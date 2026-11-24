@@ -19,8 +19,10 @@ local commands = {
     if name == "" then
       return say("type /kinfolk forget <name>")
     end
-    local me = ns.Game.Sighting().name
-    if me and me:lower() == name:lower() then
+    local s = ns.Game.Sighting()
+    local me = s.name and ns.Roster.DisplayName(s)
+    local wanted = name:lower()
+    if me and (wanted == me:lower() or wanted == s.name:lower()) then
       return say(
         "you're logged in on "
           .. me
@@ -36,8 +38,9 @@ local commands = {
     local s = ns.Game.Sighting()
     say(
       string.format(
-        "you: name=%s realm=%s level=%s class=%s",
+        "you: name=%s surname=%s realm=%s level=%s class=%s",
         tostring(s.name),
+        tostring(s.surname),
         tostring(s.realm),
         tostring(s.level),
         tostring(s.classFile)

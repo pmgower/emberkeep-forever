@@ -114,3 +114,28 @@ describe("Roster.Characters", function()
     assert.are.equal(34, store["Brakka-Nightfall"].level)
   end)
 end)
+
+describe("Roster surnames", function()
+  it("keys by full name and shows it, or the first name only", function()
+    assert.are.equal("Jango Fett-Forever", Roster.Key("Jango", "Forever", "Fett"))
+    assert.are.equal("Jango-Forever", Roster.Key("Jango", "Forever"))
+    local c = { name = "Jango", surname = "Fett" }
+    assert.are.equal("Jango Fett", Roster.DisplayName(c))
+    assert.are.equal("Jango", Roster.DisplayName(c, true))
+    assert.are.equal("Quill", Roster.DisplayName({ name = "Quill" }))
+  end)
+
+  it("keeps two alts with the same first name apart", function()
+    local store = {}
+    Roster.Observe(store, { name = "Jango", surname = "Fett", realm = "Forever" }, 1)
+    Roster.Observe(store, { name = "Jango", surname = "Reyes", realm = "Forever" }, 1)
+    assert.is_not_nil(store["Jango Fett-Forever"])
+    assert.is_not_nil(store["Jango Reyes-Forever"])
+  end)
+
+  it("forgets by full name too", function()
+    local store = {}
+    Roster.Observe(store, { name = "Jango", surname = "Fett", realm = "Forever" }, 1)
+    assert.are.equal(1, Roster.Forget(store, "jango fett"))
+  end)
+end)

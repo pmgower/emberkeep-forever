@@ -35,10 +35,14 @@ function Game.Realm()
     or Game.DEFAULT_REALM
 end
 
+-- On Forever, UnitName's second value is the character's surname, not a
+-- realm (Forever names have two parts; AllTheThings issue #2630).
 function Game.Sighting()
   local class, classFile = UnitClass("player")
+  local first, second = UnitName("player")
   return {
-    name = plain(UnitName("player")),
+    name = plain(first),
+    surname = nonEmpty(second),
     realm = Game.Realm(),
     class = plain(class),
     classFile = plain(classFile),
@@ -56,7 +60,7 @@ function Game.CurrentKey()
   if not (s.name and s.realm) then
     return nil
   end
-  return ns.Roster.Key(s.name, s.realm)
+  return ns.Roster.Key(s.name, s.realm, s.surname)
 end
 
 function Game.Now()
@@ -115,5 +119,6 @@ function Game.RestContext(db, now)
     now = now or time(),
     currentKey = Game.CurrentKey(),
     wellRested = db.wellRested,
+    hideSurnames = db.settings.hideSurnames,
   }
 end

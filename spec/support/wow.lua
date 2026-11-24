@@ -161,7 +161,7 @@ function W.install(state)
     return state.secret ~= nil and v == state.secret
   end
   _G.UnitName = function()
-    return state.name
+    return state.name, state.surname -- Forever: the second value is the surname
   end
   _G.GetRealmName = function()
     return state.realm

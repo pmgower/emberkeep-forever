@@ -19,6 +19,7 @@ local CHECKBOXES = {
     "Say who to play next when I log in",
     "One chat line naming the alt with the most rested XP.",
   },
+  { "hideSurnames", "First names only", "Show 'Jango' instead of 'Jango Fett'." },
   { "locked", "Lock window position and size", "Stops the window from being dragged or resized." },
 }
 
@@ -89,8 +90,7 @@ local function addForget(cat, layout)
     if key == "" then
       return
     end
-    local me = ns.Game.Sighting()
-    if key == ns.Roster.Key(me.name, me.realm) then
+    if key == ns.Game.CurrentKey() then
       return ns.Say("you're logged in on " .. key .. ", so they'd be added straight back.")
     end
     if ns.Roster.ForgetKey(ns.db.characters, key) then

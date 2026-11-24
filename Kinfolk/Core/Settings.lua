@@ -7,6 +7,7 @@ ns.Settings = Settings
 Settings.DEFAULTS = {
   minimapButton = true,
   loginHint = true,
+  hideSurnames = false,
   locked = false,
   theme = "frost",
   scale = 1.0,
