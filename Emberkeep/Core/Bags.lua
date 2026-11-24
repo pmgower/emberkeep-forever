@@ -5,16 +5,26 @@ ns = ns or {}
 local Bags = {}
 ns.Bags = Bags
 
--- reading: { items = { { link, count }, ... } in slot order, free, total }.
+local function itemId(link)
+  return tonumber(tostring(link or ""):match("item:(%d+)"))
+end
+
+-- reading: { items = { { id, link or nil, count }, ... } in slot order, free,
+-- total }. A link that hasn't loaded keeps the one saved for the same item.
 -- Saves it on the character and returns true, unless the game reported no
 -- bag slots at all: everyone has a backpack, so that means "not loaded".
 function Bags.Observe(c, reading, now)
   if not reading or (reading.total or 0) <= 0 then
     return false
   end
+  local known = {}
+  for _, item in ipairs(c.bags and c.bags.items or {}) do
+    known[itemId(item.link) or 0] = item.link
+  end
   local items = {}
   for i, item in ipairs(reading.items) do
-    items[i] = { link = item.link, count = item.count }
+    local link = item.link or known[item.id] or ("item:" .. tostring(item.id))
+    items[i] = { link = link, count = item.count }
   end
   c.bags = { items = items, free = reading.free, total = reading.total, at = now }
   return true

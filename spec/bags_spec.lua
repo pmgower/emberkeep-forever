@@ -21,6 +21,14 @@ describe("Bags.Observe", function()
     assert.are.equal(500, c.bags.at)
   end)
 
+  it("keeps the saved link while the same item's link hasn't loaded", function()
+    local c = {}
+    Bags.Observe(c, { items = { { id = 7, link = "|Hitem:7:99|h[Ring]|h", count = 1 } }, free = 1, total = 2 }, 1)
+    Bags.Observe(c, { items = { { id = 8, count = 1 }, { id = 7, count = 1 } }, free = 0, total = 2 }, 2)
+    assert.are.equal("item:8", c.bags.items[1].link)
+    assert.are.equal("|Hitem:7:99|h[Ring]|h", c.bags.items[2].link)
+  end)
+
   it("saves bags that are really empty", function()
     local c = { bags = { items = reading.items, free = 14, total = 16, at = 500 } }
     assert.is_true(Bags.Observe(c, { items = {}, free = 16, total = 16 }, 900))

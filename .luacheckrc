@@ -32,7 +32,7 @@ read_globals = {
   "C_Item", "GetInventoryItemID", "GetInventoryItemLink", "HandleModifiedItemClick", "IsModifiedClick",
   "ITEM_QUALITY_COLORS",
   -- Bags
-  "C_Container", "NUM_TOTAL_EQUIPPED_BAG_SLOTS",
+  "C_Container", "GetKeyRingSize", "NUM_TOTAL_EQUIPPED_BAG_SLOTS",
   -- Button on the Character window
   "CharacterFrame",
 }
