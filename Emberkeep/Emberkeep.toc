@@ -6,6 +6,7 @@
 ## SavedVariables: EmberkeepDB
 ## IconTexture: Interface\AddOns\Emberkeep\Media\emberkeep
 ## X-License: MIT
+## X-Curse-Project-ID: 1827442
 ## OptionalDeps: LibDBIcon-1.0, !BugGrabber
 
 Libs\LibStub\LibStub.lua
