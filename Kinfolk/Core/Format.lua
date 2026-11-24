@@ -38,4 +38,17 @@ function Format.Ago(then_, now)
   return days == 1 and "yesterday" or (days .. " days ago")
 end
 
+-- A time span in the two biggest units: "1d 18h", "5h 20m", "12m".
+function Format.Duration(seconds)
+  seconds = math.max(0, math.floor(seconds or 0))
+  local d, h, m =
+    math.floor(seconds / 86400), math.floor(seconds % 86400 / 3600), math.floor(seconds % 3600 / 60)
+  if d > 0 then
+    return d .. "d " .. h .. "h"
+  elseif h > 0 then
+    return h .. "h " .. m .. "m"
+  end
+  return math.max(m, 1) .. "m"
+end
+
 return Format
