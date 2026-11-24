@@ -1,6 +1,6 @@
 ## Interface: 16001
 ## Title: Kinfolk: Forever
-## Notes: Shows which alt to play next for rested XP. Later: every alt's gear, bags, bank and mail.
+## Notes: A home base for all your alts: who to play next for rested XP, and later each alt's gear, bags, bank and mail.
 ## Author: Pheubar
 ## Version: @project-version@
 ## SavedVariables: KinfolkDB

@@ -1,6 +1,8 @@
 # Kinfolk: Forever
 
-WoW Forever addon: which alt to play next for rested XP, then each alt's gear, bags, bank and mail.
+WoW Forever addon: a home base for all your alts. A roster of every character, switchable
+focuses on it (the first: which alt to play next for rested XP), and later each alt's gear, bags,
+bank and mail.
 Domain terms are in CONTEXT.md. The plan and slice list are in docs/KICKOFF.md.
 
 ## Facts the code can't show
