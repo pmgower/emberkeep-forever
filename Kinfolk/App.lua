@@ -60,7 +60,11 @@ frame:RegisterEvent("PLAYER_XP_UPDATE")
 frame:RegisterEvent("UPDATE_EXHAUSTION")
 frame:RegisterEvent("PLAYER_UPDATE_RESTING")
 frame:RegisterEvent("TRAIT_CONFIG_UPDATED")
-frame:SetScript("OnEvent", function(_, event, arg1)
+-- The last few errors Kinfolk hit, for /kinfolk debug. WoW hides Lua errors
+-- by default, so the first one in a session is also said once in chat.
+App.errors = {}
+
+local function handle(event, arg1)
   if event == "ADDON_LOADED" then
     if arg1 == addonName then
       KinfolkDB = ns.Store.Ensure(KinfolkDB)
@@ -80,6 +84,28 @@ frame:SetScript("OnEvent", function(_, event, arg1)
   -- arg1 is isInitialLogin: true on login, false on /reload and zoning.
   if event == "PLAYER_ENTERING_WORLD" and arg1 == true then
     App.LoginHint()
+  end
+end
+
+frame:SetScript("OnEvent", function(_, event, arg1)
+  local ok, err = pcall(handle, event, arg1)
+  if not ok then
+    local errors = App.errors
+    errors[#errors + 1] = event .. ": " .. tostring(err)
+    if #errors > 5 then
+      table.remove(errors, 1)
+    end
+    -- Hand it on, so BugSack and the game's own error popup still see it.
+    local report = geterrorhandler and geterrorhandler()
+    if report then
+      pcall(report, err)
+    end
+    if not App.warned then
+      App.warned = true
+      DEFAULT_CHAT_FRAME:AddMessage(
+        "|cff9fd0ffKinfolk:|r hit an error. Type /kinfolk debug and send it to the author."
+      )
+    end
   end
 end)
 
