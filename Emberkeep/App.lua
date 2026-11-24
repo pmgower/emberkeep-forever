@@ -176,14 +176,38 @@ end
 -- Bags change often, so they're read on their own, without the rest of the
 -- sighting. Not between leaving the world and entering it again (zoning or
 -- logging out), when they can read as empty.
-local leaving = false
+-- Several changes close together (looting, a shot that uses ammo) make one read.
+local leaving, queued = true, false
+local BAG_DELAY, ENTER_DELAY = 0.5, 1
+local queueBags
 
-local function readBags()
+local function readBags(tries)
   local key = ns.db and not leaving and ns.Game.CurrentKey()
   local c = key and ns.db.characters[key]
-  if c and ns.Bags.Observe(c, ns.Items.Carried(), ns.Game.Now()) then
+  if not c then
+    return
+  end
+  local reading = ns.Items.Carried()
+  if ns.Bags.Observe(c, reading, ns.Game.Now()) then
     ns.AltPanel.RefreshIfShowing(key)
   end
+  if reading and reading.missing and tries > 0 then
+    queueBags(RETRY_SECONDS, tries - 1)
+  end
+end
+
+function queueBags(delay, tries)
+  if queued then
+    return
+  end
+  if not (C_Timer and C_Timer.After) then
+    return readBags(0)
+  end
+  queued = true
+  C_Timer.After(delay, function()
+    queued = false
+    readBags(tries)
+  end)
 end
 
 local function handle(event, arg1)
@@ -206,7 +230,7 @@ local function handle(event, arg1)
     return
   end
   if event == "BAG_UPDATE_DELAYED" then
-    return readBags()
+    return queueBags(BAG_DELAY, RETRIES)
   elseif event == "PLAYER_LEAVING_WORLD" then
     leaving = true
     return
@@ -214,6 +238,9 @@ local function handle(event, arg1)
     leaving = false
   end
   observe(event, arg1)
+  if event == "PLAYER_ENTERING_WORLD" then
+    queueBags(ENTER_DELAY, RETRIES) -- whatever changed behind the loading screen
+  end
   -- Ask for /played once per session (login or /reload), a moment after
   -- loading so it doesn't land among every other addon's login work.
   if event == "PLAYER_ENTERING_WORLD" and not App.playedAsked then

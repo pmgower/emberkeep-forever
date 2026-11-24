@@ -268,21 +268,29 @@ function W.install(state)
     end,
     RequestLoadItemDataByID = function() end,
   }
-  -- The backpack: state.bag is { size, [slot] = { id, name, count } }.
+  -- The backpack and a quiver (family 1): state.bag and state.quiver are
+  -- { size, [slot] = { id, name, count } }. state.unloaded leaves names out.
+  local function bagAt(bag)
+    if bag == 0 then
+      return state.bag
+    end
+    return bag == 1 and state.quiver or nil
+  end
   _G.C_Container = {
     GetContainerNumSlots = function(bag)
-      return bag == 0 and state.bag and state.bag.size or 0
+      return bagAt(bag) and bagAt(bag).size or 0
     end,
     GetContainerNumFreeSlots = function(bag)
       local used = 0
-      for slot in pairs(bag == 0 and state.bag or {}) do
+      for slot in pairs(bagAt(bag) or {}) do
         used = used + (type(slot) == "number" and 1 or 0)
       end
-      return bag == 0 and state.bag and state.bag.size - used or 0, 0
+      return bagAt(bag) and bagAt(bag).size - used or 0, bag == 1 and 1 or 0
     end,
-    GetContainerItemInfo = function(_, slot)
-      local it = state.bag and state.bag[slot]
-      local link = it and ("|Hitem:" .. it.id .. "::|h[" .. it.name .. "]|h")
+    GetContainerItemInfo = function(bag, slot)
+      local it = bagAt(bag) and bagAt(bag)[slot]
+      local name = it and not state.unloaded and it.name or ""
+      local link = it and ("|Hitem:" .. it.id .. "::|h[" .. name .. "]|h")
       return it and { itemID = it.id, hyperlink = link, stackCount = it.count }
     end,
   }
