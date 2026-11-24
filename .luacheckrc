@@ -19,4 +19,5 @@ read_globals = {
   "UnitFactionGroup", "UnitLevel", "UnitName", "UnitRace", "issecretvalue", "time", "tinsert",
   -- Rested XP (slice 2)
   "C_Traits", "Enum", "GetMaxPlayerLevel", "GetXPExhaustion", "IsResting", "UnitXPMax",
+  "GetNormalizedRealmName", "UnitFullName",
 }

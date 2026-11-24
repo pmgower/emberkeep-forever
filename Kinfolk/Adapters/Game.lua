@@ -17,11 +17,29 @@ local function plain(v)
   return v
 end
 
+-- WoW Forever reports an empty realm name, so try the other ways the client
+-- names the realm and fall back to one fixed name. Every character then
+-- still gets a stable key ("Jango-Forever").
+Game.DEFAULT_REALM = "Forever"
+
+local function nonEmpty(v)
+  v = plain(v)
+  return type(v) == "string" and v ~= "" and v or nil
+end
+
+function Game.Realm()
+  local fromFull = UnitFullName and select(2, UnitFullName("player"))
+  return nonEmpty(GetRealmName())
+    or nonEmpty(GetNormalizedRealmName and GetNormalizedRealmName())
+    or nonEmpty(fromFull)
+    or Game.DEFAULT_REALM
+end
+
 function Game.Sighting()
   local class, classFile = UnitClass("player")
   return {
     name = plain(UnitName("player")),
-    realm = plain(GetRealmName()),
+    realm = Game.Realm(),
     class = plain(class),
     classFile = plain(classFile),
     race = plain(UnitRace("player")),

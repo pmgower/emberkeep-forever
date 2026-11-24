@@ -112,6 +112,16 @@ describe("the addon in a stand-in client", function()
     assert.are.equal(3, KinfolkDB.characters["Brakka-Nightfall"].rest.wellRested)
   end)
 
+  it("saves the character when the game reports no realm name, as WoW Forever does", function()
+    state.realm = ""
+    KinfolkDB.characters = {}
+    wow.fire("PLAYER_LOGIN")
+    local c = KinfolkDB.characters["Brakka-Forever"]
+    assert.is_not_nil(c, "the character should be saved under the fallback realm")
+    assert.are.equal(34, c.level)
+    assert.is_not_nil(c.rest)
+  end)
+
   it("keeps saved data when logout reads come back empty", function()
     state.level, state.money, state.zone = 0, 0, ""
     wow.fire("PLAYER_LOGOUT")
