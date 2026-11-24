@@ -102,6 +102,8 @@ frame:RegisterEvent("PLAYER_UPDATE_RESTING")
 frame:RegisterEvent("TRAIT_CONFIG_UPDATED")
 frame:RegisterEvent("TIME_PLAYED_MSG")
 frame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
+frame:RegisterEvent("BAG_UPDATE_DELAYED")
+frame:RegisterEvent("PLAYER_LEAVING_WORLD")
 -- The last few errors Emberkeep hit this session, for /emberkeep feedback and
 -- /emberkeep debug. Kept in memory only, never saved.
 App.errors = {}
@@ -171,6 +173,19 @@ elseif geterrorhandler and seterrorhandler then
   seterrorhandler(ourHandler)
 end
 
+-- Bags change often, so they're read on their own, without the rest of the
+-- sighting. Not between leaving the world and entering it again (zoning or
+-- logging out), when they can read as empty.
+local leaving = false
+
+local function readBags()
+  local key = ns.db and not leaving and ns.Game.CurrentKey()
+  local c = key and ns.db.characters[key]
+  if c and ns.Bags.Observe(c, ns.Items.Carried(), ns.Game.Now()) then
+    ns.AltPanel.RefreshIfShowing(key)
+  end
+end
+
 local function handle(event, arg1)
   if event == "ADDON_LOADED" then
     if arg1 == addonName then
@@ -189,6 +204,14 @@ local function handle(event, arg1)
       ns.CharacterButton.Init()
     end
     return
+  end
+  if event == "BAG_UPDATE_DELAYED" then
+    return readBags()
+  elseif event == "PLAYER_LEAVING_WORLD" then
+    leaving = true
+    return
+  elseif event == "PLAYER_ENTERING_WORLD" then
+    leaving = false
   end
   observe(event, arg1)
   -- Ask for /played once per session (login or /reload), a moment after

@@ -35,6 +35,34 @@ function Items.Worn()
   return reading
 end
 
+-- Every bag's contents, for Bags.Observe: the backpack, then each equipped bag.
+-- Free slots count only bags that hold anything (family 0).
+function Items.Carried()
+  local C = C_Container
+  if not (C and C.GetContainerNumSlots and C.GetContainerItemInfo) then
+    return nil
+  end
+  local reading = { items = {}, free = 0, total = 0 }
+  for bag = 0, NUM_TOTAL_EQUIPPED_BAG_SLOTS or 5 do
+    local size = plain(C.GetContainerNumSlots(bag)) or 0
+    local free, family = C.GetContainerNumFreeSlots(bag)
+    if size > 0 and (plain(family) or 0) == 0 and bag <= 4 then -- bag 5 is the reagent bag
+      reading.total = reading.total + size
+      reading.free = reading.free + (plain(free) or 0)
+    end
+    for slot = 1, size do
+      local info = C.GetContainerItemInfo(bag, slot)
+      local id = info and plain(info.itemID)
+      if id then
+        local link = plain(info.hyperlink)
+        reading.items[#reading.items + 1] =
+          { link = link or ("item:" .. id), count = plain(info.stackCount) or 1 }
+      end
+    end
+  end
+  return reading
+end
+
 local requested = {}
 
 -- For Gear.View. Asks the game once to load an item it doesn't know yet; the
