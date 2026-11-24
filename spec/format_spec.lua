@@ -10,6 +10,13 @@ describe("Format.Money", function()
     assert.are.same({ gold = "", silver = "", copper = "" }, Format.Money(0))
   end)
 
+  it("handles exact thousands, millions and gold with only copper", function()
+    assert.are.equal("1,000g", Format.Money(1000 * 10000).gold)
+    assert.are.equal("1,000,000g", Format.Money(1000000 * 10000).gold)
+    assert.are.equal("100g", Format.Money(100 * 10000).gold)
+    assert.are.same({ gold = "1g", silver = "", copper = "" }, Format.Money(10005))
+  end)
+
   it("treats nil as nothing", function()
     assert.are.same({ gold = "", silver = "", copper = "" }, Format.Money(nil))
   end)
