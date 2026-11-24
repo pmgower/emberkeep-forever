@@ -41,8 +41,11 @@ end
 
 -- Where a character's rested XP is at `now`: rested XP, cap, percent of a
 -- level, whether it's full, when it filled (or will), seconds to full.
-function Rest.Project(rest, now)
-  local bonus = 1 + Rest.WELL_RESTED_STEP * (rest.wellRested or 0)
+-- Well Rested is account-wide, so the account's rank (when known) wins over
+-- the rank saved with an alt's older reading.
+function Rest.Project(rest, now, accountRank)
+  local rank = type(accountRank) == "number" and accountRank or rest.wellRested or 0
+  local bonus = 1 + Rest.WELL_RESTED_STEP * rank
   local cap = rest.xpMax * Rest.CAP * bonus
   local rate = rest.xpMax * Rest.PER_SECOND * bonus * (rest.resting and 1 or Rest.AWAY)
   local start = math.min(rest.rested, cap)
@@ -63,11 +66,11 @@ end
 -- Characters to show on the Rested focus: below max level, with a rest
 -- observation. Full ones first, alphabetically (the game doesn't tell addons
 -- the character select order); then the rest by how full, highest first.
-function Rest.Ranking(characters, maxLevel, now)
+function Rest.Ranking(characters, maxLevel, now, accountRank)
   local rows = {}
   for _, c in ipairs(characters) do
     if c.rest and (c.level or 0) < maxLevel then
-      rows[#rows + 1] = { character = c, projection = Rest.Project(c.rest, now) }
+      rows[#rows + 1] = { character = c, projection = Rest.Project(c.rest, now, accountRank) }
     end
   end
   table.sort(rows, function(a, b)

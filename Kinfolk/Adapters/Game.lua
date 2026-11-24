@@ -54,31 +54,48 @@ end
 -- Alts Forever (MIT). Returns nil when it can't be read.
 local WELL_RESTED_NODE = 110301
 
-local function wellRestedRank()
+-- Several trees are Generic (Skyriding is one), so look in each for the node.
+function Game.WellRestedRank()
   local T = C_Traits
   if not (T and T.GetConfigsByType and T.GetNodeInfo) then
     return nil
   end
   local generic = Enum and Enum.TraitConfigType and Enum.TraitConfigType.Generic or 3
   local ok, configs = pcall(T.GetConfigsByType, generic)
-  local config = ok and type(configs) == "table" and plain(configs[1])
-  if not config then
+  if not (ok and type(configs) == "table") then
     return nil
   end
-  local ok2, info = pcall(T.GetNodeInfo, config, WELL_RESTED_NODE)
-  local rank = ok2
-    and type(info) == "table"
-    and plain(info.ID) == WELL_RESTED_NODE
-    and plain(info.currentRank)
-  return type(rank) == "number" and rank or nil
+  for _, config in ipairs(configs) do
+    config = plain(config)
+    if config then
+      local ok2, info = pcall(T.GetNodeInfo, config, WELL_RESTED_NODE)
+      if ok2 and type(info) == "table" and plain(info.ID) == WELL_RESTED_NODE then
+        local rank = plain(info.currentRank)
+        return type(rank) == "number" and rank or nil
+      end
+    end
+  end
+  return nil
 end
 
-function Game.RestObservation()
+-- wellRested is the account's rank, read once and passed in, so this cheap
+-- read can run on every XP change.
+function Game.RestObservation(wellRested)
   return {
     rested = plain(GetXPExhaustion()),
     xpMax = plain(UnitXPMax("player")),
     resting = plain(IsResting()),
-    wellRested = wellRestedRank(),
+    wellRested = wellRested,
     at = time(),
+  }
+end
+
+-- What the Rested views need to know about this moment.
+function Game.RestContext(db, now)
+  return {
+    maxLevel = Game.MaxLevel(),
+    now = now or time(),
+    currentKey = Game.CurrentKey(),
+    wellRested = db.wellRested,
   }
 end

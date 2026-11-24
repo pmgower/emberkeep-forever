@@ -187,7 +187,6 @@ function W.install(state)
   _G.time = function()
     return state.now
   end
-  _G.date = os.date
   _G.GetMaxPlayerLevel = function()
     return 60
   end

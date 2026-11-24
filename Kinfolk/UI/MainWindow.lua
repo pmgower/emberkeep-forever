@@ -33,8 +33,13 @@ local function moneyText(m)
   return #parts > 0 and table.concat(parts, " ") or (DIM .. "0|r")
 end
 
+-- Who the last Rested build said to play next, for the row tooltips.
+local nextKey
+
 local function restedBuild(db, now)
-  return ns.RestedView.Build(db.characters, ns, ns.Game.MaxLevel(), now, ns.Game.CurrentKey())
+  local rows, summary = ns.RestedView.Build(db.characters, ns, ns.Game.RestContext(db, now))
+  nextKey = summary.next and summary.next.key
+  return rows, summary
 end
 
 local focuses = {
@@ -121,16 +126,17 @@ local function tooltip(owner, key)
   local now = ns.Game.Now()
   local levelling = c.rest and (c.level or 0) < ns.Game.MaxLevel()
   if levelling then
-    local p = ns.Rest.Project(c.rest, now)
-    local pct = math.floor(p.percent + 0.5) .. "%"
+    local p = ns.Rest.Project(c.rest, now, ns.db.wellRested)
+    local pct = (p.full and math.floor(p.percent + 0.5) or math.floor(p.percent)) .. "%"
     GameTooltip:AddDoubleLine("Rested", p.full and (BLUE .. pct .. " (full)|r") or pct, 1, 0.82, 0, 1, 1, 1)
     if p.full then
-      local when = date("%A, %I:%M %p", math.floor(p.fullAt)):gsub(" 0(%d:)", " %1")
-      GameTooltip:AddDoubleLine("Full since", when, 1, 0.82, 0, 1, 1, 1)
+      -- At least this long: a reading taken already full can't say when it filled.
+      GameTooltip:AddDoubleLine("Full for", ns.Format.Duration(now - p.fullAt), 1, 0.82, 0, 1, 1, 1)
     else
       GameTooltip:AddDoubleLine("Full in", ns.Format.Duration(p.secondsToFull), 1, 0.82, 0, 1, 1, 1)
     end
-    GameTooltip:AddDoubleLine("Well Rested", (c.rest.wellRested or 0) .. " / 5", 1, 0.82, 0, 1, 1, 1)
+    local rank = ns.db.wellRested or c.rest.wellRested or 0
+    GameTooltip:AddDoubleLine("Well Rested", rank .. " / 5", 1, 0.82, 0, 1, 1, 1)
   end
   GameTooltip:AddDoubleLine("Gold", moneyText(ns.Format.Money(c.money)), 1, 0.82, 0)
   if c.zone then
@@ -141,11 +147,8 @@ local function tooltip(owner, key)
     GameTooltip:AddDoubleLine("Last zone", where, 1, 0.82, 0, 1, 1, 1)
   end
   GameTooltip:AddDoubleLine("Last seen", ns.Format.Ago(c.lastSeen, now), 1, 0.82, 0, 1, 1, 1)
-  if levelling then
-    local _, summary = restedBuild(ns.db, now)
-    if summary.next and summary.next.key == key and summary.next.full then
-      GameTooltip:AddLine("Rested XP past full is wasted: play " .. c.name .. " next.", 0.62, 0.82, 1, true)
-    end
+  if levelling and key == nextKey and ns.Rest.Project(c.rest, now, ns.db.wellRested).full then
+    GameTooltip:AddLine("Rested XP past full is wasted: play " .. c.name .. " next.", 0.62, 0.82, 1, true)
   end
   GameTooltip:Show()
 end
