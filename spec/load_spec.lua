@@ -486,7 +486,9 @@ describe("the addon in a stand-in client", function()
     end)
 
     it("shows bags on their own tab, and keeps the tab while stepping between alts", function()
-      state.bag = { size = 16, [1] = { id = 50, name = "Linen", count = 18 } }
+      state.bag = { size = 16, [1] = { id = 50, name = "Linen", count = 187 } }
+      state.quiver = { size = 8, [1] = { id = 60, name = "Arrow", count = 200 } }
+      wow.fire("PLAYER_ENTERING_WORLD", false, true)
       wow.fire("BAG_UPDATE_DELAYED")
       click("Brakka-Nightfall")
       for _, f in ipairs(wow.frames) do
@@ -495,9 +497,20 @@ describe("the addon in a stand-in client", function()
         end
       end
       assert.is_true(drawn("15 of 16 slots free"))
-      assert.is_true(drawn("18"))
+      local function shownLinks()
+        local n = 0
+        for _, f in ipairs(wow.frames) do
+          if f._shown and rawget(f, "link") and rawget(f, "count") then
+            n = n + 1
+          end
+        end
+        return n
+      end
+      assert.is_true(drawn("187"))
+      assert.are.equal(2, shownLinks(), "the quiver's arrows are listed, its slots aren't counted")
       ns.AltPanel.Step(1)
       assert.is_true(drawn("No bags saved yet"))
+      assert.are.equal(0, shownLinks())
       ns.AltPanel.Step(1)
       state.bag[2] = { id = 51, name = "Wool", count = 4 }
       wow.fire("BAG_UPDATE_DELAYED")
@@ -507,14 +520,38 @@ describe("the addon in a stand-in client", function()
     it("doesn't read bags while zoning or logging out", function()
       state.bag = { size = 16, [1] = { id = 50, name = "Linen", count = 18 } }
       wow.fire("BAG_UPDATE_DELAYED")
+      assert.is_nil(EmberkeepDB.characters["Brakka-Nightfall"].bags, "not before entering the world")
+      wow.fire("PLAYER_ENTERING_WORLD", false, true)
       local saved = EmberkeepDB.characters["Brakka-Nightfall"].bags
       wow.fire("PLAYER_LEAVING_WORLD")
       state.bag = { size = 16 }
       wow.fire("BAG_UPDATE_DELAYED")
       assert.are.equal(saved, EmberkeepDB.characters["Brakka-Nightfall"].bags)
       wow.fire("PLAYER_ENTERING_WORLD", false, false)
-      wow.fire("BAG_UPDATE_DELAYED")
       assert.are.equal(16, EmberkeepDB.characters["Brakka-Nightfall"].bags.free)
+    end)
+
+    it("reads bags once for changes close together, and again for a missing link", function()
+      wow.fire("PLAYER_ENTERING_WORLD", false, true)
+      local later = {}
+      _G.C_Timer = {
+        After = function(_, fn)
+          later[#later + 1] = fn
+        end,
+      }
+      state.unloaded = true
+      state.bag = { size = 16, [1] = { id = 50, name = "Linen", count = 18 } }
+      wow.fire("BAG_UPDATE_DELAYED")
+      wow.fire("BAG_UPDATE_DELAYED")
+      assert.are.equal(1, #later)
+      later[1]()
+      local c = EmberkeepDB.characters["Brakka-Nightfall"]
+      assert.are.equal("item:50", c.bags.items[1].link)
+      state.unloaded = false
+      later[2]()
+      _G.C_Timer = nil
+      assert.truthy(c.bags.items[1].link:find("[Linen]", 1, true))
+      assert.are.equal(2, #later)
     end)
 
     it("reads again until every link has loaded", function()

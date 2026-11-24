@@ -196,6 +196,7 @@ local function cell(i)
   local b = cells[i]
   if not b then
     b = CreateFrame("Button", nil, panel)
+    b.link = false
     b:SetSize(CELL, CELL)
     b.border = b:CreateTexture(nil, "BACKGROUND")
     b.border:SetAllPoints()
@@ -231,7 +232,16 @@ local function layoutBags(view, width)
   local total = #view.rows + view.free
   for i = 1, total do
     local b, row = cell(i), view.rows[i] or {}
+    local changed = b.link ~= (row.link or false)
     b.link = row.link or false
+    -- Items shift along as one is used up; the tooltip has to follow.
+    if changed and GameTooltip:IsOwned(b) then
+      if b.link then
+        GameTooltip:SetHyperlink(b.link)
+      else
+        GameTooltip:Hide()
+      end
+    end
     b.icon:SetTexture(row.link and (row.icon or QUESTION) or nil)
     b.count:SetText((row.count or 1) > 1 and row.count or "")
     local r, g, bl = ns.Items.Rgb(row.quality)

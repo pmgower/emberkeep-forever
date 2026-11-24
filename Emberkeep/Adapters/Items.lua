@@ -36,13 +36,29 @@ function Items.Worn()
 end
 
 -- Every bag's contents, for Bags.Observe: the backpack, then each equipped bag.
--- Free slots count only bags that hold anything (family 0).
+-- Free slots count only bags that hold anything (family 0). The keyring's
+-- items are listed, its slots aren't counted. "missing" says a link hasn't
+-- loaded, so read again shortly.
 function Items.Carried()
   local C = C_Container
   if not (C and C.GetContainerNumSlots and C.GetContainerItemInfo) then
     return nil
   end
-  local reading = { items = {}, free = 0, total = 0 }
+  local reading = { items = {}, free = 0, total = 0, missing = false }
+  local function readSlots(bag, size)
+    for slot = 1, size do
+      local info = C.GetContainerItemInfo(bag, slot)
+      local id = info and plain(info.itemID)
+      if id then
+        local link = plain(info.hyperlink)
+        if link and (ns.Gear.LinkName(link) or "") == "" then
+          link = nil
+        end
+        reading.missing = reading.missing or link == nil
+        reading.items[#reading.items + 1] = { id = id, link = link, count = plain(info.stackCount) or 1 }
+      end
+    end
+  end
   for bag = 0, NUM_TOTAL_EQUIPPED_BAG_SLOTS or 5 do
     local size = plain(C.GetContainerNumSlots(bag)) or 0
     local free, family = C.GetContainerNumFreeSlots(bag)
@@ -50,15 +66,11 @@ function Items.Carried()
       reading.total = reading.total + size
       reading.free = reading.free + (plain(free) or 0)
     end
-    for slot = 1, size do
-      local info = C.GetContainerItemInfo(bag, slot)
-      local id = info and plain(info.itemID)
-      if id then
-        local link = plain(info.hyperlink)
-        reading.items[#reading.items + 1] =
-          { link = link or ("item:" .. id), count = plain(info.stackCount) or 1 }
-      end
-    end
+    readSlots(bag, size)
+  end
+  local keyring = Enum and Enum.BagIndex and Enum.BagIndex.Keyring
+  if keyring and GetKeyRingSize then
+    readSlots(keyring, plain(GetKeyRingSize()) or 0)
   end
   return reading
 end
