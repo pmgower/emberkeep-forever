@@ -399,10 +399,12 @@ describe("the addon in a stand-in client", function()
     it("opens on a clicked row with its gear, and closes on a second click", function()
       click("Brakka-Nightfall")
       assert.are.equal("Brakka-Nightfall", ns.AltPanel.Key())
+      assert.is_true(ns.AltPanel.IsShown())
       assert.is_true(drawn("Old Cap"))
       assert.is_true(drawn("16 empty slots, 1 outleveled"))
       click("Brakka-Nightfall")
       assert.is_nil(ns.AltPanel.Key())
+      assert.is_false(ns.AltPanel.IsShown())
     end)
 
     it("steps through the alts in row order, and says when no gear is saved", function()
@@ -438,11 +440,39 @@ describe("the addon in a stand-in client", function()
       assert.are.equal(1, #wow.linked)
     end)
 
-    it("closes when the alt it shows is removed, and redraws when items load", function()
+    it("closes when the alt it shows is removed", function()
       click("Quill-Nightfall")
-      wow.fire("GET_ITEM_INFO_RECEIVED", 10, true)
       ns.CharactersPage.Remove("Quill-Nightfall")
       assert.is_nil(ns.AltPanel.Key())
+      assert.is_false(ns.AltPanel.IsShown())
+    end)
+
+    it("redraws when an item loads, but not when a load fails", function()
+      click("Brakka-Nightfall")
+      state.worn[1].level = 33
+      wow.fire("GET_ITEM_INFO_RECEIVED", 10, false)
+      assert.is_false(drawn("Head  33"))
+      wow.fire("GET_ITEM_INFO_RECEIVED", 10, true)
+      assert.is_true(drawn("Head  33"))
+    end)
+
+    it("reads again until every link has loaded", function()
+      local later = {}
+      _G.C_Timer = {
+        After = function(_, fn)
+          later[#later + 1] = fn
+        end,
+      }
+      state.worn = { [1] = { id = 11, name = "New Cap", level = 30, quality = 2 } }
+      state.unloaded = true
+      wow.fire("PLAYER_EQUIPMENT_CHANGED", 1, false)
+      local c = EmberkeepDB.characters["Brakka-Nightfall"]
+      assert.are.equal("item:11", c.gear.slots[1])
+      state.unloaded = false
+      later[1]()
+      _G.C_Timer = nil
+      assert.truthy(c.gear.slots[1]:find("[New Cap]", 1, true))
+      assert.are.equal(1, #later, "nothing left to read again")
     end)
   end)
 

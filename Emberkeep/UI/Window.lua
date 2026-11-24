@@ -91,7 +91,7 @@ W.__index = W
 
 -- opts: name, title, store (table: point, size), defaultPoint {p, rp, x, y},
 -- defaultSize {w, h}, bounds {minW, minH, maxW, maxH}, isLocked(), onClose(),
--- onResize(), onTheme().
+-- onResize(), onMove(), onTheme().
 function Window.New(opts)
   local self = setmetatable({ opts = opts, store = opts.store or {}, highlights = {} }, W)
   local f = CreateFrame("Frame", opts.name, UIParent, "BackdropTemplate")
@@ -186,6 +186,9 @@ function W:ForwardDrag(child)
     self:SavePosition()
     self.moving = false
     self:UpdateScrollBars()
+    if self.opts.onMove then
+      self.opts.onMove()
+    end
   end)
 end
 

@@ -5,7 +5,7 @@ local _, ns = ...
 local AltPanel = {}
 ns.AltPanel = AltPanel
 
-local WIDE, NARROW, HEADER_H, PAD = 400, 240, 24, 10
+local WIDE, NARROW, HEADER_H, PAD = 400, 270, 24, 10
 local SLOT_H, ICON = 34, 28
 local DIM, WARN = "|cff8f98a5", "|cffe0a040"
 local QUESTION = "Interface\\Icons\\INV_Misc_QuestionMark"
@@ -49,6 +49,7 @@ local function build(window)
       insets = { left = 3, right = 3, top = 3, bottom = 3 },
     })
   end
+  panel:SetClampedToScreen(true)
   win:ForwardDrag(panel)
   panel.close = CreateFrame("Button", nil, panel, "UIPanelCloseButton")
   panel.close:SetSize(20, 20)
@@ -66,7 +67,7 @@ local function build(window)
   panel.prev:SetPoint("RIGHT", panel.next, "LEFT", -3, 0)
   panel.title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
   panel.title:SetPoint("TOPLEFT", PAD, -8)
-  panel.title:SetPoint("RIGHT", panel.prev, "LEFT", -6, 0)
+  panel.title:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -105, -8)
   panel.title:SetJustifyH("LEFT")
   panel.title:SetWordWrap(false)
   panel.line = panel:CreateTexture(nil, "ARTWORK")
@@ -80,6 +81,9 @@ local function build(window)
     AltPanel.Refresh()
   end)
   panel.view:SetPoint("TOPRIGHT", -PAD, -(HEADER_H + 5))
+  panel.summary:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -(PAD + 86), -(HEADER_H + 9))
+  panel.summary:SetJustifyH("LEFT")
+  panel.summary:SetWordWrap(false)
   panel.asOf = panel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
   panel.asOf:SetPoint("BOTTOMLEFT", PAD, 9)
   panel.asOf:SetJustifyH("LEFT")
@@ -99,7 +103,7 @@ local function slotButton(id)
     b.icon:SetPoint("CENTER", b.border, "CENTER")
     b.name = b:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     b.name:SetPoint("TOPLEFT", b.border, "TOPRIGHT", 6, -2)
-    b.name:SetPoint("RIGHT", b, "RIGHT", -2, 0)
+    b.name:SetPoint("TOPRIGHT", b, "TOPRIGHT", -2, -4)
     b.name:SetJustifyH("LEFT")
     b.name:SetWordWrap(false)
     b.detail = b:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
@@ -177,9 +181,13 @@ local function layoutGear(view, list, width)
 end
 
 -- To the right of the window, or to its left when the right has no room.
-local function dock(width)
+function AltPanel.Dock()
+  if not panel then
+    return
+  end
   local num = ns.Window.Num
   local right, left = num(win.frame:GetRight(), 0), num(win.frame:GetLeft(), 0)
+  local width = num(panel:GetWidth(), WIDE)
   local scale = num(win.frame:GetEffectiveScale(), 1)
   if scale <= 0 then
     scale = 1
@@ -201,9 +209,6 @@ function AltPanel.Refresh()
   if not c then
     return AltPanel.Close() -- removed while open
   end
-  for _, b in pairs(buttons) do
-    b:Hide()
-  end
   local list = settings().gearList
   local width = list and NARROW or WIDE
   local name = classColored(ns.Roster.DisplayName(c, settings().hideSurnames), c.classFile)
@@ -215,15 +220,24 @@ function AltPanel.Refresh()
     panel.summary:SetText(ns.Gear.Summary(view))
     panel.asOf:SetText("Gear as of " .. ns.Format.Ago(view.at, ns.Game.Now()))
     panel.view:Show()
+    -- Both layouts place every slot, so none needs hiding first: hiding the
+    -- one under the mouse would blink its tooltip and drop a click.
     height = layoutGear(view, list, width)
   else
+    for _, b in pairs(buttons) do
+      b:Hide()
+    end
     panel.summary:SetText(DIM .. "No gear saved yet|r")
     panel.asOf:SetText("Log in here once to save it.")
     panel.view:Hide()
   end
   panel:SetSize(width, HEADER_H + 30 + height + 26)
-  dock(width)
+  AltPanel.Dock()
   panel:Show()
+end
+
+function AltPanel.IsShown()
+  return panel ~= nil and panel:IsShown()
 end
 
 -- Which character the panel is showing, if it's open.
@@ -285,8 +299,9 @@ end
 local pending = false
 local loader = CreateFrame("Frame")
 loader:RegisterEvent("GET_ITEM_INFO_RECEIVED")
-loader:SetScript("OnEvent", function()
-  if pending or not (shownKey and ns.MainWindow.IsShown()) then
+loader:SetScript("OnEvent", function(_, _, _, success)
+  -- A failed load isn't news; redrawing for it would ask again forever.
+  if not success or pending or not (shownKey and ns.MainWindow.IsShown()) then
     return
   end
   if not (C_Timer and C_Timer.After) then

@@ -35,7 +35,9 @@ function Items.Worn()
   return reading
 end
 
--- For Gear.View. Asks the game to load an item it doesn't know yet; the
+local requested = {}
+
+-- For Gear.View. Asks the game once to load an item it doesn't know yet; the
 -- answer arrives as GET_ITEM_INFO_RECEIVED.
 function Items.Info(link)
   local id = ns.Gear.ItemId(link)
@@ -48,7 +50,8 @@ function Items.Info(link)
   info.name, _, info.quality = C_Item.GetItemInfo(link)
   if info.name and C_Item.GetDetailedItemLevelInfo then
     info.itemLevel = C_Item.GetDetailedItemLevelInfo(link)
-  elseif not info.name and C_Item.RequestLoadItemDataByID then
+  elseif not info.name and not requested[id] and C_Item.RequestLoadItemDataByID then
+    requested[id] = true
     C_Item.RequestLoadItemDataByID(id)
   end
   return info
