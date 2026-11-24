@@ -7,8 +7,9 @@ Paste everything below the "Description" line into the project's **Description**
 **Screenshots (gallery order).** Take them on a character below max level with at least three alts
 seen, in the default Frost Steel scheme, with UI scale and window scale at 100%:
 
-1. **Rested tab:** `/emberkeep` with three or more alts listed. Ideally one is full (blue bar), one is
-   filling in an inn (green) and one is outside (orange). File: `emberkeep-rested-screenshot-001.png`
+1. **Rested tab:** `/emberkeep` with three or more alts listed, window dragged wide enough to show
+   full names and the Zone column. Ideally one is full (blue bar), one is filling in an inn
+   (green) and one is outside (orange). File: `emberkeep-rested-screenshot-001.png`
 2. **Row tooltip:** hover the top row (a full alt) so the tooltip shows Rested, Full for, Well
    Rested, Last zone (inn) and "play … next". File: `emberkeep-tooltip-screenshot-001.png`
 3. **Overview tab:** every alt with level, time played, gold, zone and last seen, plus the All characters total row.
@@ -19,17 +20,21 @@ seen, in the default Frost Steel scheme, with UI scale and window scale at 100%:
    Crop to the chat box. File: `emberkeep-login-hint-screenshot-001.png`
 6. **Options page:** Esc > Options > AddOns > Emberkeep, showing every option.
    File: `emberkeep-options-screenshot-001.png`
-7. **Bug report window:** `/emberkeep feedback`. File: `emberkeep-feedback-screenshot-001.png`
-8. **Optional: color schemes.** The window in Deepwater or Twilight next to Frost Steel.
+7. **Characters page:** Esc > Options > AddOns > Emberkeep > Characters, with the table and
+   Remove buttons. File: `emberkeep-characters-screenshot-001.png`
+8. **Right-click menu:** right-click an alt's row in the window to show Remove.
+   File: `emberkeep-remove-menu-screenshot-001.png`
+9. **Bug report window:** `/emberkeep feedback`. File: `emberkeep-feedback-screenshot-001.png`
+10. **Optional: color schemes.** The window in Deepwater or Twilight next to Frost Steel.
    File: `emberkeep-themes-screenshot-001.png`
 
 **Project name:** Emberkeep: Forever
 
-**Summary (one line):** A home base for your alts in WoW Forever: who to play next for rested XP, plus every alt's level, gold and whereabouts.
+**Summary (one line):** A home base for your alts in WoW Forever: who to play next for rested XP, plus every alt's level, gold, time played and whereabouts.
 
 **Categories:** Miscellaneous (main), Data Export, Chat & Communication. Pick the closest CurseForge offers; "Alts" isn't a category.
 
-**License:** MIT
+**License:** MIT (set in the project settings; the description doesn't mention it)
 
 **Game version:** Forever (1.60.1)
 
@@ -54,12 +59,13 @@ It's a small, read-only helper. It never changes your characters, gold or items,
   * **Zone:** where each alt logged out, next to whether they're in an inn or outside.
   * Max-level alts are left out.
 * **Overview tab**: every character with level, time played, gold, zone and when you last played them, plus your **total gold** and **total time played** across all of them.
-* **Row tooltips**: rested %, when it fills (or how long it has been full), your Well Rested rank, and where you logged out.
+* **Row tooltips**: rested %, when it fills (or how long it has been full), your Well Rested rank, time played, and where you logged out, down to the inn or city district.
 * **Minimap button**: hover for "Play next" and a count of full alts. Left-click toggles the window and right-click opens the options.
 * **Login reminder**: one chat line when you log in, naming who to play next. You can turn it off.
 * **Full Forever names**: "Jango Fett" everywhere, or first names only if you prefer.
 * **Themed window**: resizable, movable, and closes with Esc. Four color schemes and a scale slider.
-* **Easy bug reports**: `/emberkeep feedback` (or ctrl-click the minimap button) gives you a link to a GitHub bug report with the details filled in. No character names are included.
+* **Characters page**: Options > AddOns > Emberkeep > Characters lists every saved alt with a **Remove** button, for alts you've deleted. You can also right-click an alt's row in the window.
+* **Easy bug reports**: `/emberkeep feedback` (or ctrl-click the minimap button) gives you a link to a bug report form with the details filled in. No character names are included.
 
 ## How it works
 
@@ -78,7 +84,7 @@ Rested XP is only readable on the character you're logged in on. For your other 
 | `/emberkeep remove <name>` | Remove a character you deleted (also Options > AddOns > Emberkeep > Characters, or right-click their row) |
 | `/emberkeep reset` | Put the window back in the middle of the screen |
 | `/emberkeep version` | Show the version |
-| `/emberkeep feedback` | Report a bug: a link to a GitHub bug report with your details filled in (also ctrl-click the minimap button) |
+| `/emberkeep feedback` | Report a bug: a link to a bug report form with your details filled in (also ctrl-click the minimap button) |
 | `/emberkeep debug` | Print what Emberkeep sees, for bug reports |
 
 ## Coming next
@@ -89,14 +95,12 @@ Emberkeep is built around "focuses", one tab per question you ask about your alt
 * **Bags, bank and mail**: find an item on any alt without logging in.
 * **Max-level focuses**: things to track once your alts hit the cap.
 
-Tell us what you'd like next in the comments or on GitHub.
+Tell us what you'd like next in the comments.
 
 ## Please help verify
 
-Two rested numbers aren't confirmed in WoW Forever yet: the rate away from an inn, and exactly how Well Rested raises the cap. If an alt's "Full in" is off when you log back in, please tell us in the comments or on GitHub.
+Two rested numbers aren't confirmed in WoW Forever yet: the rate away from an inn, and exactly how Well Rested raises the cap. If an alt's "Full in" is off when you log back in, please tell us in the comments.
 
-## Source, issues and license
+## Credits
 
-Open source under the MIT license: https://github.com/pmgower/emberkeep-forever
-
-Minimap button uses LibDBIcon and LibDataBroker (public domain / BSD).
+The minimap button uses LibDBIcon and LibDataBroker.
