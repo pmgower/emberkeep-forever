@@ -19,6 +19,7 @@ function MinimapButton.TooltipLines(db, now)
   lines[#lines + 1] = "|cff8f98a5" .. ns.RestedView.CountText(rows, summary) .. "|r"
   lines[#lines + 1] = "|cff9fd0ffLeft-click:|r show or hide the window"
   lines[#lines + 1] = "|cff9fd0ffRight-click:|r options"
+  lines[#lines + 1] = "|cff9fd0ffCtrl-click:|r report a bug"
   lines[#lines + 1] = "|cff9fd0ffDrag:|r move this button"
   return lines
 end
@@ -35,7 +36,9 @@ function MinimapButton.Init(db)
     text = "Kinfolk",
     icon = "Interface\\AddOns\\Kinfolk\\Media\\kinfolk",
     OnClick = function(_, button)
-      if button == "RightButton" then
+      if IsControlKeyDown and IsControlKeyDown() then
+        ns.App.OpenFeedback()
+      elseif button == "RightButton" then
         ns.OptionsPage.Open()
       else
         ns.MainWindow.Toggle()

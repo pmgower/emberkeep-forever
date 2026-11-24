@@ -12,7 +12,7 @@ local CHECKBOXES = {
   {
     "minimapButton",
     "Show minimap button",
-    "Left-click shows or hides the window, right-click opens this page.",
+    "Left-click shows or hides the window, right-click opens this page, ctrl-click reports a bug.",
   },
   {
     "loginHint",
@@ -21,6 +21,11 @@ local CHECKBOXES = {
   },
   { "hideSurnames", "First names only", "Show 'Jango' instead of 'Jango Fett'." },
   { "locked", "Lock window position and size", "Stops the window from being dragged or resized." },
+  {
+    "errorPrompt",
+    "Offer a bug report on errors",
+    "If Kinfolk hits an error, a small window offers to report it, once per session.",
+  },
 }
 
 local function register(cat, key, kind, label, default, onChange)
@@ -127,6 +132,19 @@ function OptionsPage.Init()
   addTheme(category)
   addScale(category)
   addForget(category, layout)
+  if layout and CreateSettingsButtonInitializer then
+    layout:AddInitializer(
+      CreateSettingsButtonInitializer(
+        "",
+        "Report a bug",
+        function()
+          ns.App.OpenFeedback()
+        end,
+        "Opens a link to a GitHub bug report with your details filled in. Same as /kinfolk feedback.",
+        true
+      )
+    )
+  end
   Settings.RegisterAddOnCategory(category)
 end
 

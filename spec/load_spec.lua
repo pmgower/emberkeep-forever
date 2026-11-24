@@ -227,12 +227,12 @@ describe("the addon in a stand-in client", function()
 
   it("builds the options page and applies a changed color scheme and scale", function()
     assert.are.equal("Kinfolk", wow.settings.name)
-    assert.are.equal(7, #wow.settings.controls) -- 4 checkboxes, scheme, scale, character
+    assert.are.equal(8, #wow.settings.controls) -- 5 checkboxes, scheme, scale, character
     SlashCmdList.KINFOLK("")
-    local theme = wow.settings.controls[5]
+    local theme = wow.settings.controls[6]
     theme:SetValue("twilight")
     assert.are.equal("twilight", ns.Window.Current().key)
-    wow.settings.controls[6]:SetValue(1.5)
+    wow.settings.controls[7]:SetValue(1.5)
     local scaled
     for _, f in ipairs(wow.frames) do
       if f._scale == 1.5 then
@@ -250,7 +250,7 @@ describe("the addon in a stand-in client", function()
 
   it("forgets a character picked on the options page", function()
     KinfolkDB.characters["Quill-Nightfall"] = { name = "Quill", realm = "Nightfall", level = 18 }
-    local picker = wow.settings.controls[7]
+    local picker = wow.settings.controls[8]
     local names = {}
     for _, o in ipairs(picker.options()) do
       names[#names + 1] = o.value
@@ -263,7 +263,7 @@ describe("the addon in a stand-in client", function()
   end)
 
   it("won't forget the logged-in character from the options page", function()
-    local picker = wow.settings.controls[7]
+    local picker = wow.settings.controls[8]
     picker:SetValue("Brakka-Nightfall")
     wow.settings.buttons[1].onClick()
     assert.is_not_nil(KinfolkDB.characters["Brakka-Nightfall"])
@@ -285,5 +285,103 @@ describe("the addon in a stand-in client", function()
     assert.truthy(lines[1]:find("Kinfolk:|r version 0.1.0", 1, true), lines[1])
     assert.truthy(lines[2]:find("forgot 1", 1, true))
     assert.is_nil(KinfolkDB.characters["Quill-Nightfall"])
+  end)
+
+  describe("bug reports", function()
+    it("opens a report with a prefilled GitHub link and no character names", function()
+      SlashCmdList.KINFOLK("feedback")
+      local fw = ns.FeedbackWindow
+      assert.is_true(fw.IsShown())
+      assert.truthy(fw.url:find("issues/new?template=bug_report.yml&feedback=", 1, true))
+      assert.truthy(fw.report:find("Addon: 0.1.0", 1, true))
+      assert.truthy(
+        fw.report:find("Character: level 34 Orc WARRIOR, Horde, realm Nightfall, max level 60", 1, true)
+      )
+      assert.truthy(fw.report:find("Rested: 2500 of 10000 XP, resting", 1, true))
+      assert.is_nil(fw.report:find("Brakka", 1, true))
+    end)
+
+    it("opens from the options page button and a minimap ctrl-click", function()
+      local button
+      for _, b in ipairs(wow.settings.buttons) do
+        if b.label == "Report a bug" then
+          button = b
+        end
+      end
+      assert.is_not_nil(button)
+      button.onClick()
+      assert.is_true(ns.FeedbackWindow.IsShown())
+      state.ctrl = true
+      ns.FeedbackWindow.url = nil
+      wow.icons.Kinfolk.obj.OnClick(nil, "LeftButton")
+      assert.is_not_nil(ns.FeedbackWindow.url)
+      assert.is_false(ns.MainWindow.IsShown(), "ctrl-click reports a bug instead of opening the window")
+    end)
+
+    it("notes an event error, offers a report once and still passes it to the game's handler", function()
+      ns.Game.Sighting = function()
+        error("Interface/AddOns/Kinfolk/Adapters/Game.lua:40: boom")
+      end
+      wow.fire("PLAYER_MONEY")
+      wow.fire("PLAYER_MONEY")
+      assert.are.equal(2, #ns.App.errors)
+      assert.truthy(ns.App.errors[1]:find("PLAYER_MONEY: ", 1, true))
+      assert.are.equal(2, #wow.caught, "each error should reach the game's handler once")
+      assert.is_true(ns.FeedbackWindow.IsPromptShown())
+      assert.truthy(ns.FeedbackWindow.promptMessage:find("boom", 1, true))
+    end)
+
+    it("notes our errors that reach the game's handler, but not other addons'", function()
+      geterrorhandler()("Interface/AddOns/OtherAddon/x.lua:1: not ours")
+      assert.are.equal(0, #ns.App.errors)
+      state.stack = "Interface/AddOns/Kinfolk/UI/MainWindow.lua:200: in function"
+      geterrorhandler()("attempt to index a nil value")
+      assert.are.equal(1, #ns.App.errors)
+      assert.are.equal(2, #wow.caught, "both still reach the game's handler")
+    end)
+
+    it("doesn't take another addon's error for ours because our handler is on the stack", function()
+      state.stack = "Interface/AddOns/WeakAuras/x.lua:1: in function"
+      geterrorhandler()("Interface/AddOns/WeakAuras/x.lua:1: oops")
+      assert.are.equal(0, #ns.App.errors)
+    end)
+
+    it("still opens a report when the thing being reported is broken", function()
+      ns.Game.Sighting = function()
+        error("boom")
+      end
+      ns.App.OpenFeedback()
+      assert.is_true(ns.FeedbackWindow.IsShown())
+      assert.truthy(ns.FeedbackWindow.report:find("Alts saved:", 1, true))
+    end)
+
+    it("listens to BugGrabber when BugSack owns the error handler", function()
+      local listeners = {}
+      _G.BugGrabber = {
+        RegisterCallback = function(owner, name, fn)
+          listeners[#listeners + 1] = { owner = owner, name = name, fn = fn }
+        end,
+      }
+      wow.install(state)
+      local handler = geterrorhandler()
+      _G.seterrorhandler = function() end -- BugGrabber blocks it
+      ns = wow.loadToc("Kinfolk/Kinfolk.toc", "Kinfolk")
+      wow.fire("ADDON_LOADED", "Kinfolk")
+      assert.are.equal(handler, geterrorhandler())
+      assert.are.equal("BugGrabber_BugGrabbed", listeners[1].name)
+      listeners[1].fn("BugGrabber_BugGrabbed", { message = "Interface/AddOns/Kinfolk/UI/X.lua:3: boom" })
+      listeners[1].fn("BugGrabber_BugGrabbed", { message = "Interface/AddOns/Other/x.lua:1: nope" })
+      assert.are.equal(1, #ns.App.errors)
+      _G.BugGrabber = nil
+    end)
+
+    it("says it in chat instead when the offer is turned off", function()
+      KinfolkDB.settings.errorPrompt = false
+      state.stack = "Interface/AddOns/Kinfolk/App.lua:1"
+      geterrorhandler()("boom")
+      assert.is_false(ns.FeedbackWindow.IsPromptShown())
+      local last = DEFAULT_CHAT_FRAME.lines[#DEFAULT_CHAT_FRAME.lines]
+      assert.truthy(last:find("/kinfolk feedback", 1, true))
+    end)
   end)
 end)

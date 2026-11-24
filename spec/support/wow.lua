@@ -170,7 +170,7 @@ function W.install(state)
     return "Warrior", "WARRIOR"
   end
   _G.UnitRace = function()
-    return "Orc"
+    return "Orc", "Orc" -- localized name, then the race token
   end
   _G.UnitFactionGroup = function()
     return "Horde"
@@ -207,6 +207,35 @@ function W.install(state)
   end
   _G.GetCursorPosition = function()
     return 0, 0
+  end
+  _G.IsControlKeyDown = function()
+    return state.ctrl == true
+  end
+  _G.GetBuildInfo = function()
+    return "1.60.1", "60000", "Nov 1 2026", 16001
+  end
+  _G.GetLocale = function()
+    return "enUS"
+  end
+  -- Like the real one, the first line is whoever called it (level 1), so
+  -- state.stack is everything below that.
+  _G.debugstack = function(start)
+    local lines = { "Interface/AddOns/Kinfolk/App.lua:90: in function <handler>" }
+    for line in (state.stack or ""):gmatch("[^\n]+") do
+      lines[#lines + 1] = line
+    end
+    return table.concat(lines, "\n", math.min(start or 1, #lines + 1))
+  end
+  -- The game's error handler: records what reaches it, like BugSack would.
+  W.caught = {}
+  local handler = function(msg)
+    table.insert(W.caught, msg)
+  end
+  _G.geterrorhandler = function()
+    return handler
+  end
+  _G.seterrorhandler = function(fn)
+    handler = fn
   end
 end
 
