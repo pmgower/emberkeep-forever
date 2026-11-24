@@ -1,0 +1,35 @@
+name: Bug report
+description: Something in Kinfolk isn't working (wrong alt to play next, a window misbehaving, a Lua error).
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! In game, type `/kinfolk feedback` (or ctrl-click the minimap button) and copy the link from the window into your browser. It opens this form with the `/kinfolk feedback output` box already filled in. If that box is empty, copy the report from the same window and paste it in.
+        The report has your level, race, class, faction, realm, settings, and each alt's level, class and rested %. It does not include any character names.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you see, and what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How can we see it too?
+      description: For example, "logged out in an inn, came back a day later, and the Rested bar hadn't moved".
+  - type: textarea
+    id: feedback
+    attributes:
+      label: /kinfolk feedback output
+      description: Paste the report from the `/kinfolk feedback` window here.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: lua-error
+    attributes:
+      label: Lua error (if any)
+      description: If you saw a Lua error popup (or BugSack caught one), paste the full text.
+      render: text
