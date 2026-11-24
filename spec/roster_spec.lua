@@ -40,6 +40,16 @@ describe("Roster.Observe", function()
     assert.are.equal(2000, c.lastSeen)
   end)
 
+  it("ignores zero gold read while logging out, but not at other times", function()
+    local store = {}
+    Roster.Observe(store, sighting(), 1)
+    Roster.Observe(store, sighting({ money = 0, level = 0 }), 2, { loggingOut = true })
+    assert.are.equal(421800, store["Brakka-Nightfall"].money)
+    assert.are.equal(34, store["Brakka-Nightfall"].level)
+    Roster.Observe(store, sighting({ money = 0 }), 3)
+    assert.are.equal(0, store["Brakka-Nightfall"].money)
+  end)
+
   it("ignores a sighting with no name or realm", function()
     local store = {}
     assert.is_nil(Roster.Observe(store, sighting({ name = "" }), 1))
@@ -81,5 +91,15 @@ describe("Roster.Characters", function()
       names[#names + 1] = c.name
     end
     assert.are.same({ "Elowen", "Aldo", "Quill" }, names)
+  end)
+
+  it("returns copies, so the saved records stay as they were", function()
+    local store = {}
+    Roster.Observe(store, sighting(), 1)
+    local list = Roster.Characters(store)
+    assert.are.equal("Brakka-Nightfall", list[1].key)
+    list[1].level = 99
+    assert.is_nil(store["Brakka-Nightfall"].key)
+    assert.are.equal(34, store["Brakka-Nightfall"].level)
   end)
 end)
