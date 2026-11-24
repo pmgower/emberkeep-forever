@@ -18,6 +18,10 @@ local function fakeObject(kind)
           self._shown = true
         elseif k == "Hide" then
           self._shown = false
+        elseif k == "Disable" then
+          self._disabled = true
+        elseif k == "Enable" then
+          self._disabled = false
         elseif k == "IsShown" then
           return self._shown
         elseif k == "GetWidth" then
@@ -89,7 +93,7 @@ function W.install(state)
   -- Just enough of the Settings API to build the options page and change values.
   -- Like the real one, it refuses a variable name used twice or a default of
   -- the wrong type, and SetValue writes the table and runs the callback.
-  W.settings = { controls = {}, callbacks = {}, buttons = {}, variables = {} }
+  W.settings = { controls = {}, callbacks = {}, buttons = {}, variables = {}, pages = {} }
   local kinds = { boolean = "boolean", number = "number", string = "string" }
   local function setting(key, tbl)
     return {
@@ -149,12 +153,15 @@ function W.install(state)
       return { SetLabelFormatter = function() end }
     end,
     RegisterAddOnCategory = function() end,
+    RegisterCanvasLayoutSubcategory = function(_, frame, name)
+      W.settings.pages[name] = frame
+    end,
     OpenToCategory = function(id)
       W.settings.opened = id
     end,
   }
-  _G.CreateSettingsButtonInitializer = function(_, label, onClick)
-    return { label = label, onClick = onClick }
+  _G.CreateSettingsButtonInitializer = function(name, label, onClick)
+    return { name = name, label = label, onClick = onClick }
   end
   -- Values named in state.secret read as hidden from addons.
   _G.issecretvalue = function(v)
