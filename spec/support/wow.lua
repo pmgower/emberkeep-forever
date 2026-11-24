@@ -30,12 +30,18 @@ local function fakeObject(kind)
           self._h = ...
         elseif k == "SetSize" then
           self._w, self._h = ...
+        elseif k == "SetText" then
+          self._text = ...
+        elseif k == "GetText" then
+          return self._text
         elseif k == "GetStringWidth" then
           return 40
         elseif k == "GetPoint" then
           return "CENTER", nil, "CENTER", 0, 0
         elseif k:match("^Create") then
-          return fakeObject(k)
+          local child = fakeObject(k)
+          table.insert(W.frames, child)
+          return child
         elseif k:match("^Get") then
           return 0
         end
@@ -69,6 +75,10 @@ function W.install(state)
       return field == "Version" and state.version or nil
     end,
   }
+  -- Values named in state.secret read as hidden from addons.
+  _G.issecretvalue = function(v)
+    return state.secret ~= nil and v == state.secret
+  end
   _G.UnitName = function()
     return state.name
   end
@@ -112,6 +122,7 @@ function W.loadToc(toc, addonName)
   local ns = {}
   local dir = toc:match("^(.*)/[^/]+$")
   for line in io.lines(toc) do
+    line = line:gsub("%s+$", "")
     if line ~= "" and not line:match("^#") then
       local chunk = assert(loadfile(dir .. "/" .. line:gsub("\\", "/")))
       chunk(addonName, ns)
