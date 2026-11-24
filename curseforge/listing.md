@@ -19,7 +19,8 @@ seen, in the default Frost Steel scheme, with UI scale and window scale at 100%:
    Crop to the chat box. File: `emberkeep-login-hint-screenshot-001.png`
 6. **Options page:** Esc > Options > AddOns > Emberkeep, showing every option.
    File: `emberkeep-options-screenshot-001.png`
-7. **Optional: color schemes.** The window in Deepwater or Twilight next to Frost Steel.
+7. **Bug report window:** `/emberkeep feedback`. File: `emberkeep-feedback-screenshot-001.png`
+8. **Optional: color schemes.** The window in Deepwater or Twilight next to Frost Steel.
    File: `emberkeep-themes-screenshot-001.png`
 
 **Project name:** Emberkeep: Forever
