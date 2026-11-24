@@ -51,6 +51,7 @@ It's a small, read-only helper. It never changes your characters, gold or items,
   * **Order:** full alts first (alphabetically), then by how full they are.
   * **Bars:** each alt has one, coloured blue when full and rested XP is going to waste, green when filling in an inn, and orange when filling outside.
   * **Full in:** time until each alt is full.
+  * **Zone:** where each alt logged out, next to whether they're in an inn or outside.
   * Max-level alts are left out.
 * **Overview tab**: every character with level, time played, gold, zone and when you last played them, plus your **total gold** and **total time played** across all of them.
 * **Row tooltips**: rested %, when it fills (or how long it has been full), your Well Rested rank, and where you logged out.
