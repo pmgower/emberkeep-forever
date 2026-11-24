@@ -112,6 +112,42 @@ function Game.RestObservation(wellRested)
   }
 end
 
+-- /played time. The game answers RequestTimePlayed with TIME_PLAYED_MSG, and
+-- every chat window prints that answer as two lines. Asking on each login
+-- would spam chat, so while our own request is out the chat windows stop
+-- listening for the answer, and listen again once it arrives (or after 10
+-- seconds, if it never does).
+local muted
+
+function Game.PlayedAnswered()
+  if not muted then
+    return
+  end
+  for _, f in ipairs(muted) do
+    f:RegisterEvent("TIME_PLAYED_MSG")
+  end
+  muted = nil
+end
+
+function Game.RequestPlayed()
+  if not RequestTimePlayed or muted then
+    return false
+  end
+  muted = {}
+  for i = 1, NUM_CHAT_WINDOWS or 10 do
+    local f = _G["ChatFrame" .. i]
+    if f and f.IsEventRegistered and f:IsEventRegistered("TIME_PLAYED_MSG") then
+      f:UnregisterEvent("TIME_PLAYED_MSG")
+      muted[#muted + 1] = f
+    end
+  end
+  RequestTimePlayed()
+  if C_Timer and C_Timer.After then
+    C_Timer.After(10, Game.PlayedAnswered)
+  end
+  return true
+end
+
 -- What the Rested views need to know about this moment.
 function Game.RestContext(db, now)
   return {

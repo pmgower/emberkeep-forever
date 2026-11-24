@@ -87,6 +87,7 @@ local focuses = {
     columns = {
       { "Character", 150, grow = 2 },
       { "Lvl", 34 },
+      { "Played", 70 },
       { "Gold", 100 },
       { "Zone", 130, grow = 1 },
       { "Last seen", 90 },
@@ -97,7 +98,8 @@ local focuses = {
         ns.Roster,
         ns.Format,
         now,
-        { hideSurnames = db.settings.hideSurnames }
+        { hideSurnames = db.settings.hideSurnames, currentKey = ns.Game.CurrentKey() },
+        ns.Played
       )
       local grid = {}
       for _, r in ipairs(rows) do
@@ -106,6 +108,7 @@ local focuses = {
           cells = {
             classColored(r.name, r.classFile),
             r.level,
+            r.played,
             moneyText(r.money),
             r.zone,
             DIM .. r.seen .. "|r",
@@ -115,7 +118,9 @@ local focuses = {
       -- The account total gets its own row with no character name, so it
       -- can't be read as one character's gold.
       if #rows > 0 then
-        grid[#grid + 1] = { cells = { DIM .. "All characters|r", "", moneyText(summary.money), "", "" } }
+        grid[#grid + 1] = {
+          cells = { DIM .. "All characters|r", "", summary.played, moneyText(summary.money), "", "" },
+        }
       end
       return grid, summary.count == 1 and "1 alt" or (summary.count .. " alts")
     end,
@@ -155,6 +160,10 @@ local function tooltip(owner, key)
     GameTooltip:AddDoubleLine("Well Rested", rank .. " / 5", 1, 0.82, 0, 1, 1, 1)
   end
   GameTooltip:AddDoubleLine("Gold", moneyText(ns.Format.Money(c.money)), 1, 0.82, 0)
+  local played = ns.Played.Total(c, now, key == ns.Game.CurrentKey())
+  if played then
+    GameTooltip:AddDoubleLine("Played", ns.Format.Duration(played), 1, 0.82, 0, 1, 1, 1)
+  end
   if c.zone then
     local where = c.zone
     if levelling then

@@ -303,6 +303,33 @@ describe("the addon in a stand-in client", function()
     assert.is_not_nil(EmberkeepDB.characters["Brakka-Nightfall"])
   end)
 
+  it("asks for /played once a session without printing it, and keeps the answer", function()
+    wow.fire("PLAYER_ENTERING_WORLD", true, false)
+    wow.fire("PLAYER_ENTERING_WORLD", false, false) -- zoning doesn't ask again
+    assert.are.equal(1, wow.playedRequests)
+    assert.is_false(_G.ChatFrame1:IsEventRegistered("TIME_PLAYED_MSG"), "chat shouldn't print our answer")
+    wow.fire("TIME_PLAYED_MSG", 7200, 600)
+    assert.is_true(_G.ChatFrame1:IsEventRegistered("TIME_PLAYED_MSG"), "chat should hear /played again")
+    local c = EmberkeepDB.characters["Brakka-Nightfall"]
+    assert.are.same({ total = 7200, at = 1000 }, c.played)
+    state.now = 1600
+    wow.fire("PLAYER_LOGOUT")
+    assert.are.same({ total = 7800, at = 1600 }, c.played)
+  end)
+
+  it("shows time played on the Overview tab", function()
+    EmberkeepDB.characters["Brakka-Nightfall"].played = { total = 90000, at = 400 }
+    EmberkeepDB.settings.focus = "overview"
+    SlashCmdList.EMBERKEEP("")
+    local drawn = 0
+    for _, f in ipairs(wow.frames) do
+      if f._text == "1d 1h" then
+        drawn = drawn + 1 -- 90000s plus the 600s since, on the character you're on
+      end
+    end
+    assert.are.equal(2, drawn, "Brakka's row and the All characters total")
+  end)
+
   it("won't forget the character you're logged in on", function()
     SlashCmdList.EMBERKEEP("forget Brakka")
     assert.is_not_nil(EmberkeepDB.characters["Brakka-Nightfall"])

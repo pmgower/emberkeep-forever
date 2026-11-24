@@ -25,6 +25,21 @@ describe("Overview.Build", function()
     assert.are.equal("4 days ago", rows[2].seen)
   end)
 
+  it("shows time played, counting on for the character you're on, and totals it", function()
+    local Played = dofile("Emberkeep/Core/Played.lua")
+    local store = {}
+    Roster.Observe(store, { name = "Saelra", realm = "R", level = 60 }, 0)
+    Roster.Observe(store, { name = "Quill", realm = "R", level = 18 }, 0)
+    Roster.Observe(store, { name = "New", realm = "R", level = 1 }, 0)
+    Played.Observe(store["Saelra-R"], 3 * 86400, 0)
+    Played.Observe(store["Quill-R"], 3600, 0)
+    local rows, summary = Overview.Build(store, Roster, Format, 1800, { currentKey = "Quill-R" }, Played)
+    assert.are.equal("3d 0h", rows[1].played)
+    assert.are.equal("1h 30m", rows[2].played)
+    assert.are.equal("", rows[3].played, "not read yet")
+    assert.are.equal("3d 1h", summary.played)
+  end)
+
   it("shows ? for a level never read", function()
     local store = {}
     Roster.Observe(store, { name = "New", realm = "R" }, 0)
