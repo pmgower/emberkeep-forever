@@ -1,4 +1,4 @@
-# Kickoff brief: alt tracker addon Kinfolk: Forever
+# Kickoff brief: alt tracker addon Emberkeep: Forever
 
 Goal: a WoW Forever home base for all my alts: one roster, each alt's gear, bags, bank and mail, and switchable focuses on top. The first focus is which alt to play next for rested XP; at max level other focuses (cooldowns, lockouts, gold, upgrades) take over. It's for me, and later for any Forever player with several alts.
 
@@ -19,7 +19,7 @@ Rates: 5% of a level per 8 h resting, 1/4 of that elsewhere (unverified on Forev
 
 ## What done looks like
 
-1. On login, chat says which alt to play next, and `/kinfolk` opens the roster on its Play next focus: a Frost Steel window listing alts by that ranking with rested %, time to full, and a capped flag.
+1. On login, chat says which alt to play next, and `/emberkeep` opens the roster on its Play next focus: a Frost Steel window listing alts by that ranking with rested %, time to full, and a capped flag.
 2. An alt left in an inn for a day projects within 1 percentage point of what the game shows when I log in on it.
 3. I can open any alt's equipped gear, bags, bank and mail, with tooltips and shift-click links; bank and mail show "as of".
 4. An empty read (logout XP = 0, closed bank) never wipes saved data.
@@ -29,7 +29,7 @@ Rates: 5% of a level per 8 h resting, 1/4 of that elsewhere (unverified on Forev
 
 | # | Slice | Pass/fail check |
 | --- | --- | --- |
-| 0 | Repo setup: CLAUDE.md, CONTEXT.md, deny rules, hooks (luacheck, StyLua, busted, TOC check; exit 2), CI running the same, release workflow. Addon loads and `/kinfolk` prints its version. | A deliberately broken test makes the hook exit 2 and CI fail. In game: `/reload`, no Lua errors, version prints. |
+| 0 | Repo setup: CLAUDE.md, CONTEXT.md, deny rules, hooks (luacheck, StyLua, busted, TOC check; exit 2), CI running the same, release workflow. Addon loads and `/emberkeep` prints its version. | A deliberately broken test makes the hook exit 2 and CI fail. In game: `/reload`, no Lua errors, version prints. |
 | 1 | Roster: save each character on login/logout, window lists name, class, level, last seen. | busted roster specs. In game: log in on 2 alts, both listed. |
 | 1b | Design: clickable mockup approved by Paul (window, minimap button, options page), then a local beta install to look at in game before the MVP PR. | Paul says it looks good. |
 | 2 | Play next (MVP): rest observation, projection, ranking, window columns, login chat line. | busted projection/ranking specs incl. cap, away rate, Well Rested, logout-zero guard. In game: ranking and rested % match the XP bar on the current alt. |
