@@ -1,3 +1,13 @@
+## 0.3.0
+
+- Click an alt to open a panel beside the window with their gear: item names, item levels, tooltips, and shift-click to link
+- Bags tab in the same panel: what each alt is carrying and how many slots are free
+- Up and Down step through your alts, and the open tab stays open
+- Empty slots and outleveled items are marked
+- Gear shows in two columns like the Character window, or as a list
+- Emberkeep button on the Character window
+- Log in on each alt once to save their gear and bags
+
 ## 0.2.0
 
 - Renamed from Kinfolk: Forever (if you installed by hand, delete the old Kinfolk folder, then log in on each alt once to fill your list again)

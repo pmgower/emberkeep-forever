@@ -25,7 +25,10 @@ seen, in the default Frost Steel scheme, with UI scale and window scale at 100%:
 8. **Right-click menu:** right-click an alt's row in the window to show Remove.
    File: `emberkeep-remove-menu-screenshot-001.png`
 9. **Bug report window:** `/emberkeep feedback`. File: `emberkeep-feedback-screenshot-001.png`
-10. **Optional: color schemes.** The window in Deepwater or Twilight next to Frost Steel.
+10. **Alt panel, Gear tab:** File: `emberkeep-gear-screenshot-001.png`
+11. **Alt panel, Bags tab:** File: `emberkeep-bags-screenshot-001.png`
+12. **Character window button:** File: `emberkeep-character-button-screenshot-001.png`
+13. **Optional: color schemes.** The window in Deepwater or Twilight next to Frost Steel.
    File: `emberkeep-themes-screenshot-001.png`
 
 **Project name:** Emberkeep: Forever
@@ -44,7 +47,7 @@ seen, in the default Frost Steel scheme, with UI scale and window scale at 100%:
 
 # Emberkeep: Forever
 
-**A home base for all your alts.** Emberkeep keeps track of every character you play, so you can see your whole roster at a glance, whether they're levelling or already at the cap. It starts with rested XP and an overview of every alt, with gear, bags, bank and mail on the way.
+**A home base for all your alts.** Emberkeep keeps track of every character you play, so you can see your whole roster at a glance, whether they're levelling or already at the cap. It starts with rested XP, an overview of every alt, and each alt's gear and bags, with bank and mail on the way.
 
 **Always know which alt to play next.** Rested XP builds up while you're logged out, but it stops at 150% of a level. Past that, it's wasted. Emberkeep remembers every character you log in on and works out where each one's rested XP is right now. It tells you who to play next and which alts are already full.
 
@@ -59,7 +62,12 @@ It's a small, read-only helper. It never changes your characters, gold or items,
   * **Zone:** where each alt logged out, next to whether they're in an inn or outside.
   * Max-level alts are left out.
 * **Overview tab**: every character with level, time played, gold, zone and when you last played them, plus your **total gold** and **total time played** across all of them.
+* **Alt panel**: click an alt to see their gear and bags beside the window, without logging in on them.
+  * **Gear:** item names, item levels and tooltips, in two columns or a list. Empty slots and outleveled items are marked.
+  * **Bags:** every item with its count, and how many slots are free.
+  * **Up** and **Down** step through your alts. Shift-click an item to link it in chat.
 * **Row tooltips**: rested %, when it fills (or how long it has been full), your Well Rested rank, time played, and where you logged out, down to the inn or city district.
+* **Character window button**: opens the panel from the game's own Character window.
 * **Minimap button**: hover for "Play next" and a count of full alts. Left-click toggles the window and right-click opens the options.
 * **Login reminder**: one chat line when you log in, naming who to play next. You can turn it off.
 * **Full Forever names**: "Jango Fett" everywhere, or first names only if you prefer.
@@ -69,7 +77,7 @@ It's a small, read-only helper. It never changes your characters, gold or items,
 
 ## How it works
 
-1. **Log in on each alt once.** Emberkeep saves its level, gold, zone and rested XP.
+1. **Log in on each alt once.** Emberkeep saves its level, gold, zone, rested XP, gear and bags.
 2. **Play as normal.** It updates as you level, earn gold and walk in and out of inns.
 3. **Open `/emberkeep`** (or click the minimap button) to see who's full and who to play next.
 
@@ -91,8 +99,8 @@ Rested XP is only readable on the character you're logged in on. For your other 
 
 Emberkeep is built around "focuses", one tab per question you ask about your alts. Rested is the first. Next up:
 
-* **Gear**: each alt's equipped items.
-* **Bags, bank and mail**: find an item on any alt without logging in.
+* **Bank and mail**: see them from any alt.
+* **Search**: find an item on any alt without logging in.
 * **Max-level focuses**: things to track once your alts hit the cap.
 
 Tell us what you'd like next in the comments.
