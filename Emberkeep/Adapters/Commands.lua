@@ -1,8 +1,8 @@
--- Commands: /kinfolk and its subcommands. Thin adapter over Core and the windows.
+-- Commands: /emberkeep and its subcommands. Thin adapter over Core and the windows.
 local addonName, ns = ...
 
 local function say(text)
-  DEFAULT_CHAT_FRAME:AddMessage("|cff9fd0ffKinfolk:|r " .. text)
+  DEFAULT_CHAT_FRAME:AddMessage("|cff9fd0ffEmberkeep:|r " .. text)
 end
 ns.Say = say
 
@@ -17,7 +17,7 @@ local commands = {
   end,
   forget = function(name)
     if name == "" then
-      return say("type /kinfolk forget <name>")
+      return say("type /emberkeep forget <name>")
     end
     local s = ns.Game.Sighting()
     local me = s.name and ns.Roster.DisplayName(s)
@@ -33,7 +33,7 @@ local commands = {
     say(string.format("forgot %d character(s) named %s", n, name))
     ns.MainWindow.RefreshIfShown()
   end,
-  -- What the game reports and what Kinfolk saved, for bug reports.
+  -- What the game reports and what Emberkeep saved, for bug reports.
   debug = function()
     local s = ns.Game.Sighting()
     say(
@@ -86,8 +86,8 @@ local commands = {
   end,
 }
 
-SLASH_KINFOLK1 = "/kinfolk"
-SlashCmdList.KINFOLK = function(input)
+SLASH_EMBERKEEP1 = "/emberkeep"
+SlashCmdList.EMBERKEEP = function(input)
   local cmd, rest = tostring(input or ""):match("^%s*(%S*)%s*(.-)%s*$")
   cmd = cmd:lower()
   if cmd == "" then
@@ -97,5 +97,5 @@ SlashCmdList.KINFOLK = function(input)
   if fn then
     return fn(rest)
   end
-  say("/kinfolk opens the window. Also: options, feedback (report a bug), version, forget <name>, reset")
+  say("/emberkeep opens the window. Also: options, feedback (report a bug), version, forget <name>, reset")
 end

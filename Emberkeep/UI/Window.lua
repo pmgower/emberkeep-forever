@@ -1,4 +1,4 @@
--- Window: Kinfolk's window frame, the same design as BagQuests' windows.
+-- Window: Emberkeep's window frame, the same design as BagQuests' windows.
 -- A bordered, themed, movable and resizable window with a title bar
 -- (bag icon, title, version, right-hand text, close button), a scrolling
 -- content area and a size grip in the bottom-right corner. Size and position
@@ -7,7 +7,7 @@ local _, ns = ...
 local Window = {}
 ns.Window = Window
 
-local MEDIA = "Interface\\AddOns\\Kinfolk\\Media\\"
+local MEDIA = "Interface\\AddOns\\Emberkeep\\Media\\"
 local HEADER_H, PAD, GRIP_PAD = 24, 10, 14
 Window.HEADER_H, Window.PAD, Window.GRIP_PAD = HEADER_H, PAD, GRIP_PAD
 Window.CHROME_H = HEADER_H + 4 + GRIP_PAD -- height that isn't content
@@ -77,7 +77,7 @@ local function num(v, default)
 end
 Window.Num = num
 
--- Recolor every Kinfolk window for a scheme.
+-- Recolor every Emberkeep window for a scheme.
 function Window.SetTheme(key)
   theme = Window.Theme(key)
   for _, w in ipairs(windows) do
@@ -203,10 +203,10 @@ function W:BuildHeader()
   local icon = header:CreateTexture(nil, "ARTWORK")
   icon:SetSize(18, 18)
   icon:SetPoint("LEFT", 3, 0)
-  icon:SetTexture(MEDIA .. "kinfolk")
+  icon:SetTexture(MEDIA .. "emberkeep")
   self.titleText = header:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
   self.titleText:SetPoint("LEFT", icon, "RIGHT", 5, 0)
-  self.titleText:SetText(self.opts.title or "Kinfolk")
+  self.titleText:SetText(self.opts.title or "Emberkeep")
   local ver = header:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
   ver:SetPoint("LEFT", self.titleText, "RIGHT", 5, 0)
   ver:SetText(ns.versionText or "")
@@ -497,7 +497,7 @@ function W:Reset()
   self.frame:SetSize(d[1], d[2])
 end
 
--- /kinfolk reset: every window back to its default spot and size.
+-- /emberkeep reset: every window back to its default spot and size.
 function Window.ResetAll()
   for _, w in ipairs(windows) do
     w:Reset()

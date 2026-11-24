@@ -2,13 +2,13 @@
 -- new game API has to add it here, in plain sight.
 std = "lua51"
 max_line_length = 110
-exclude_files = { ".luacheckrc", ".busted", "Kinfolk/Libs/**" }
+exclude_files = { ".luacheckrc", ".busted", "Emberkeep/Libs/**" }
 ignore = { "212" } -- unused arguments (event handlers often ignore some)
 
 files["spec/**"] = { std = "+busted" }
 
 -- Globals the addon creates.
-globals = { "KinfolkDB", "SLASH_KINFOLK1", "SlashCmdList" }
+globals = { "EmberkeepDB", "SLASH_EMBERKEEP1", "SlashCmdList" }
 
 -- WoW API the adapters read. Core/ must not use any of these (scripts/core-purity.sh).
 read_globals = {

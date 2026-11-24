@@ -1,6 +1,6 @@
--- FeedbackWindow: /kinfolk feedback. WoW chat can't be copied, so the issue
+-- FeedbackWindow: /emberkeep feedback. WoW chat can't be copied, so the issue
 -- link and the report go in two read-only edit boxes the player can Ctrl+C
--- from. Also the small "Kinfolk ran into a problem" prompt. Same themed frame
+-- from. Also the small "Emberkeep ran into a problem" prompt. Same themed frame
 -- as the main window (UI/Window.lua).
 local _, ns = ...
 local FeedbackWindow = {}
@@ -95,8 +95,8 @@ end
 
 local function build()
   win = ns.Window.New({
-    name = "KinfolkFeedbackWindow",
-    title = "Kinfolk: report a problem",
+    name = "EmberkeepFeedbackWindow",
+    title = "Emberkeep: report a problem",
     store = {},
     defaultPoint = { "CENTER", "CENTER", 0, 0 },
     defaultSize = { 540, 380 },
@@ -109,7 +109,7 @@ local function build()
     end,
   })
   win.frame:SetFrameStrata("DIALOG")
-  tinsert(UISpecialFrames, "KinfolkFeedbackWindow") -- Esc closes it
+  tinsert(UISpecialFrames, "EmberkeepFeedbackWindow") -- Esc closes it
   label() -- texts are set in Show: they depend on whether the link carries the report
   urlBox = readOnly(CreateFrame("EditBox", nil, win.content))
   label()
@@ -147,7 +147,7 @@ function FeedbackWindow.IsShown()
 end
 
 ---------------------------------------------------------------- error prompt
--- Once per session, when Kinfolk itself hits a Lua error: "Report it" opens
+-- Once per session, when Emberkeep itself hits a Lua error: "Report it" opens
 -- the feedback window, which already has the error in its report.
 
 local prompt, promptText
@@ -162,8 +162,8 @@ end
 
 local function buildPrompt()
   prompt = ns.Window.New({
-    name = "KinfolkErrorPrompt",
-    title = "Kinfolk ran into a problem",
+    name = "EmberkeepErrorPrompt",
+    title = "Emberkeep ran into a problem",
     store = {},
     defaultPoint = { "TOP", "TOP", 0, -160 },
     defaultSize = { 380, 150 },
@@ -176,7 +176,7 @@ local function buildPrompt()
   })
   local f, c = prompt.frame, prompt.content
   f:SetFrameStrata("DIALOG")
-  tinsert(UISpecialFrames, "KinfolkErrorPrompt") -- Esc closes it
+  tinsert(UISpecialFrames, "EmberkeepErrorPrompt") -- Esc closes it
   c:SetSize(prompt:ContentWidth(), 60)
   promptText = c:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   promptText:SetPoint("TOPLEFT", c, "TOPLEFT", 0, -2)

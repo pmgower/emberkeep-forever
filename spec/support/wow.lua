@@ -220,7 +220,7 @@ function W.install(state)
   -- Like the real one, the first line is whoever called it (level 1), so
   -- state.stack is everything below that.
   _G.debugstack = function(start)
-    local lines = { "Interface/AddOns/Kinfolk/App.lua:90: in function <handler>" }
+    local lines = { "Interface/AddOns/Emberkeep/App.lua:90: in function <handler>" }
     for line in (state.stack or ""):gmatch("[^\n]+") do
       lines[#lines + 1] = line
     end

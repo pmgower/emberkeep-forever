@@ -1,4 +1,4 @@
-local Rest = dofile("Kinfolk/Core/Rest.lua")
+local Rest = dofile("Emberkeep/Core/Rest.lua")
 
 local HOUR, DAY = 3600, 86400
 local LEVEL = 10000 -- XP to level, a round number

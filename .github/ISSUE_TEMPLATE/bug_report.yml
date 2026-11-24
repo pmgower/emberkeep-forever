@@ -1,11 +1,11 @@
 name: Bug report
-description: Something in Kinfolk isn't working (wrong alt to play next, a window misbehaving, a Lua error).
+description: Something in Emberkeep isn't working (wrong alt to play next, a window misbehaving, a Lua error).
 labels: [bug]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for reporting! In game, type `/kinfolk feedback` (or ctrl-click the minimap button) and copy the link from the window into your browser. It opens this form with the `/kinfolk feedback output` box already filled in. If that box is empty, copy the report from the same window and paste it in.
+        Thanks for reporting! In game, type `/emberkeep feedback` (or ctrl-click the minimap button) and copy the link from the window into your browser. It opens this form with the `/emberkeep feedback output` box already filled in. If that box is empty, copy the report from the same window and paste it in.
         The report has your level, race, class, faction, realm, settings, and each alt's level, class and rested %. It does not include any character names.
   - type: textarea
     id: what-happened
@@ -22,8 +22,8 @@ body:
   - type: textarea
     id: feedback
     attributes:
-      label: /kinfolk feedback output
-      description: Paste the report from the `/kinfolk feedback` window here.
+      label: /emberkeep feedback output
+      description: Paste the report from the `/emberkeep feedback` window here.
       render: text
     validations:
       required: true

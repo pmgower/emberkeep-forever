@@ -1,4 +1,4 @@
-local Store = dofile("Kinfolk/Core/Store.lua")
+local Store = dofile("Emberkeep/Core/Store.lua")
 
 describe("Store.Ensure", function()
   it("builds every part on first run", function()

@@ -60,8 +60,8 @@ frame:RegisterEvent("PLAYER_XP_UPDATE")
 frame:RegisterEvent("UPDATE_EXHAUSTION")
 frame:RegisterEvent("PLAYER_UPDATE_RESTING")
 frame:RegisterEvent("TRAIT_CONFIG_UPDATED")
--- The last few errors Kinfolk hit this session, for /kinfolk feedback and
--- /kinfolk debug. Kept in memory only, never saved.
+-- The last few errors Emberkeep hit this session, for /emberkeep feedback and
+-- /emberkeep debug. Kept in memory only, never saved.
 App.errors = {}
 
 -- The game's error handler from before ours, so BugSack and the game's own
@@ -82,7 +82,9 @@ function App.NoteError(text)
     if ns.db and ns.db.settings.errorPrompt and ns.FeedbackWindow then
       ns.FeedbackWindow.ShowErrorPrompt(text)
     else
-      DEFAULT_CHAT_FRAME:AddMessage("|cff9fd0ffKinfolk:|r hit an error. Type /kinfolk feedback to report it.")
+      DEFAULT_CHAT_FRAME:AddMessage(
+        "|cff9fd0ffEmberkeep:|r hit an error. Type /emberkeep feedback to report it."
+      )
     end
   end
   if C_Timer and C_Timer.After then
@@ -130,8 +132,8 @@ end
 local function handle(event, arg1)
   if event == "ADDON_LOADED" then
     if arg1 == addonName then
-      KinfolkDB = ns.Store.Ensure(KinfolkDB)
-      ns.db = KinfolkDB
+      EmberkeepDB = ns.Store.Ensure(EmberkeepDB)
+      ns.db = EmberkeepDB
       local themeKeys = {}
       for _, t in ipairs(ns.Window.THEMES) do
         themeKeys[t.key] = true
@@ -186,7 +188,7 @@ local function try(fallback, fn, ...)
   return fallback
 end
 
--- Everything /kinfolk feedback reports, read from the game. No names.
+-- Everything /emberkeep feedback reports, read from the game. No names.
 function App.FeedbackContext()
   local db = ns.db or { characters = {}, settings = {} }
   local client = {}
@@ -244,7 +246,7 @@ function App.FeedbackContext()
   }
 end
 
--- Opens the feedback window. Shared by /kinfolk feedback, the options page,
+-- Opens the feedback window. Shared by /emberkeep feedback, the options page,
 -- the minimap button and the error prompt.
 function App.OpenFeedback()
   local report = ns.Feedback.Report(App.FeedbackContext())

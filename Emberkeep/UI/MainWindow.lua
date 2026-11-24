@@ -1,4 +1,4 @@
--- MainWindow: the Kinfolk window. A tab per focus along the top, and the
+-- MainWindow: the Emberkeep window. A tab per focus along the top, and the
 -- active focus's table below. Each focus says what its columns are and builds
 -- its rows from Core, so a new focus is a new entry in `focuses`, nothing else.
 local _, ns = ...
@@ -376,8 +376,8 @@ end
 
 local function build()
   win = ns.Window.New({
-    name = "KinfolkMainWindow",
-    title = "Kinfolk",
+    name = "EmberkeepMainWindow",
+    title = "Emberkeep",
     store = settings().window,
     defaultPoint = { "CENTER", "CENTER", 0, 80 },
     defaultSize = { 520, 220 },
@@ -401,7 +401,7 @@ local function build()
   local top = -(ns.Window.HEADER_H + 4 + TAB_H + 6)
   win.scroll:SetPoint("TOPLEFT", ns.Window.PAD, top)
   win.vbar:SetPoint("TOPRIGHT", -2, top) -- same inset as Window.lua's bars
-  tinsert(UISpecialFrames, "KinfolkMainWindow") -- Esc closes it
+  tinsert(UISpecialFrames, "EmberkeepMainWindow") -- Esc closes it
   win.frame:Hide()
   for _, focus in ipairs(focuses) do
     if focus.key == settings().focus then

@@ -1,4 +1,4 @@
-# Kinfolk: Forever
+# Emberkeep: Forever
 
 WoW Forever addon: a home base for all your alts. A roster of every character, switchable
 focuses on it (the first: which alt to play next for rested XP), and later each alt's gear, bags,
@@ -14,7 +14,7 @@ Domain terms are in CONTEXT.md. The plan and slice list are in docs/KICKOFF.md.
   during logout. Never let an empty read overwrite a saved snapshot.
 
 ## How work is checked
-- `scripts/check.sh` is the gate: luacheck, Core purity (no WoW globals in `Kinfolk/Core`),
+- `scripts/check.sh` is the gate: luacheck, Core purity (no WoW globals in `Emberkeep/Core`),
   StyLua, busted, TOC check. Hooks in `.claude/settings.json` run it on Stop and TaskCompleted
   and lint each edited file; CI runs the same script.
 - Deny rules cover secrets, the game's `WTF/` folder, force pushes and tag pushes.
@@ -23,5 +23,5 @@ Domain terms are in CONTEXT.md. The plan and slice list are in docs/KICKOFF.md.
 - Atomic commits whose message says why. One slice per PR. Rebase only, never merge commits.
 - No AI attribution in commits or PRs.
 - Releases: a `v*` tag runs the packager to CurseForge. Only Paul tags, from his PC.
-- Installs for in-game testing copy `Kinfolk/` into
+- Installs for in-game testing copy `Emberkeep/` into
   `D:\Blizzard Games\World of Warcraft\_forever_\Interface\AddOns\`, then `/reload`.

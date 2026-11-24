@@ -6,10 +6,10 @@ status=0
 run() { echo "== $*"; "$@" || status=1; }
 run luacheck . --formatter plain --codes
 # Core is the domain: Lua 5.1 only, no WoW API, so busted can test all of it.
-run luacheck Kinfolk/Core --no-config --std lua51 --ignore 212 --formatter plain --codes
+run luacheck Emberkeep/Core --no-config --std lua51 --ignore 212 --formatter plain --codes
 run stylua --check .
 run busted --output=utfTerminal
-run lua5.1 scripts/toc-check.lua Kinfolk/Kinfolk.toc
+run lua5.1 scripts/toc-check.lua Emberkeep/Emberkeep.toc
 # Bundled libraries must be byte-for-byte the pinned versions.
-run bash -c 'cd Kinfolk/Libs && sha256sum --quiet -c ../../scripts/libs.sha256 && test "$(find . -name "*.lua" | wc -l)" -eq "$(wc -l < ../../scripts/libs.sha256)"'
+run bash -c 'cd Emberkeep/Libs && sha256sum --quiet -c ../../scripts/libs.sha256 && test "$(find . -name "*.lua" | wc -l)" -eq "$(wc -l < ../../scripts/libs.sha256)"'
 exit $status

@@ -1,4 +1,4 @@
-local Columns = dofile("Kinfolk/Core/Columns.lua")
+local Columns = dofile("Emberkeep/Core/Columns.lua")
 
 local cols = { { "#", 20 }, { "Character", 140, grow = 2 }, { "Lvl", 34 }, { "Rested", 130, grow = 1 } }
 
