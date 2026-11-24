@@ -187,6 +187,19 @@ function W.install(state)
   _G.time = function()
     return state.now
   end
+  _G.date = os.date
+  _G.GetMaxPlayerLevel = function()
+    return 60
+  end
+  _G.UnitXPMax = function()
+    return state.xpMax or 0
+  end
+  _G.GetXPExhaustion = function()
+    return state.rested
+  end
+  _G.IsResting = function()
+    return state.resting
+  end
   _G.IsShiftKeyDown = function()
     return false
   end
