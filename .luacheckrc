@@ -12,5 +12,8 @@ globals = { "KinfolkDB", "SLASH_KINFOLK1", "SlashCmdList" }
 
 -- WoW API the adapters read. Core/ must not use any of these (scripts/core-purity.sh).
 read_globals = {
-  "C_AddOns", "DEFAULT_CHAT_FRAME", "GetAddOnMetadata",
+  "C_AddOns", "CreateFrame", "DEFAULT_CHAT_FRAME", "GameTooltip", "GetAddOnMetadata",
+  "GetCursorPosition", "GetMoney", "GetRealZoneText", "GetRealmName", "IsMouseButtonDown",
+  "IsShiftKeyDown", "RAID_CLASS_COLORS", "UIParent", "UISpecialFrames", "UnitClass",
+  "UnitFactionGroup", "UnitLevel", "UnitName", "UnitRace", "issecretvalue", "time", "tinsert",
 }
