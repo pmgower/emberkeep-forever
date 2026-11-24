@@ -227,7 +227,7 @@ describe("the addon in a stand-in client", function()
 
   it("builds the options page and applies a changed color scheme and scale", function()
     assert.are.equal("Emberkeep", wow.settings.name)
-    assert.are.equal(8, #wow.settings.controls) -- 5 checkboxes, scheme, scale, character
+    assert.are.equal(7, #wow.settings.controls) -- 5 checkboxes, scheme, scale
     SlashCmdList.EMBERKEEP("")
     local theme = wow.settings.controls[6]
     theme:SetValue("twilight")
@@ -248,24 +248,35 @@ describe("the addon in a stand-in client", function()
     assert.are.equal(7, wow.settings.opened)
   end)
 
-  it("forgets a character picked on the options page", function()
-    EmberkeepDB.characters["Quill-Nightfall"] = { name = "Quill", realm = "Nightfall", level = 18 }
-    local picker = wow.settings.controls[8]
-    local names = {}
-    for _, o in ipairs(picker.options()) do
-      names[#names + 1] = o.value
+  -- The Characters page: one row per saved character, with Remove.
+  local function charactersPage()
+    local page = wow.settings.pages.Characters
+    assert.is_not_nil(page, "the Characters page should be registered")
+    page._scripts.OnShow(page)
+    local rows = {}
+    for _, f in ipairs(wow.frames) do
+      if f._text == "Remove" then
+        rows[#rows + 1] = f
+      end
     end
-    assert.are.same({ "Brakka-Nightfall", "Quill-Nightfall" }, names)
-    picker:SetValue("Quill-Nightfall")
-    wow.settings.buttons[1].onClick()
+    return rows
+  end
+
+  it("lists saved characters on a Characters page, each with Remove", function()
+    EmberkeepDB.characters["Quill-Nightfall"] =
+      { name = "Quill", realm = "Nightfall", level = 18, lastSeen = 1000 }
+    local buttons = charactersPage()
+    assert.are.equal(2, #buttons) -- Brakka (34) first, then Quill (18)
+    assert.is_true(buttons[1]._disabled, "you can't remove the character you're on")
+    assert.is_false(buttons[2]._disabled)
+    buttons[2]._scripts.OnClick(buttons[2])
     assert.is_nil(EmberkeepDB.characters["Quill-Nightfall"])
-    assert.are.equal("", picker.tbl.forget, "the picker should clear after a forget")
+    local last = DEFAULT_CHAT_FRAME.lines[#DEFAULT_CHAT_FRAME.lines]
+    assert.truthy(last:find("removed Quill", 1, true), last)
   end)
 
-  it("won't forget the logged-in character from the options page", function()
-    local picker = wow.settings.controls[8]
-    picker:SetValue("Brakka-Nightfall")
-    wow.settings.buttons[1].onClick()
+  it("won't remove the logged-in character", function()
+    assert.is_false(ns.CharactersPage.Remove("Brakka-Nightfall"))
     assert.is_not_nil(EmberkeepDB.characters["Brakka-Nightfall"])
   end)
 

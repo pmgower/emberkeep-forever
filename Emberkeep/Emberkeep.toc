@@ -30,5 +30,6 @@ UI\Window.lua
 UI\MainWindow.lua
 UI\FeedbackWindow.lua
 UI\MinimapButton.lua
+UI\CharactersPage.lua
 UI\OptionsPage.lua
 Adapters\Commands.lua

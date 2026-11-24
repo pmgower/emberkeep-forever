@@ -1,5 +1,6 @@
 -- OptionsPage: Options > AddOns > Emberkeep. Each control writes straight into
 -- EmberkeepDB.settings and tells the window, so the page and /emberkeep agree.
+-- Saved characters have their own page under it (UI/CharactersPage.lua).
 -- Every part checks the client has that Settings API first and is skipped
 -- quietly if not; the slash commands still work.
 local _, ns = ...
@@ -72,53 +73,6 @@ local function addScale(cat)
   Settings.CreateSlider(cat, setting, options, "Size of the Emberkeep window.")
 end
 
--- A dropdown of saved characters and a Forget button.
-local function addForget(cat, layout)
-  local create = Settings.CreateDropdown or Settings.CreateDropDown
-  if not (create and Settings.CreateControlTextContainer and layout and CreateSettingsButtonInitializer) then
-    return
-  end
-  -- Values are roster keys (Name-Realm), so two alts with one name on
-  -- different realms are told apart.
-  local pick = { forget = "" }
-  local setting =
-    Settings.RegisterAddOnSetting(cat, "Emberkeep_forget", "forget", pick, "string", "Character", "")
-  create(cat, setting, function()
-    local c = Settings.CreateControlTextContainer()
-    for _, ch in ipairs(ns.Roster.Characters(ns.db.characters)) do
-      c:Add(ch.key, string.format("%s (%s)", ch.key, tostring(ch.level or "?")))
-    end
-    return c:GetData()
-  end, "Pick a character you deleted or don't want listed, then press Forget.")
-  local function forget()
-    local key = pick.forget
-    if key == "" then
-      return
-    end
-    if key == ns.Game.CurrentKey() then
-      return ns.Say("you're logged in on " .. key .. ", so they'd be added straight back.")
-    end
-    if ns.Roster.ForgetKey(ns.db.characters, key) then
-      ns.Say("forgot " .. key)
-      ns.MainWindow.RefreshIfShown()
-    end
-    if setting.SetValue then
-      setting:SetValue("")
-    else
-      pick.forget = ""
-    end
-  end
-  layout:AddInitializer(
-    CreateSettingsButtonInitializer(
-      "",
-      "Forget",
-      forget,
-      "Removes the picked character from Emberkeep. They come back if you log in on them again.",
-      true
-    )
-  )
-end
-
 function OptionsPage.Init()
   if not (Settings and Settings.RegisterVerticalLayoutCategory) then
     return
@@ -131,7 +85,6 @@ function OptionsPage.Init()
   end
   addTheme(category)
   addScale(category)
-  addForget(category, layout)
   if layout and CreateSettingsButtonInitializer then
     layout:AddInitializer(
       CreateSettingsButtonInitializer(
@@ -145,6 +98,7 @@ function OptionsPage.Init()
       )
     )
   end
+  ns.CharactersPage.Init(category)
   Settings.RegisterAddOnCategory(category)
 end
 
