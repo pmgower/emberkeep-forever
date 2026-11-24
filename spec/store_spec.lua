@@ -1,0 +1,20 @@
+local Store = dofile("Kinfolk/Core/Store.lua")
+
+describe("Store.Ensure", function()
+  it("builds every part on first run", function()
+    local db = Store.Ensure(nil)
+    assert.are.same({ characters = {}, settings = { window = {} } }, db)
+  end)
+
+  it("keeps saved data", function()
+    local db = Store.Ensure({ characters = { ["A-R"] = { name = "A" } }, settings = { locked = true } })
+    assert.are.equal("A", db.characters["A-R"].name)
+    assert.is_true(db.settings.locked)
+    assert.are.same({}, db.settings.window)
+  end)
+
+  it("replaces parts that are the wrong type", function()
+    local db = Store.Ensure({ characters = "oops" })
+    assert.are.same({}, db.characters)
+  end)
+end)
