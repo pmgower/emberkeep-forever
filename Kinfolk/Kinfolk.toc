@@ -19,6 +19,8 @@ Core\Roster.lua
 Core\Format.lua
 Core\Settings.lua
 Core\Overview.lua
+Core\Rest.lua
+Core\RestedView.lua
 Adapters\Game.lua
 App.lua
 UI\Window.lua

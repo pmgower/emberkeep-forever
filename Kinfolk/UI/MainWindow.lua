@@ -5,8 +5,11 @@ local _, ns = ...
 local MainWindow = {}
 ns.MainWindow = MainWindow
 
-local ROW_H, TAB_H, TAB_GAP = 18, 20, 4
+local ROW_H, TAB_H, TAB_GAP, BAR_W = 18, 20, 4, 80
 local GOLD, SILVER, COPPER, DIM = "|cffffd100", "|cffc7c7cf", "|cffeda55f", "|cff8f98a5"
+local BLUE, WARN = "|cff4da6ff", "|cffe0a040"
+-- Bar colors: full (wasting rest), filling in an inn, filling outside.
+local BAR_FULL, BAR_INN, BAR_OUT = { 0.30, 0.65, 1 }, { 0.50, 0.78, 0.50 }, { 0.88, 0.63, 0.25 }
 
 local function classColored(name, classFile)
   local c = classFile and RAID_CLASS_COLORS and RAID_CLASS_COLORS[classFile]
@@ -30,7 +33,47 @@ local function moneyText(m)
   return #parts > 0 and table.concat(parts, " ") or (DIM .. "0|r")
 end
 
+local function restedBuild(db, now)
+  return ns.RestedView.Build(db.characters, ns, ns.Game.MaxLevel(), now, ns.Game.CurrentKey())
+end
+
 local focuses = {
+  {
+    key = "rested",
+    title = "Rested",
+    columns = {
+      { "", 20 },
+      { "Character", 140 },
+      { "Lvl", 34 },
+      { "Rested", 130 },
+      { "Full in", 64 },
+      { "Resting", 70 },
+    },
+    bar = 4, -- the column that draws a fill bar before its text
+    build = function(db, now)
+      local rows, summary = restedBuild(db, now)
+      local grid = {}
+      for _, r in ipairs(rows) do
+        grid[#grid + 1] = {
+          key = r.key,
+          fill = r.fill,
+          color = r.full and BAR_FULL or (r.resting and BAR_INN or BAR_OUT),
+          cells = {
+            DIM .. r.rank .. "|r",
+            classColored(r.name, r.classFile),
+            r.level,
+            (r.full and BLUE or "") .. r.percent .. "%" .. (r.full and "|r" or ""),
+            r.full and (BLUE .. r.fullIn .. "|r") or r.fullIn,
+            r.resting and (DIM .. "Inn|r") or (WARN .. "Outside|r"),
+          },
+        }
+      end
+      if #grid == 0 then
+        grid[1] = { cells = { "", DIM .. "No levelling alts yet|r" } }
+      end
+      return grid, ns.RestedView.RightText(summary)
+    end,
+  },
   {
     key = "overview",
     title = "Overview",
@@ -59,7 +102,7 @@ local focuses = {
   },
 }
 
-local win, tabs, cells, stripes, headerLine, hovers = nil, {}, {}, {}, nil, {}
+local win, tabs, cells, stripes, headerLine, hovers, bars = nil, {}, {}, {}, nil, {}, {}
 local active = focuses[1]
 
 local function settings()
@@ -75,11 +118,35 @@ local function tooltip(owner, key)
   GameTooltip:AddLine(classColored(c.name, c.classFile))
   local who = string.format("Level %s %s %s", tostring(c.level or "?"), c.race or "", c.class or "")
   GameTooltip:AddLine(who, 0.79, 0.81, 0.84)
+  local now = ns.Game.Now()
+  local levelling = c.rest and (c.level or 0) < ns.Game.MaxLevel()
+  if levelling then
+    local p = ns.Rest.Project(c.rest, now)
+    local pct = math.floor(p.percent + 0.5) .. "%"
+    GameTooltip:AddDoubleLine("Rested", p.full and (BLUE .. pct .. " (full)|r") or pct, 1, 0.82, 0, 1, 1, 1)
+    if p.full then
+      local when = date("%A, %I:%M %p", math.floor(p.fullAt)):gsub(" 0(%d:)", " %1")
+      GameTooltip:AddDoubleLine("Full since", when, 1, 0.82, 0, 1, 1, 1)
+    else
+      GameTooltip:AddDoubleLine("Full in", ns.Format.Duration(p.secondsToFull), 1, 0.82, 0, 1, 1, 1)
+    end
+    GameTooltip:AddDoubleLine("Well Rested", (c.rest.wellRested or 0) .. " / 5", 1, 0.82, 0, 1, 1, 1)
+  end
   GameTooltip:AddDoubleLine("Gold", moneyText(ns.Format.Money(c.money)), 1, 0.82, 0)
   if c.zone then
-    GameTooltip:AddDoubleLine("Last zone", c.zone, 1, 0.82, 0, 1, 1, 1)
+    local where = c.zone
+    if levelling then
+      where = where .. (c.rest.resting and " (inn)" or " (outside)")
+    end
+    GameTooltip:AddDoubleLine("Last zone", where, 1, 0.82, 0, 1, 1, 1)
   end
-  GameTooltip:AddDoubleLine("Last seen", ns.Format.Ago(c.lastSeen, ns.Game.Now()), 1, 0.82, 0, 1, 1, 1)
+  GameTooltip:AddDoubleLine("Last seen", ns.Format.Ago(c.lastSeen, now), 1, 0.82, 0, 1, 1, 1)
+  if levelling then
+    local _, summary = restedBuild(ns.db, now)
+    if summary.next and summary.next.key == key and summary.next.full then
+      GameTooltip:AddLine("Rested XP past full is wasted: play " .. c.name .. " next.", 0.62, 0.82, 1, true)
+    end
+  end
   GameTooltip:Show()
 end
 
@@ -107,6 +174,18 @@ local function stripe(r)
     stripes[r] = t
   end
   return t
+end
+
+-- A track and a fill texture per row, for a focus with a bar column.
+local function bar(r)
+  local b = bars[r]
+  if not b then
+    b =
+      { track = win.content:CreateTexture(nil, "ARTWORK"), fill = win.content:CreateTexture(nil, "OVERLAY") }
+    b.track:SetColorTexture(1, 1, 1, 0.08)
+    bars[r] = b
+  end
+  return b
 end
 
 -- An invisible button per row for the hover tooltip; it forwards drags so the
@@ -196,6 +275,10 @@ local function layout(grid)
   for _, b in pairs(hovers) do
     b:Hide()
   end
+  for _, b in pairs(bars) do
+    b.track:Hide()
+    b.fill:Hide()
+  end
   local tr, tg, tb = ns.Window.Rgb(ns.Window.Current().title)
   local header = {}
   for i, col in ipairs(active.columns) do
@@ -225,9 +308,26 @@ local function layout(grid)
     for c, text in ipairs(row.cells) do
       local w = active.columns[c][2]
       local fs = cell(r, c)
+      local textX, textW = x, w - 6
+      if r > 1 and c == active.bar and row.fill then
+        local b = bar(r)
+        b.track:ClearAllPoints()
+        b.track:SetPoint("TOPLEFT", content, "TOPLEFT", x, y - 3)
+        b.track:SetSize(BAR_W, 8)
+        b.track:Show()
+        local fillW = math.floor(BAR_W * math.max(0, math.min(1, row.fill)) + 0.5)
+        if fillW > 0 then
+          b.fill:SetColorTexture(row.color[1], row.color[2], row.color[3], 1)
+          b.fill:ClearAllPoints()
+          b.fill:SetPoint("TOPLEFT", b.track, "TOPLEFT", 0, 0)
+          b.fill:SetSize(fillW, 8)
+          b.fill:Show()
+        end
+        textX, textW = x + BAR_W + 6, w - BAR_W - 12
+      end
       fs:ClearAllPoints()
-      fs:SetPoint("TOPLEFT", content, "TOPLEFT", x, y)
-      fs:SetWidth(w - 6)
+      fs:SetPoint("TOPLEFT", content, "TOPLEFT", textX, y)
+      fs:SetWidth(textW)
       fs:SetText(text)
       fs:Show()
       if r == 1 then
