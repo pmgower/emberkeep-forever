@@ -1,0 +1,21 @@
+# Every pull request and push to main runs the same gate as the local hooks.
+name: Checks
+on:
+  workflow_call:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: sudo apt-get update && sudo apt-get install -y lua5.1 liblua5.1-dev luarocks
+      - run: sudo luarocks install luacheck && sudo luarocks install busted
+      - name: Install StyLua
+        run: |
+          curl -sSL -o stylua.zip https://github.com/JohnnyMorganz/StyLua/releases/download/v2.0.2/stylua-linux-x86_64.zip
+          sudo unzip -o stylua.zip -d /usr/local/bin && rm stylua.zip
+      - run: scripts/check.sh

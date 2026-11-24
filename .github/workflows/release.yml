@@ -1,0 +1,29 @@
+# Pushing a v* tag (Paul only) builds the zip and uploads it to CurseForge.
+name: Release
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: write # the packager creates the GitHub release too
+jobs:
+  gate:
+    uses: ./.github/workflows/checks.yml
+  release:
+    needs: gate
+    runs-on: ubuntu-latest
+    env:
+      CF_API_KEY: ${{ secrets.CF_API_KEY }}
+      GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: CHANGELOG.md is for this tag
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          head -n 1 CHANGELOG.md | grep -qx "## $v" || { echo "CHANGELOG.md must start with '## $v'"; exit 1; }
+      - name: TOC has a CurseForge project id
+        run: |
+          grep -q '^## X-Curse-Project-ID: [0-9]' Kinfolk/Kinfolk.toc \
+            || { echo "Add '## X-Curse-Project-ID: <id>' to Kinfolk/Kinfolk.toc, or the packager skips CurseForge"; exit 1; }
+      - uses: BigWigsMods/packager@v2
