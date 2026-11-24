@@ -31,4 +31,6 @@ read_globals = {
   -- Gear
   "C_Item", "GetInventoryItemID", "GetInventoryItemLink", "HandleModifiedItemClick", "IsModifiedClick",
   "ITEM_QUALITY_COLORS",
+  -- Button on the Character window
+  "CharacterFrame",
 }

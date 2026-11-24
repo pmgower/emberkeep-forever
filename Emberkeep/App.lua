@@ -185,6 +185,9 @@ local function handle(event, arg1)
       ns.MinimapButton.Init(ns.db)
       ns.OptionsPage.Init()
     end
+    if ns.db then
+      ns.CharacterButton.Init()
+    end
     return
   end
   observe(event, arg1)
