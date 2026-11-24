@@ -13,7 +13,7 @@ end
 
 local commands = {
   version = function()
-    say(ns.Version.Line("Kinfolk: Forever", metadata("Version")))
+    say(ns.Version.Line("version", metadata("Version")))
   end,
   forget = function(name)
     if name == "" then
@@ -30,6 +30,46 @@ local commands = {
     local n = ns.Roster.Forget(ns.db.characters, name)
     say(string.format("forgot %d character(s) named %s", n, name))
     ns.MainWindow.RefreshIfShown()
+  end,
+  -- What the game reports and what Kinfolk saved, for bug reports.
+  debug = function()
+    local s = ns.Game.Sighting()
+    say(
+      string.format(
+        "you: name=%s realm=%s level=%s class=%s",
+        tostring(s.name),
+        tostring(s.realm),
+        tostring(s.level),
+        tostring(s.classFile)
+      )
+    )
+    local ok, rest = pcall(ns.Game.RestObservation)
+    if ok then
+      say(
+        string.format(
+          "rest: rested=%s xpMax=%s resting=%s maxLevel=%s",
+          tostring(rest.rested),
+          tostring(rest.xpMax),
+          tostring(rest.resting),
+          tostring(ns.Game.MaxLevel())
+        )
+      )
+    else
+      say("rest read failed: " .. tostring(rest))
+    end
+    local db = ns.db
+    if not db then
+      return say("no saved data loaded (ADDON_LOADED didn't finish)")
+    end
+    local count = 0
+    for key, c in pairs(db.characters) do
+      count = count + 1
+      say(string.format("saved %s: level=%s rest=%s", key, tostring(c.level), c.rest and "yes" or "no"))
+    end
+    say(count .. " character(s) saved")
+    for _, e in ipairs(ns.App.errors) do
+      say("|cffff6060error|r " .. e)
+    end
   end,
   options = function()
     ns.OptionsPage.Open()

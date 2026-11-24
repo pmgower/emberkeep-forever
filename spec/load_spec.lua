@@ -231,7 +231,7 @@ describe("the addon in a stand-in client", function()
     SlashCmdList.KINFOLK("reset")
     SlashCmdList.KINFOLK("nonsense")
     local lines = DEFAULT_CHAT_FRAME.lines
-    assert.truthy(lines[1]:find("Kinfolk: Forever 0.1.0", 1, true))
+    assert.truthy(lines[1]:find("Kinfolk:|r version 0.1.0", 1, true), lines[1])
     assert.truthy(lines[2]:find("forgot 1", 1, true))
     assert.is_nil(KinfolkDB.characters["Quill-Nightfall"])
   end)
