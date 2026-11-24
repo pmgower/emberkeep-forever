@@ -1,0 +1,33 @@
+local Format = dofile("Kinfolk/Core/Format.lua")
+
+describe("Format.Money", function()
+  it("splits copper into gold and silver with thousands commas", function()
+    assert.are.same({ gold = "1,204g", silver = "37s", copper = "" }, Format.Money(12043705))
+  end)
+
+  it("shows copper only when there is no gold", function()
+    assert.are.same({ gold = "", silver = "3s", copper = "5c" }, Format.Money(305))
+    assert.are.same({ gold = "", silver = "", copper = "" }, Format.Money(0))
+  end)
+
+  it("handles exact thousands, millions and gold with only copper", function()
+    assert.are.equal("1,000g", Format.Money(1000 * 10000).gold)
+    assert.are.equal("1,000,000g", Format.Money(1000000 * 10000).gold)
+    assert.are.equal("100g", Format.Money(100 * 10000).gold)
+    assert.are.same({ gold = "1g", silver = "", copper = "" }, Format.Money(10005))
+  end)
+
+  it("treats nil as nothing", function()
+    assert.are.same({ gold = "", silver = "", copper = "" }, Format.Money(nil))
+  end)
+end)
+
+describe("Format.Ago", function()
+  it("reads in plain words", function()
+    assert.are.equal("just now", Format.Ago(1000, 1500))
+    assert.are.equal("5h ago", Format.Ago(0, 5 * 3600 + 10))
+    assert.are.equal("yesterday", Format.Ago(0, 86400 + 10))
+    assert.are.equal("6 days ago", Format.Ago(0, 6 * 86400))
+    assert.are.equal("never", Format.Ago(nil, 10))
+  end)
+end)

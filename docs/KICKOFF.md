@@ -10,7 +10,7 @@ Goal: a WoW Forever home base for all my alts: one roster, each alt's gear, bags
 | Rest observation | What the game reported at a moment: rested XP, XP to level, resting or not, Well Rested rank, time |
 | Rest projection | Rested XP now, the cap and time to full, computed from the last observation (pure function) |
 | Capped | Projected rested has reached the cap, so further rest is wasted |
-| Play-next ranking | Alts below max level, capped first (longest capped first), then by rested as a share of the cap. **Assumption, tell me if you rank differently.** |
+| Play-next ranking | Alts below max level only (max-level alts never appear in it). Full (capped) alts first, alphabetically, then the rest by rested % highest first. Confirmed by Paul 2026-11-24. |
 | Focus | One way of ranking or reading the roster, shown as a view. Each is its own module over the same roster (play next is the first; others are added later without touching the core). |
 | Snapshot | Items in one location (Equipped, Bags, Bank, Mail) plus `observedAt` |
 | Stale | A snapshot shown with "as of" because it can only be refreshed at the bank or mailbox |
@@ -31,6 +31,7 @@ Rates: 5% of a level per 8 h resting, 1/4 of that elsewhere (unverified on Forev
 | --- | --- | --- |
 | 0 | Repo setup: CLAUDE.md, CONTEXT.md, deny rules, hooks (luacheck, StyLua, busted, TOC check; exit 2), CI running the same, release workflow. Addon loads and `/kinfolk` prints its version. | A deliberately broken test makes the hook exit 2 and CI fail. In game: `/reload`, no Lua errors, version prints. |
 | 1 | Roster: save each character on login/logout, window lists name, class, level, last seen. | busted roster specs. In game: log in on 2 alts, both listed. |
+| 1b | Design: clickable mockup approved by Paul (window, minimap button, options page), then a local beta install to look at in game before the MVP PR. | Paul says it looks good. |
 | 2 | Play next (MVP): rest observation, projection, ranking, window columns, login chat line. | busted projection/ranking specs incl. cap, away rate, Well Rested, logout-zero guard. In game: ranking and rested % match the XP bar on the current alt. |
 | 3 | Equipped gear panel per alt. | busted snapshot specs. In game: an alt's gear matches its character sheet. |
 | 4 | Bags grid per alt with free slots. | busted specs. In game: bag counts match after looting. |
