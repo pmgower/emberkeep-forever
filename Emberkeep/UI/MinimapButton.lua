@@ -1,16 +1,16 @@
 -- MinimapButton: the LibDBIcon button. Left-click shows or hides the window,
 -- right-click opens the options page. Position and visibility live in
--- KinfolkDB.minimapIcon, in LibDBIcon's own format.
+-- EmberkeepDB.minimapIcon, in LibDBIcon's own format.
 local _, ns = ...
 local MinimapButton = {}
 ns.MinimapButton = MinimapButton
 
-local NAME = "Kinfolk"
+local NAME = "Emberkeep"
 local icon
 
 -- Tooltip lines, kept separate from the frame so tests can read them.
 function MinimapButton.TooltipLines(db, now)
-  local lines = { "Kinfolk" }
+  local lines = { "Emberkeep" }
   local rows, summary = ns.RestedView.Build(db.characters, ns, ns.Game.RestContext(db, now))
   local top = summary.next
   if top then
@@ -33,8 +33,8 @@ function MinimapButton.Init(db)
   db.minimapIcon = type(db.minimapIcon) == "table" and db.minimapIcon or {}
   local obj = ldb:NewDataObject(NAME, {
     type = "launcher",
-    text = "Kinfolk",
-    icon = "Interface\\AddOns\\Kinfolk\\Media\\kinfolk",
+    text = "Emberkeep",
+    icon = "Interface\\AddOns\\Emberkeep\\Media\\emberkeep",
     OnClick = function(_, button)
       if IsControlKeyDown and IsControlKeyDown() then
         ns.App.OpenFeedback()

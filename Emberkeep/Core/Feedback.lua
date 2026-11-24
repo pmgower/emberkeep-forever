@@ -1,5 +1,5 @@
 -- Feedback: the bug report. Pure Lua: App gathers the facts from the game, this
--- file turns them into the text /kinfolk feedback shows and the GitHub link
+-- file turns them into the text /emberkeep feedback shows and the GitHub link
 -- that carries it. Nothing leaves the player's computer: addons can't reach
 -- the network, so the player copies the link into their browser.
 --
@@ -10,16 +10,16 @@ ns = ns or {}
 local Feedback = {}
 ns.Feedback = Feedback
 
-Feedback.BUG_FORM_URL = "https://github.com/pmgower/kinfolk-forever/issues/new?template=bug_report.yml"
+Feedback.BUG_FORM_URL = "https://github.com/pmgower/emberkeep-forever/issues/new?template=bug_report.yml"
 Feedback.FORM_FIELD = "feedback" -- id of the report box in .github/ISSUE_TEMPLATE/bug_report.yml
 Feedback.MAX_URL = 7000 -- GitHub refuses much longer links; past this, the player pastes the report
 Feedback.MAX_ERRORS = 5
 Feedback.MAX_ERROR_LEN = 600 -- one error plus a short stack, so the link stays short
 Feedback.MAX_ALTS = 20
 
-local OURS = "AddOns[/\\]Kinfolk[/\\]"
+local OURS = "AddOns[/\\]Emberkeep[/\\]"
 
--- Is this Lua error from Kinfolk? Looks for our folder in the message or the
+-- Is this Lua error from Emberkeep? Looks for our folder in the message or the
 -- stack, so other addons' errors are left alone.
 function Feedback.IsOurs(msg, stack)
   local hay = tostring(msg or "") .. "\n" .. tostring(stack or "")
@@ -139,7 +139,7 @@ function Feedback.Report(ctx)
   end
   local c, ch = ctx.client or {}, ctx.character or {}
 
-  add("Kinfolk feedback report")
+  add("Emberkeep feedback report")
   add("Addon: %s", q(ctx.version))
   add(
     "Client: %s build %s (%s), interface %s, locale %s",

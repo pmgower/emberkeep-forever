@@ -6,7 +6,7 @@ local function fail(msg)
   failed = true
 end
 
-local toc = arg[1] or "Kinfolk/Kinfolk.toc"
+local toc = arg[1] or "Emberkeep/Emberkeep.toc"
 local dir = toc:match("^(.*)/[^/]+$") or "."
 local listed = {}
 for line in io.lines(toc) do

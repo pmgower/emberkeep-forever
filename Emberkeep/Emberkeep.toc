@@ -1,10 +1,10 @@
 ## Interface: 16001
-## Title: Kinfolk: Forever
+## Title: Emberkeep: Forever
 ## Notes: A home base for all your alts: who to play next for rested XP, and later each alt's gear, bags, bank and mail.
 ## Author: Pheubar
 ## Version: @project-version@
-## SavedVariables: KinfolkDB
-## IconTexture: Interface\AddOns\Kinfolk\Media\kinfolk
+## SavedVariables: EmberkeepDB
+## IconTexture: Interface\AddOns\Emberkeep\Media\emberkeep
 ## X-License: MIT
 ## OptionalDeps: LibDBIcon-1.0, !BugGrabber
 

@@ -1,6 +1,6 @@
-local Roster = dofile("Kinfolk/Core/Roster.lua")
-local Format = dofile("Kinfolk/Core/Format.lua")
-local Overview = dofile("Kinfolk/Core/Overview.lua")
+local Roster = dofile("Emberkeep/Core/Roster.lua")
+local Format = dofile("Emberkeep/Core/Format.lua")
+local Overview = dofile("Emberkeep/Core/Overview.lua")
 
 describe("Overview.Build", function()
   it("makes one row per character and totals the gold", function()

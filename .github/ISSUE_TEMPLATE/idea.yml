@@ -1,5 +1,5 @@
 name: Idea
-description: Suggest a new feature or a change to how Kinfolk works.
+description: Suggest a new feature or a change to how Emberkeep works.
 labels: [enhancement]
 body:
   - type: textarea

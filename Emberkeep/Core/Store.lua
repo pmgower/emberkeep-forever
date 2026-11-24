@@ -1,4 +1,4 @@
--- Store: the shape of KinfolkDB, the account-wide SavedVariables table.
+-- Store: the shape of EmberkeepDB, the account-wide SavedVariables table.
 -- Pure Lua: given whatever the game loaded (nil on first run), return a table
 -- with every part the addon reads, keeping what is already there.
 local _, ns = ...

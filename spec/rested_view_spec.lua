@@ -1,9 +1,9 @@
 local deps = {
-  Roster = dofile("Kinfolk/Core/Roster.lua"),
-  Rest = dofile("Kinfolk/Core/Rest.lua"),
-  Format = dofile("Kinfolk/Core/Format.lua"),
+  Roster = dofile("Emberkeep/Core/Roster.lua"),
+  Rest = dofile("Emberkeep/Core/Rest.lua"),
+  Format = dofile("Emberkeep/Core/Format.lua"),
 }
-local RestedView = dofile("Kinfolk/Core/RestedView.lua")
+local RestedView = dofile("Emberkeep/Core/RestedView.lua")
 
 local DAY, LEVEL, NOW = 86400, 10000, 30 * 86400
 

@@ -1,5 +1,5 @@
--- OptionsPage: Options > AddOns > Kinfolk. Each control writes straight into
--- KinfolkDB.settings and tells the window, so the page and /kinfolk agree.
+-- OptionsPage: Options > AddOns > Emberkeep. Each control writes straight into
+-- EmberkeepDB.settings and tells the window, so the page and /emberkeep agree.
 -- Every part checks the client has that Settings API first and is skipped
 -- quietly if not; the slash commands still work.
 local _, ns = ...
@@ -24,13 +24,13 @@ local CHECKBOXES = {
   {
     "errorPrompt",
     "Offer a bug report on errors",
-    "If Kinfolk hits an error, a small window offers to report it, once per session.",
+    "If Emberkeep hits an error, a small window offers to report it, once per session.",
   },
 }
 
 local function register(cat, key, kind, label, default, onChange)
   local setting =
-    Settings.RegisterAddOnSetting(cat, "Kinfolk_" .. key, key, ns.db.settings, kind, label, default)
+    Settings.RegisterAddOnSetting(cat, "Emberkeep_" .. key, key, ns.db.settings, kind, label, default)
   if setting.SetValueChangedCallback then
     setting:SetValueChangedCallback(function()
       onChange()
@@ -56,7 +56,7 @@ local function addTheme(cat)
       c:Add(t.key, t.name)
     end
     return c:GetData()
-  end, "Colors for the Kinfolk window.")
+  end, "Colors for the Emberkeep window.")
 end
 
 local function addScale(cat)
@@ -69,7 +69,7 @@ local function addScale(cat)
   if options.SetLabelFormatter and mixin and mixin.Label then
     options:SetLabelFormatter(mixin.Label.Right, ns.Settings.ScaleLabel)
   end
-  Settings.CreateSlider(cat, setting, options, "Size of the Kinfolk window.")
+  Settings.CreateSlider(cat, setting, options, "Size of the Emberkeep window.")
 end
 
 -- A dropdown of saved characters and a Forget button.
@@ -82,7 +82,7 @@ local function addForget(cat, layout)
   -- different realms are told apart.
   local pick = { forget = "" }
   local setting =
-    Settings.RegisterAddOnSetting(cat, "Kinfolk_forget", "forget", pick, "string", "Character", "")
+    Settings.RegisterAddOnSetting(cat, "Emberkeep_forget", "forget", pick, "string", "Character", "")
   create(cat, setting, function()
     local c = Settings.CreateControlTextContainer()
     for _, ch in ipairs(ns.Roster.Characters(ns.db.characters)) do
@@ -113,7 +113,7 @@ local function addForget(cat, layout)
       "",
       "Forget",
       forget,
-      "Removes the picked character from Kinfolk. They come back if you log in on them again.",
+      "Removes the picked character from Emberkeep. They come back if you log in on them again.",
       true
     )
   )
@@ -124,7 +124,7 @@ function OptionsPage.Init()
     return
   end
   local layout
-  category, layout = Settings.RegisterVerticalLayoutCategory("Kinfolk")
+  category, layout = Settings.RegisterVerticalLayoutCategory("Emberkeep")
   for _, row in ipairs(CHECKBOXES) do
     local setting = register(category, row[1], "boolean", row[2], ns.Settings.DEFAULTS[row[1]], changed)
     Settings.CreateCheckbox(category, setting, row[3])
@@ -140,7 +140,7 @@ function OptionsPage.Init()
         function()
           ns.App.OpenFeedback()
         end,
-        "Opens a link to a GitHub bug report with your details filled in. Same as /kinfolk feedback.",
+        "Opens a link to a GitHub bug report with your details filled in. Same as /emberkeep feedback.",
         true
       )
     )
@@ -153,6 +153,8 @@ function OptionsPage.Open()
     Settings.OpenToCategory(category:GetID())
     return true
   end
-  DEFAULT_CHAT_FRAME:AddMessage("|cff9fd0ffKinfolk:|r the options page isn't available; type /kinfolk help")
+  DEFAULT_CHAT_FRAME:AddMessage(
+    "|cff9fd0ffEmberkeep:|r the options page isn't available; type /emberkeep help"
+  )
   return false
 end

@@ -12,7 +12,7 @@ function Version.Line(title, metadata)
   if metadata and metadata ~= "" and not metadata:match("^@.*@$") then
     version = metadata
   end
-  return string.format("%s %s", title or "Kinfolk", version)
+  return string.format("%s %s", title or "Emberkeep", version)
 end
 
 -- The short form the window header shows: "v0.1.0", or "dev".

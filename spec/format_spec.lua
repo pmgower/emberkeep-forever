@@ -1,4 +1,4 @@
-local Format = dofile("Kinfolk/Core/Format.lua")
+local Format = dofile("Emberkeep/Core/Format.lua")
 
 describe("Format.Money", function()
   it("splits copper into gold and silver with thousands commas", function()

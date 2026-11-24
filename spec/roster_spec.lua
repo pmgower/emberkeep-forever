@@ -1,4 +1,4 @@
-local Roster = dofile("Kinfolk/Core/Roster.lua")
+local Roster = dofile("Emberkeep/Core/Roster.lua")
 
 local function sighting(over)
   local s = {

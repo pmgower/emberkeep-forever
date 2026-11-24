@@ -1,4 +1,4 @@
-local Feedback = dofile("Kinfolk/Core/Feedback.lua")
+local Feedback = dofile("Emberkeep/Core/Feedback.lua")
 
 local function ctx()
   return {
@@ -31,7 +31,7 @@ describe("Feedback.Report", function()
     local report = Feedback.Report(ctx())
     assert.are.equal(
       table.concat({
-        "Kinfolk feedback report",
+        "Emberkeep feedback report",
         "Addon: 0.1.0",
         "Client: 1.60.1 build 60000 (Nov 1 2026), interface 16001, locale enUS",
         "Character: level 23 Orc HUNTER, Horde, realm Forever, max level 60",
@@ -73,18 +73,18 @@ describe("Feedback.Report", function()
 end)
 
 describe("Feedback errors", function()
-  it("knows Kinfolk's errors from other addons'", function()
-    assert.is_true(Feedback.IsOurs("Interface/AddOns/Kinfolk/App.lua:12: boom"))
-    assert.is_true(Feedback.IsOurs("boom", "Interface\\AddOns\\Kinfolk\\UI\\MainWindow.lua:40"))
+  it("knows Emberkeep's errors from other addons'", function()
+    assert.is_true(Feedback.IsOurs("Interface/AddOns/Emberkeep/App.lua:12: boom"))
+    assert.is_true(Feedback.IsOurs("boom", "Interface\\AddOns\\Emberkeep\\UI\\MainWindow.lua:40"))
     assert.is_false(
-      Feedback.IsOurs("Interface/AddOns/BagQuests/App.lua:1: x", "Interface/AddOns/Kinfolkish/a.lua")
+      Feedback.IsOurs("Interface/AddOns/BagQuests/App.lua:1: x", "Interface/AddOns/Emberkeepish/a.lua")
     )
   end)
 
   it("keeps our stack lines only, and cuts long errors", function()
-    local stack = "Interface/AddOns/Other/x.lua:1\nInterface/AddOns/Kinfolk/App.lua:9: in function"
+    local stack = "Interface/AddOns/Other/x.lua:1\nInterface/AddOns/Emberkeep/App.lua:9: in function"
     assert.are.equal(
-      "boom\n  Interface/AddOns/Kinfolk/App.lua:9: in function",
+      "boom\n  Interface/AddOns/Emberkeep/App.lua:9: in function",
       Feedback.ShortError("boom", stack)
     )
     local long = Feedback.ShortError(string.rep("x", 900))

@@ -1,4 +1,4 @@
-local Settings = dofile("Kinfolk/Core/Settings.lua")
+local Settings = dofile("Emberkeep/Core/Settings.lua")
 
 describe("Settings.Apply", function()
   it("fills in every default on first run", function()

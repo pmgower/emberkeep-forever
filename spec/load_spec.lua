@@ -18,33 +18,33 @@ describe("the addon in a stand-in client", function()
       rested = 2500,
       resting = true,
     }
-    _G.KinfolkDB = nil
+    _G.EmberkeepDB = nil
     wow.install(state)
-    ns = wow.loadToc("Kinfolk/Kinfolk.toc", "Kinfolk")
-    wow.fire("ADDON_LOADED", "Kinfolk")
+    ns = wow.loadToc("Emberkeep/Emberkeep.toc", "Emberkeep")
+    wow.fire("ADDON_LOADED", "Emberkeep")
     wow.fire("PLAYER_LOGIN")
   end)
 
   it("saves the logged-in character", function()
-    local c = KinfolkDB.characters["Brakka-Nightfall"]
+    local c = EmberkeepDB.characters["Brakka-Nightfall"]
     assert.are.equal(34, c.level)
     assert.are.equal("Orgrimmar", c.zone)
     assert.are.equal("v0.1.0", ns.versionText)
   end)
 
   it("saves the character's rested XP, and keeps it when logout reads XP to level as 0", function()
-    local r = KinfolkDB.characters["Brakka-Nightfall"].rest
+    local r = EmberkeepDB.characters["Brakka-Nightfall"].rest
     assert.are.same({ rested = 2500, xpMax = 10000, resting = true, wellRested = 0, at = 1000 }, r)
     state.xpMax, state.rested = 0, nil
     wow.fire("PLAYER_LOGOUT")
-    assert.are.equal(2500, KinfolkDB.characters["Brakka-Nightfall"].rest.rested)
+    assert.are.equal(2500, EmberkeepDB.characters["Brakka-Nightfall"].rest.rested)
   end)
 
   it("says who to play next on login, skipping the character you're on", function()
     -- You're on Brakka, who is full; Quill is next at 60%.
-    KinfolkDB.characters["Brakka-Nightfall"].rest.rested = 15000
+    EmberkeepDB.characters["Brakka-Nightfall"].rest.rested = 15000
     local partly = { rested = 6000, xpMax = 10000, resting = true, wellRested = 0, at = 1000 }
-    KinfolkDB.characters["Quill-Nightfall"] =
+    EmberkeepDB.characters["Quill-Nightfall"] =
       { name = "Quill", realm = "Nightfall", level = 18, rest = partly }
     state.rested = 15000
     wow.fire("PLAYER_ENTERING_WORLD", true, false)
@@ -57,7 +57,7 @@ describe("the addon in a stand-in client", function()
   end)
 
   it("opens on the Rested tab with each alt's rested percent", function()
-    SlashCmdList.KINFOLK("")
+    SlashCmdList.EMBERKEEP("")
     local seen = {}
     for _, f in ipairs(wow.frames) do
       if f._text then
@@ -66,7 +66,7 @@ describe("the addon in a stand-in client", function()
     end
     assert.is_true(seen["25%"], "Brakka's 25% rested should be drawn")
     -- Hovering each row builds its tooltip without an error, full or not.
-    KinfolkDB.characters["Brakka-Nightfall"].rest.rested = 15000
+    EmberkeepDB.characters["Brakka-Nightfall"].rest.rested = 15000
     local hovered = 0
     for _, f in ipairs(wow.frames) do
       if f.key and f._scripts.OnEnter then
@@ -78,11 +78,11 @@ describe("the addon in a stand-in client", function()
   end)
 
   it("names who to play next in the minimap tooltip, not the character you're on", function()
-    KinfolkDB.characters["Brakka-Nightfall"].rest.rested = 15000
+    EmberkeepDB.characters["Brakka-Nightfall"].rest.rested = 15000
     local partly = { rested = 6000, xpMax = 10000, resting = true, wellRested = 0, at = 1000 }
-    KinfolkDB.characters["Quill-Nightfall"] =
+    EmberkeepDB.characters["Quill-Nightfall"] =
       { name = "Quill", realm = "Nightfall", level = 18, rest = partly }
-    local lines = ns.MinimapButton.TooltipLines(KinfolkDB, 1000)
+    local lines = ns.MinimapButton.TooltipLines(EmberkeepDB, 1000)
     assert.truthy(lines[2]:find("Play next: Quill", 1, true), lines[2])
     assert.truthy(lines[3]:find("1 alt full, 1 still resting", 1, true), lines[3])
   end)
@@ -90,7 +90,7 @@ describe("the addon in a stand-in client", function()
   it("doesn't save a rested reading on level-up, when XP to level can be stale", function()
     state.xpMax, state.rested = 12000, 9999
     wow.fire("PLAYER_LEVEL_UP", 35)
-    assert.are.equal(10000, KinfolkDB.characters["Brakka-Nightfall"].rest.xpMax)
+    assert.are.equal(10000, EmberkeepDB.characters["Brakka-Nightfall"].rest.xpMax)
   end)
 
   it("reads the account's Well Rested rank from whichever Generic tree has it", function()
@@ -108,26 +108,26 @@ describe("the addon in a stand-in client", function()
     }
     wow.fire("TRAIT_CONFIG_UPDATED")
     _G.C_Traits, _G.Enum = nil, nil
-    assert.are.equal(3, KinfolkDB.wellRested)
-    assert.are.equal(3, KinfolkDB.characters["Brakka-Nightfall"].rest.wellRested)
+    assert.are.equal(3, EmberkeepDB.wellRested)
+    assert.are.equal(3, EmberkeepDB.characters["Brakka-Nightfall"].rest.wellRested)
   end)
 
   it("saves the character when the game reports no realm name, as WoW Forever does", function()
     state.realm = ""
-    KinfolkDB.characters = {}
+    EmberkeepDB.characters = {}
     wow.fire("PLAYER_LOGIN")
-    local c = KinfolkDB.characters["Brakka-Forever"]
+    local c = EmberkeepDB.characters["Brakka-Forever"]
     assert.is_not_nil(c, "the character should be saved under the fallback realm")
     assert.are.equal(34, c.level)
     assert.is_not_nil(c.rest)
   end)
 
   it("saves the surname, keys by full name, and moves an entry saved without it", function()
-    local old = KinfolkDB.characters["Brakka-Nightfall"]
+    local old = EmberkeepDB.characters["Brakka-Nightfall"]
     state.surname = "Stonefist"
     wow.fire("PLAYER_LOGIN")
-    assert.is_nil(KinfolkDB.characters["Brakka-Nightfall"])
-    local c = KinfolkDB.characters["Brakka Stonefist-Nightfall"]
+    assert.is_nil(EmberkeepDB.characters["Brakka-Nightfall"])
+    local c = EmberkeepDB.characters["Brakka Stonefist-Nightfall"]
     assert.are.equal(old, c, "the earlier entry should move, not be duplicated")
     assert.are.equal("Stonefist", c.surname)
   end)
@@ -143,7 +143,7 @@ describe("the addon in a stand-in client", function()
       end
       return false
     end
-    SlashCmdList.KINFOLK("")
+    SlashCmdList.EMBERKEEP("")
     assert.is_true(drawn("Brakka Stonefist"))
     wow.settings.controls[3]:SetValue(true) -- First names only
     for _, f in ipairs(wow.frames) do
@@ -157,10 +157,10 @@ describe("the addon in a stand-in client", function()
   end)
 
   it("puts the account's gold total on its own row with no character name", function()
-    KinfolkDB.characters["Quill-Nightfall"] =
+    EmberkeepDB.characters["Quill-Nightfall"] =
       { name = "Quill", realm = "Nightfall", level = 18, money = 10000 }
-    KinfolkDB.settings.focus = "overview"
-    SlashCmdList.KINFOLK("")
+    EmberkeepDB.settings.focus = "overview"
+    SlashCmdList.EMBERKEEP("")
     local total = false
     for _, f in ipairs(wow.frames) do
       if f._text and tostring(f._text):find("All characters", 1, true) then
@@ -176,15 +176,15 @@ describe("the addon in a stand-in client", function()
   it("keeps saved data when logout reads come back empty", function()
     state.level, state.money, state.zone = 0, 0, ""
     wow.fire("PLAYER_LOGOUT")
-    local c = KinfolkDB.characters["Brakka-Nightfall"]
+    local c = EmberkeepDB.characters["Brakka-Nightfall"]
     assert.are.equal(34, c.level)
     assert.are.equal(421800, c.money)
   end)
 
-  it("opens and closes the window with /kinfolk, and refreshes it while open", function()
+  it("opens and closes the window with /emberkeep, and refreshes it while open", function()
     assert.is_false(ns.MainWindow.IsShown())
-    KinfolkDB.settings.focus = "overview" -- the gold column is on Overview
-    SlashCmdList.KINFOLK("")
+    EmberkeepDB.settings.focus = "overview" -- the gold column is on Overview
+    SlashCmdList.EMBERKEEP("")
     assert.is_true(ns.MainWindow.IsShown())
     state.money = 12345678
     wow.fire("PLAYER_MONEY")
@@ -195,40 +195,40 @@ describe("the addon in a stand-in client", function()
       end
     end
     assert.is_true(seen, "the new gold total should be drawn in the open window")
-    SlashCmdList.KINFOLK("")
+    SlashCmdList.EMBERKEEP("")
     assert.is_false(ns.MainWindow.IsShown())
   end)
 
   it("saves the new level from PLAYER_LEVEL_UP even if the game still reports the old one", function()
     wow.fire("PLAYER_LEVEL_UP", 35)
-    assert.are.equal(35, KinfolkDB.characters["Brakka-Nightfall"].level)
+    assert.are.equal(35, EmberkeepDB.characters["Brakka-Nightfall"].level)
   end)
 
   it("does not save a value the client hides from addons", function()
     state.zone = "Hidden"
     state.secret = "Hidden"
     wow.fire("ZONE_CHANGED_NEW_AREA")
-    assert.are.equal("Orgrimmar", KinfolkDB.characters["Brakka-Nightfall"].zone)
+    assert.are.equal("Orgrimmar", EmberkeepDB.characters["Brakka-Nightfall"].zone)
   end)
 
   it("shows the minimap button and hides it when the option is off", function()
-    local button = wow.icons.Kinfolk
+    local button = wow.icons.Emberkeep
     assert.is_true(button.shown)
-    KinfolkDB.settings.minimapButton = false
-    ns.MinimapButton.Apply(KinfolkDB)
+    EmberkeepDB.settings.minimapButton = false
+    ns.MinimapButton.Apply(EmberkeepDB)
     assert.is_false(button.shown)
     assert.is_true(button.db.hide)
   end)
 
   it("opens the window from a minimap left-click", function()
-    wow.icons.Kinfolk.obj.OnClick(nil, "LeftButton")
+    wow.icons.Emberkeep.obj.OnClick(nil, "LeftButton")
     assert.is_true(ns.MainWindow.IsShown())
   end)
 
   it("builds the options page and applies a changed color scheme and scale", function()
-    assert.are.equal("Kinfolk", wow.settings.name)
+    assert.are.equal("Emberkeep", wow.settings.name)
     assert.are.equal(8, #wow.settings.controls) -- 5 checkboxes, scheme, scale, character
-    SlashCmdList.KINFOLK("")
+    SlashCmdList.EMBERKEEP("")
     local theme = wow.settings.controls[6]
     theme:SetValue("twilight")
     assert.are.equal("twilight", ns.Window.Current().key)
@@ -244,12 +244,12 @@ describe("the addon in a stand-in client", function()
     assert.are.equal("CENTER", scaled._point[1])
     assert.are.equal(400, scaled._point[4])
     wow.fire("PLAYER_MONEY")
-    SlashCmdList.KINFOLK("options")
+    SlashCmdList.EMBERKEEP("options")
     assert.are.equal(7, wow.settings.opened)
   end)
 
   it("forgets a character picked on the options page", function()
-    KinfolkDB.characters["Quill-Nightfall"] = { name = "Quill", realm = "Nightfall", level = 18 }
+    EmberkeepDB.characters["Quill-Nightfall"] = { name = "Quill", realm = "Nightfall", level = 18 }
     local picker = wow.settings.controls[8]
     local names = {}
     for _, o in ipairs(picker.options()) do
@@ -258,7 +258,7 @@ describe("the addon in a stand-in client", function()
     assert.are.same({ "Brakka-Nightfall", "Quill-Nightfall" }, names)
     picker:SetValue("Quill-Nightfall")
     wow.settings.buttons[1].onClick()
-    assert.is_nil(KinfolkDB.characters["Quill-Nightfall"])
+    assert.is_nil(EmberkeepDB.characters["Quill-Nightfall"])
     assert.are.equal("", picker.tbl.forget, "the picker should clear after a forget")
   end)
 
@@ -266,30 +266,30 @@ describe("the addon in a stand-in client", function()
     local picker = wow.settings.controls[8]
     picker:SetValue("Brakka-Nightfall")
     wow.settings.buttons[1].onClick()
-    assert.is_not_nil(KinfolkDB.characters["Brakka-Nightfall"])
+    assert.is_not_nil(EmberkeepDB.characters["Brakka-Nightfall"])
   end)
 
   it("won't forget the character you're logged in on", function()
-    SlashCmdList.KINFOLK("forget Brakka")
-    assert.is_not_nil(KinfolkDB.characters["Brakka-Nightfall"])
+    SlashCmdList.EMBERKEEP("forget Brakka")
+    assert.is_not_nil(EmberkeepDB.characters["Brakka-Nightfall"])
   end)
 
   it("answers version, forget and reset", function()
-    KinfolkDB.characters["Quill-Nightfall"] = { name = "Quill", realm = "Nightfall", level = 18 }
-    SlashCmdList.KINFOLK("")
-    SlashCmdList.KINFOLK("version")
-    SlashCmdList.KINFOLK("forget quill")
-    SlashCmdList.KINFOLK("reset")
-    SlashCmdList.KINFOLK("nonsense")
+    EmberkeepDB.characters["Quill-Nightfall"] = { name = "Quill", realm = "Nightfall", level = 18 }
+    SlashCmdList.EMBERKEEP("")
+    SlashCmdList.EMBERKEEP("version")
+    SlashCmdList.EMBERKEEP("forget quill")
+    SlashCmdList.EMBERKEEP("reset")
+    SlashCmdList.EMBERKEEP("nonsense")
     local lines = DEFAULT_CHAT_FRAME.lines
-    assert.truthy(lines[1]:find("Kinfolk:|r version 0.1.0", 1, true), lines[1])
+    assert.truthy(lines[1]:find("Emberkeep:|r version 0.1.0", 1, true), lines[1])
     assert.truthy(lines[2]:find("forgot 1", 1, true))
-    assert.is_nil(KinfolkDB.characters["Quill-Nightfall"])
+    assert.is_nil(EmberkeepDB.characters["Quill-Nightfall"])
   end)
 
   describe("bug reports", function()
     it("opens a report with a prefilled GitHub link and no character names", function()
-      SlashCmdList.KINFOLK("feedback")
+      SlashCmdList.EMBERKEEP("feedback")
       local fw = ns.FeedbackWindow
       assert.is_true(fw.IsShown())
       assert.truthy(fw.url:find("issues/new?template=bug_report.yml&feedback=", 1, true))
@@ -313,14 +313,14 @@ describe("the addon in a stand-in client", function()
       assert.is_true(ns.FeedbackWindow.IsShown())
       state.ctrl = true
       ns.FeedbackWindow.url = nil
-      wow.icons.Kinfolk.obj.OnClick(nil, "LeftButton")
+      wow.icons.Emberkeep.obj.OnClick(nil, "LeftButton")
       assert.is_not_nil(ns.FeedbackWindow.url)
       assert.is_false(ns.MainWindow.IsShown(), "ctrl-click reports a bug instead of opening the window")
     end)
 
     it("notes an event error, offers a report once and still passes it to the game's handler", function()
       ns.Game.Sighting = function()
-        error("Interface/AddOns/Kinfolk/Adapters/Game.lua:40: boom")
+        error("Interface/AddOns/Emberkeep/Adapters/Game.lua:40: boom")
       end
       wow.fire("PLAYER_MONEY")
       wow.fire("PLAYER_MONEY")
@@ -334,7 +334,7 @@ describe("the addon in a stand-in client", function()
     it("notes our errors that reach the game's handler, but not other addons'", function()
       geterrorhandler()("Interface/AddOns/OtherAddon/x.lua:1: not ours")
       assert.are.equal(0, #ns.App.errors)
-      state.stack = "Interface/AddOns/Kinfolk/UI/MainWindow.lua:200: in function"
+      state.stack = "Interface/AddOns/Emberkeep/UI/MainWindow.lua:200: in function"
       geterrorhandler()("attempt to index a nil value")
       assert.are.equal(1, #ns.App.errors)
       assert.are.equal(2, #wow.caught, "both still reach the game's handler")
@@ -365,23 +365,23 @@ describe("the addon in a stand-in client", function()
       wow.install(state)
       local handler = geterrorhandler()
       _G.seterrorhandler = function() end -- BugGrabber blocks it
-      ns = wow.loadToc("Kinfolk/Kinfolk.toc", "Kinfolk")
-      wow.fire("ADDON_LOADED", "Kinfolk")
+      ns = wow.loadToc("Emberkeep/Emberkeep.toc", "Emberkeep")
+      wow.fire("ADDON_LOADED", "Emberkeep")
       assert.are.equal(handler, geterrorhandler())
       assert.are.equal("BugGrabber_BugGrabbed", listeners[1].name)
-      listeners[1].fn("BugGrabber_BugGrabbed", { message = "Interface/AddOns/Kinfolk/UI/X.lua:3: boom" })
+      listeners[1].fn("BugGrabber_BugGrabbed", { message = "Interface/AddOns/Emberkeep/UI/X.lua:3: boom" })
       listeners[1].fn("BugGrabber_BugGrabbed", { message = "Interface/AddOns/Other/x.lua:1: nope" })
       assert.are.equal(1, #ns.App.errors)
       _G.BugGrabber = nil
     end)
 
     it("says it in chat instead when the offer is turned off", function()
-      KinfolkDB.settings.errorPrompt = false
-      state.stack = "Interface/AddOns/Kinfolk/App.lua:1"
+      EmberkeepDB.settings.errorPrompt = false
+      state.stack = "Interface/AddOns/Emberkeep/App.lua:1"
       geterrorhandler()("boom")
       assert.is_false(ns.FeedbackWindow.IsPromptShown())
       local last = DEFAULT_CHAT_FRAME.lines[#DEFAULT_CHAT_FRAME.lines]
-      assert.truthy(last:find("/kinfolk feedback", 1, true))
+      assert.truthy(last:find("/emberkeep feedback", 1, true))
     end)
   end)
 end)
