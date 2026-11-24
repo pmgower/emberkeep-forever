@@ -5,7 +5,9 @@ local _, ns = ...
 local MainWindow = {}
 ns.MainWindow = MainWindow
 
-local ROW_H, TAB_H, TAB_GAP, BAR_W = 18, 20, 4, 80
+local ROW_H, TAB_H, TAB_GAP = 18, 20, 4
+-- A bar column keeps BAR_TEXT px for its "150%" text; the rest is bar, up to BAR_MAX.
+local BAR_TEXT, BAR_MAX = 50, 220
 local GOLD, SILVER, COPPER, DIM = "|cffffd100", "|cffc7c7cf", "|cffeda55f", "|cff8f98a5"
 local BLUE, WARN = "|cff4da6ff", "|cffe0a040"
 -- Bar colors: full (wasting rest), filling in an inn, filling outside.
@@ -48,9 +50,9 @@ local focuses = {
     title = "Rested",
     columns = {
       { "", 20 },
-      { "Character", 140 },
+      { "Character", 140, grow = 2 },
       { "Lvl", 34 },
-      { "Rested", 130 },
+      { "Rested", 130, grow = 1 },
       { "Full in", 64 },
       { "Resting", 70 },
     },
@@ -82,7 +84,13 @@ local focuses = {
   {
     key = "overview",
     title = "Overview",
-    columns = { { "Character", 150 }, { "Lvl", 34 }, { "Gold", 100 }, { "Zone", 130 }, { "Last seen", 90 } },
+    columns = {
+      { "Character", 150, grow = 2 },
+      { "Lvl", 34 },
+      { "Gold", 100 },
+      { "Zone", 130, grow = 1 },
+      { "Last seen", 90 },
+    },
     build = function(db, now)
       local rows, summary = ns.Overview.Build(
         db.characters,
@@ -269,12 +277,19 @@ local function paintTabs()
   end
 end
 
+-- Room the columns can stretch into: none until the player resizes the
+-- window (it fits the table until then), after that the inner width (the
+-- vertical scroll bar sits in the window's padding, outside it).
+local function stretchWidth()
+  if not win.store.size then
+    return 0
+  end
+  return win:ContentWidth() - 4
+end
+
 local function layout(grid)
   local content = win.content
-  local width = 0
-  for _, col in ipairs(active.columns) do
-    width = width + col[2]
-  end
+  local widths, width = ns.Columns.Fit(active.columns, stretchWidth())
   for _, row in pairs(cells) do
     for _, fs in pairs(row) do
       fs:Hide()
@@ -317,16 +332,17 @@ local function layout(grid)
       b:Show()
     end
     for c, text in ipairs(row.cells) do
-      local w = active.columns[c][2]
+      local w = widths[c]
       local fs = cell(r, c)
       local textX, textW = x, w - 6
       if r > 1 and c == active.bar and row.fill then
         local b = bar(r)
         b.track:ClearAllPoints()
         b.track:SetPoint("TOPLEFT", content, "TOPLEFT", x, y - 3)
-        b.track:SetSize(BAR_W, 8)
+        local barW = math.min(BAR_MAX, w - BAR_TEXT) -- the bar grows with its column
+        b.track:SetSize(barW, 8)
         b.track:Show()
-        local fillW = math.floor(BAR_W * math.max(0, math.min(1, row.fill)) + 0.5)
+        local fillW = math.floor(barW * math.max(0, math.min(1, row.fill)) + 0.5)
         if fillW > 0 then
           b.fill:SetColorTexture(row.color[1], row.color[2], row.color[3], 1)
           b.fill:ClearAllPoints()
@@ -334,7 +350,7 @@ local function layout(grid)
           b.fill:SetSize(fillW, 8)
           b.fill:Show()
         end
-        textX, textW = x + BAR_W + 6, w - BAR_W - 12
+        textX, textW = x + barW + 6, w - barW - 12
       end
       fs:ClearAllPoints()
       fs:SetPoint("TOPLEFT", content, "TOPLEFT", textX, y)
