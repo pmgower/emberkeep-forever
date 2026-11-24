@@ -1,0 +1,10 @@
+## Interface: 16001
+## Title: Kinfolk: Forever
+## Notes: Shows which alt to play next for rested XP. Later: every alt's gear, bags, bank and mail.
+## Author: Pheubar
+## Version: 0.1.0
+## SavedVariables: KinfolkDB
+## X-License: MIT
+
+Core\Version.lua
+Adapters\Commands.lua
