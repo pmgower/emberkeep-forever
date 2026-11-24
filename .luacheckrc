@@ -28,4 +28,7 @@ read_globals = {
   "RequestTimePlayed", "NUM_CHAT_WINDOWS",
   -- Location column
   "GetSubZoneText",
+  -- Gear
+  "C_Item", "GetInventoryItemID", "GetInventoryItemLink", "HandleModifiedItemClick", "IsModifiedClick",
+  "ITEM_QUALITY_COLORS",
 }

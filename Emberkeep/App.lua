@@ -15,6 +15,9 @@ function App.DB()
   return ns.db
 end
 
+-- When what the character is wearing is read. Not at logout: it reads empty.
+local GEAR_EVENTS = { PLAYER_LOGIN = true, PLAYER_ENTERING_WORLD = true, PLAYER_EQUIPMENT_CHANGED = true }
+
 local function observe(event, arg1)
   if not ns.db then
     return
@@ -37,6 +40,9 @@ local function observe(event, arg1)
   -- (reads can come back empty); the readings just before are good.
   if key and event ~= "PLAYER_LEVEL_UP" and event ~= "PLAYER_LOGOUT" then
     ns.Rest.Observe(ns.db.characters[key], ns.Game.RestObservation(ns.db.wellRested))
+  end
+  if key and GEAR_EVENTS[event] then
+    ns.Gear.Observe(ns.db.characters[key], ns.Items.Worn(), ns.Game.Now())
   end
   if event == "TIME_PLAYED_MSG" then
     if key then
@@ -77,6 +83,7 @@ frame:RegisterEvent("UPDATE_EXHAUSTION")
 frame:RegisterEvent("PLAYER_UPDATE_RESTING")
 frame:RegisterEvent("TRAIT_CONFIG_UPDATED")
 frame:RegisterEvent("TIME_PLAYED_MSG")
+frame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
 -- The last few errors Emberkeep hit this session, for /emberkeep feedback and
 -- /emberkeep debug. Kept in memory only, never saved.
 App.errors = {}

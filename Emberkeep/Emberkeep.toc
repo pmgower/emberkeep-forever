@@ -25,10 +25,13 @@ Core\Rest.lua
 Core\Played.lua
 Core\RestedView.lua
 Core\Feedback.lua
+Core\Gear.lua
 Adapters\Game.lua
+Adapters\Items.lua
 App.lua
 UI\Window.lua
 UI\MainWindow.lua
+UI\AltPanel.lua
 UI\FeedbackWindow.lua
 UI\MinimapButton.lua
 UI\CharactersPage.lua
