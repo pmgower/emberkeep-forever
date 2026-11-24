@@ -38,6 +38,20 @@ local function observe(event, arg1)
   if key and event ~= "PLAYER_LEVEL_UP" and event ~= "PLAYER_LOGOUT" then
     ns.Rest.Observe(ns.db.characters[key], ns.Game.RestObservation(ns.db.wellRested))
   end
+  if event == "TIME_PLAYED_MSG" then
+    if key then
+      ns.Played.Observe(ns.db.characters[key], arg1, ns.Game.Now())
+    end
+    -- Next frame: a chat window listening again mid-event could still
+    -- print this answer.
+    if C_Timer and C_Timer.After then
+      C_Timer.After(0, ns.Game.PlayedAnswered)
+    else
+      ns.Game.PlayedAnswered()
+    end
+  elseif key and event == "PLAYER_LOGOUT" then
+    ns.Played.Settle(ns.db.characters[key], ns.Game.Now())
+  end
   for _, fn in ipairs(listeners) do
     fn()
   end
@@ -60,6 +74,7 @@ frame:RegisterEvent("PLAYER_XP_UPDATE")
 frame:RegisterEvent("UPDATE_EXHAUSTION")
 frame:RegisterEvent("PLAYER_UPDATE_RESTING")
 frame:RegisterEvent("TRAIT_CONFIG_UPDATED")
+frame:RegisterEvent("TIME_PLAYED_MSG")
 -- The last few errors Emberkeep hit this session, for /emberkeep feedback and
 -- /emberkeep debug. Kept in memory only, never saved.
 App.errors = {}
@@ -146,6 +161,16 @@ local function handle(event, arg1)
     return
   end
   observe(event, arg1)
+  -- Ask for /played once per session (login or /reload), a moment after
+  -- loading so it doesn't land among every other addon's login work.
+  if event == "PLAYER_ENTERING_WORLD" and not App.playedAsked then
+    App.playedAsked = true
+    if C_Timer and C_Timer.After then
+      C_Timer.After(3, ns.Game.RequestPlayed)
+    else
+      ns.Game.RequestPlayed()
+    end
+  end
   -- arg1 is isInitialLogin: true on login, false on /reload and zoning.
   if event == "PLAYER_ENTERING_WORLD" and arg1 == true then
     App.LoginHint()

@@ -14,6 +14,10 @@ local function fakeObject(kind)
           self._scripts[name] = fn
         elseif k == "RegisterEvent" then
           self._events[...] = true
+        elseif k == "UnregisterEvent" then
+          self._events[...] = nil
+        elseif k == "IsEventRegistered" then
+          return self._events[...] == true
         elseif k == "Show" then
           self._shown = true
         elseif k == "Hide" then
@@ -237,6 +241,15 @@ function W.install(state)
   _G.GetBuildInfo = function()
     return "1.60.1", "60000", "Nov 1 2026", 16001
   end
+  -- /played: counts requests; a test answers with W.fire("TIME_PLAYED_MSG", ...).
+  -- ChatFrame1 listens for the answer, like the real chat window.
+  W.playedRequests = 0
+  _G.RequestTimePlayed = function()
+    W.playedRequests = W.playedRequests + 1
+  end
+  _G.NUM_CHAT_WINDOWS = 1
+  _G.ChatFrame1 = fakeObject("ChatFrame")
+  _G.ChatFrame1:RegisterEvent("TIME_PLAYED_MSG")
   _G.GetLocale = function()
     return "enUS"
   end

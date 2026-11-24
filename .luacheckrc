@@ -24,4 +24,6 @@ read_globals = {
   "seterrorhandler", "debugstack", "GetBuildInfo", "GetLocale", "IsControlKeyDown", "C_Timer", "BugSack", "BugGrabber",
   -- Right-click menu
   "MenuUtil",
+  -- Time played
+  "RequestTimePlayed", "NUM_CHAT_WINDOWS",
 }
