@@ -2,7 +2,7 @@
 -- new game API has to add it here, in plain sight.
 std = "lua51"
 max_line_length = 110
-exclude_files = { ".luacheckrc", ".busted" }
+exclude_files = { ".luacheckrc", ".busted", "Kinfolk/Libs/**" }
 ignore = { "212" } -- unused arguments (event handlers often ignore some)
 
 files["spec/**"] = { std = "+busted" }
@@ -14,6 +14,7 @@ globals = { "KinfolkDB", "SLASH_KINFOLK1", "SlashCmdList" }
 read_globals = {
   "C_AddOns", "CreateFrame", "DEFAULT_CHAT_FRAME", "GameTooltip", "GetAddOnMetadata",
   "GetCursorPosition", "GetMoney", "GetRealZoneText", "GetRealmName", "IsMouseButtonDown",
-  "IsShiftKeyDown", "RAID_CLASS_COLORS", "UIParent", "UISpecialFrames", "UnitClass",
+  "IsShiftKeyDown", "LibStub", "MinimalSliderWithSteppersMixin", "CreateSettingsButtonInitializer",
+  "Settings", "RAID_CLASS_COLORS", "UIParent", "UISpecialFrames", "UnitClass",
   "UnitFactionGroup", "UnitLevel", "UnitName", "UnitRace", "issecretvalue", "time", "tinsert",
 }

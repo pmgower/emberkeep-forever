@@ -75,6 +75,64 @@ function W.install(state)
       return field == "Version" and state.version or nil
     end,
   }
+  -- Just enough of the Settings API to build the options page and change values.
+  W.settings = { controls = {}, callbacks = {}, buttons = {} }
+  local function setting(key, tbl)
+    return {
+      SetValueChangedCallback = function(_, fn)
+        W.settings.callbacks[key] = fn
+      end,
+      tbl = tbl,
+    }
+  end
+  _G.Settings = {
+    RegisterVerticalLayoutCategory = function(name)
+      W.settings.name = name
+      return {
+        GetID = function()
+          return 7
+        end,
+      }, {
+        AddInitializer = function(_, init)
+          table.insert(W.settings.buttons, init)
+        end,
+      }
+    end,
+    RegisterAddOnSetting = function(_, _, key, tbl)
+      return setting(key, tbl)
+    end,
+    CreateCheckbox = function(_, s)
+      table.insert(W.settings.controls, s)
+    end,
+    CreateDropdown = function(_, s, options)
+      s.options = options
+      table.insert(W.settings.controls, s)
+    end,
+    CreateControlTextContainer = function()
+      local data = {}
+      return {
+        Add = function(_, value, label)
+          table.insert(data, { value = value, label = label })
+        end,
+        GetData = function()
+          return data
+        end,
+      }
+    end,
+    CreateSlider = function(_, s)
+      table.insert(W.settings.controls, s)
+    end,
+    CreateSliderOptions = function()
+      return { SetLabelFormatter = function() end }
+    end,
+    RegisterAddOnCategory = function() end,
+    OpenToCategory = function(id)
+      W.settings.opened = id
+    end,
+  }
+  _G.CreateSettingsButtonInitializer = function(_, label, onClick)
+    return { label = label, onClick = onClick }
+  end
   -- Values named in state.secret read as hidden from addons.
   _G.issecretvalue = function(v)
     return state.secret ~= nil and v == state.secret
@@ -117,13 +175,40 @@ function W.install(state)
   end
 end
 
+-- Bundled libraries are pinned upstream code, so the smoke test swaps them
+-- for a LibStub that records what our code registers.
+function W.fakeLibs()
+  W.icons = {}
+  local ldb = {
+    NewDataObject = function(_, name, obj)
+      W.icons[name] = { obj = obj, shown = nil }
+      return obj
+    end,
+  }
+  local dbicon = {
+    Register = function(_, name, _, db)
+      W.icons[name].db = db
+    end,
+    Show = function(_, name)
+      W.icons[name].shown = true
+    end,
+    Hide = function(_, name)
+      W.icons[name].shown = false
+    end,
+  }
+  _G.LibStub = function(major)
+    return ({ ["LibDataBroker-1.1"] = ldb, ["LibDBIcon-1.0"] = dbicon })[major]
+  end
+end
+
 -- Loads every file the TOC lists, in order, with one shared namespace.
 function W.loadToc(toc, addonName)
+  W.fakeLibs()
   local ns = {}
   local dir = toc:match("^(.*)/[^/]+$")
   for line in io.lines(toc) do
     line = line:gsub("%s+$", "")
-    if line ~= "" and not line:match("^#") then
+    if line ~= "" and not line:match("^#") and not line:match("^Libs\\") then
       local chunk = assert(loadfile(dir .. "/" .. line:gsub("\\", "/")))
       chunk(addonName, ns)
     end

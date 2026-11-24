@@ -48,7 +48,10 @@ frame:SetScript("OnEvent", function(_, event, arg1)
     if arg1 == addonName then
       KinfolkDB = ns.Store.Ensure(KinfolkDB)
       ns.db = KinfolkDB
+      ns.Settings.Apply(ns.db.settings)
       ns.versionText = ns.Version.Short(metadata("Version"))
+      ns.MinimapButton.Init(ns.db)
+      ns.OptionsPage.Init()
     end
     return
   end
