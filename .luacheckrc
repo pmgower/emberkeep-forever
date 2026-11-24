@@ -1,0 +1,16 @@
+-- Lua 5.1 plus only the WoW API the addon uses. A slice that reaches for a
+-- new game API has to add it here, in plain sight.
+std = "lua51"
+max_line_length = 110
+exclude_files = { ".luacheckrc", ".busted" }
+ignore = { "212" } -- unused arguments (event handlers often ignore some)
+
+files["spec/**"] = { std = "+busted" }
+
+-- Globals the addon creates.
+globals = { "KinfolkDB", "SLASH_KINFOLK1", "SlashCmdList" }
+
+-- WoW API the adapters read. Core/ must not use any of these (scripts/core-purity.sh).
+read_globals = {
+  "C_AddOns", "DEFAULT_CHAT_FRAME", "GetAddOnMetadata",
+}
