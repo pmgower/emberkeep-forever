@@ -1,6 +1,10 @@
 local Bags = dofile("Emberkeep/Core/Bags.lua")
 
-local reading = { items = { { link = "item:1", count = 5 }, { link = "item:2", count = 1 } }, free = 14, total = 16 }
+local reading = {
+  items = { { link = "item:1", count = 5 }, { link = "item:2", count = 1 } },
+  free = 14,
+  total = 16,
+}
 
 describe("Bags.Observe", function()
   it("saves the items, free and total slots with the time", function()
