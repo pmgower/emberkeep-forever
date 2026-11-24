@@ -15,4 +15,10 @@ function Version.Line(title, metadata)
   return string.format("%s %s", title or "Kinfolk", version)
 end
 
+-- The short form the window header shows: "v0.1.0", or "dev".
+function Version.Short(metadata)
+  local version = Version.Line("", metadata):gsub("^%s+", "")
+  return version == "dev" and "dev" or ("v" .. version)
+end
+
 return Version
