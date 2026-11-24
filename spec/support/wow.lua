@@ -229,6 +229,50 @@ function W.install(state)
   _G.IsResting = function()
     return state.resting
   end
+  -- Worn items: state.worn is { [slot id] = { id, name, level, quality } }.
+  -- state.unloaded leaves links out, as just after login.
+  local function item(id)
+    for _, it in pairs(state.worn or {}) do
+      if it.id == id then
+        return it
+      end
+    end
+  end
+  local function idOf(link)
+    return tonumber(tostring(link):match("item:(%d+)"))
+  end
+  _G.GetInventoryItemID = function(_, slot)
+    return state.worn and state.worn[slot] and state.worn[slot].id
+  end
+  _G.GetInventoryItemLink = function(_, slot)
+    local it = state.worn and state.worn[slot]
+    if it and not state.unloaded then
+      return "|cffffffff|Hitem:" .. it.id .. "::|h[" .. it.name .. "]|h|r"
+    end
+  end
+  _G.C_Item = {
+    GetItemInfoInstant = function(link)
+      return idOf(link), nil, nil, "INVTYPE_HEAD", 134400
+    end,
+    GetItemInfo = function(link)
+      local it = item(idOf(link))
+      if it then
+        return it.name, link, it.quality
+      end
+    end,
+    GetDetailedItemLevelInfo = function(link)
+      local it = item(idOf(link))
+      return it and it.level
+    end,
+    RequestLoadItemDataByID = function() end,
+  }
+  W.linked = {}
+  _G.IsModifiedClick = function()
+    return state.shift == true
+  end
+  _G.HandleModifiedItemClick = function(link)
+    table.insert(W.linked, link)
+  end
   _G.IsShiftKeyDown = function()
     return false
   end

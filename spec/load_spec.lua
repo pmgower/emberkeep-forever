@@ -350,6 +350,102 @@ describe("the addon in a stand-in client", function()
     assert.is_nil(EmberkeepDB.characters["Quill-Nightfall"])
   end)
 
+  describe("the alt panel", function()
+    local function drawn(text)
+      for _, f in ipairs(wow.frames) do
+        if f._shown and f._text and tostring(f._text):find(text, 1, true) then
+          return true
+        end
+      end
+      return false
+    end
+    local function row(key)
+      for _, f in ipairs(wow.frames) do
+        if rawget(f, "key") == key and f._scripts.OnClick then
+          return f
+        end
+      end
+    end
+    local function click(key)
+      local r = row(key)
+      r._scripts.OnClick(r, "LeftButton")
+    end
+
+    before_each(function()
+      state.worn = { [1] = { id = 10, name = "Old Cap", level = 12, quality = 1 } }
+      wow.fire("PLAYER_EQUIPMENT_CHANGED", 1, false)
+      EmberkeepDB.characters["Quill-Nightfall"] =
+        { name = "Quill", realm = "Nightfall", level = 18, lastSeen = 1000 }
+      EmberkeepDB.settings.focus = "overview"
+      SlashCmdList.EMBERKEEP("")
+    end)
+
+    it("saves worn gear, and keeps it when a reading comes back empty", function()
+      local gear = EmberkeepDB.characters["Brakka-Nightfall"].gear
+      assert.truthy(gear.slots[1]:find("[Old Cap]", 1, true))
+      state.worn = {}
+      wow.fire("PLAYER_EQUIPMENT_CHANGED", 1, true)
+      wow.fire("PLAYER_LOGOUT")
+      assert.are.equal(gear, EmberkeepDB.characters["Brakka-Nightfall"].gear)
+    end)
+
+    it("keeps the link when the game hasn't loaded it yet", function()
+      local saved = EmberkeepDB.characters["Brakka-Nightfall"].gear.slots[1]
+      state.unloaded = true
+      wow.fire("PLAYER_ENTERING_WORLD", true, false)
+      assert.are.equal(saved, EmberkeepDB.characters["Brakka-Nightfall"].gear.slots[1])
+    end)
+
+    it("opens on a clicked row with its gear, and closes on a second click", function()
+      click("Brakka-Nightfall")
+      assert.are.equal("Brakka-Nightfall", ns.AltPanel.Key())
+      assert.is_true(drawn("Old Cap"))
+      assert.is_true(drawn("16 empty slots, 1 outleveled"))
+      click("Brakka-Nightfall")
+      assert.is_nil(ns.AltPanel.Key())
+    end)
+
+    it("steps through the alts in row order, and says when no gear is saved", function()
+      click("Brakka-Nightfall")
+      ns.AltPanel.Step(1)
+      assert.are.equal("Quill-Nightfall", ns.AltPanel.Key())
+      assert.is_true(drawn("No gear saved yet"))
+      ns.AltPanel.Step(1)
+      assert.are.equal("Brakka-Nightfall", ns.AltPanel.Key())
+    end)
+
+    it("switches to a list and remembers it", function()
+      click("Brakka-Nightfall")
+      for _, f in ipairs(wow.frames) do
+        if rawget(f, "label") and f.label._text == "List" then
+          f._scripts.OnClick(f)
+        end
+      end
+      assert.is_true(EmberkeepDB.settings.gearList)
+      assert.is_true(drawn("Two columns"))
+    end)
+
+    it("links an item on shift-click, and does nothing on a plain click", function()
+      click("Brakka-Nightfall")
+      for _, f in ipairs(wow.frames) do
+        if rawget(f, "link") then
+          f._scripts.OnEnter(f)
+          f._scripts.OnClick(f)
+          state.shift = true
+          f._scripts.OnClick(f)
+        end
+      end
+      assert.are.equal(1, #wow.linked)
+    end)
+
+    it("closes when the alt it shows is removed, and redraws when items load", function()
+      click("Quill-Nightfall")
+      wow.fire("GET_ITEM_INFO_RECEIVED", 10, true)
+      ns.CharactersPage.Remove("Quill-Nightfall")
+      assert.is_nil(ns.AltPanel.Key())
+    end)
+  end)
+
   describe("bug reports", function()
     it("opens a report with a prefilled GitHub link and no character names", function()
       SlashCmdList.EMBERKEEP("feedback")
