@@ -4,7 +4,16 @@
 ## Author: Pheubar
 ## Version: @project-version@
 ## SavedVariables: KinfolkDB
+## IconTexture: Interface\AddOns\Kinfolk\Media\kinfolk
 ## X-License: MIT
 
 Core\Version.lua
+Core\Store.lua
+Core\Roster.lua
+Core\Format.lua
+Core\Overview.lua
+Adapters\Game.lua
+App.lua
+UI\Window.lua
+UI\MainWindow.lua
 Adapters\Commands.lua
