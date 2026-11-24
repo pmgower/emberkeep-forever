@@ -180,6 +180,9 @@ function W:ForwardDrag(child)
   end)
   child:SetScript("OnDragStop", function()
     self.frame:StopMovingOrSizing()
+    if self.frame.SetUserPlaced then
+      self.frame:SetUserPlaced(false)
+    end -- our store owns the position
     self:SavePosition()
     self.moving = false
     self:UpdateScrollBars()
@@ -441,6 +444,9 @@ function W:BuildGrip()
   end)
   grip:SetScript("OnMouseUp", function()
     self.frame:StopMovingOrSizing()
+    if self.frame.SetUserPlaced then
+      self.frame:SetUserPlaced(false)
+    end -- our store owns the position
     local d = self.opts.defaultSize or { 270, 120 }
     self.store.size = { num(self.frame:GetWidth(), d[1]), num(self.frame:GetHeight(), d[2]) }
     self:SavePosition()

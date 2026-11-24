@@ -18,6 +18,14 @@ local commands = {
     if name == "" then
       return say("type /kinfolk forget <name>")
     end
+    local me = ns.Game.Sighting().name
+    if me and me:lower() == name:lower() then
+      return say(
+        "you're logged in on "
+          .. me
+          .. ", so they'd be added straight back. Forget them from another character."
+      )
+    end
     local n = ns.Roster.Forget(ns.db.characters, name)
     say(string.format("forgot %d character(s) named %s", n, name))
     ns.MainWindow.RefreshIfShown()

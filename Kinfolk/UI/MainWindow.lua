@@ -157,6 +157,8 @@ local function buildTabs()
     t:SetWidth(math.max(70, (t.label:GetStringWidth() or 50) + 24))
     t:ClearAllPoints()
     t:SetPoint("TOPLEFT", win.frame, "TOPLEFT", ns.Window.PAD + x, -(ns.Window.HEADER_H + 4))
+    -- Above the scrolling rows, so a row scrolled under the strip can't take the click.
+    t:SetFrameLevel((win.frame:GetFrameLevel() or 1) + 10)
     x = x + t:GetWidth() + TAB_GAP
   end
 end
@@ -268,7 +270,9 @@ local function build()
     end,
   })
   -- Room for the tab strip between the title bar and the table.
-  win.scroll:SetPoint("TOPLEFT", ns.Window.PAD, -(ns.Window.HEADER_H + 4 + TAB_H + 6))
+  local top = -(ns.Window.HEADER_H + 4 + TAB_H + 6)
+  win.scroll:SetPoint("TOPLEFT", ns.Window.PAD, top)
+  win.vbar:SetPoint("TOPRIGHT", -2, top) -- same inset as Window.lua's bars
   tinsert(UISpecialFrames, "KinfolkMainWindow") -- Esc closes it
   win.frame:Hide()
   for _, focus in ipairs(focuses) do
@@ -279,18 +283,31 @@ local function build()
   buildTabs()
 end
 
-function MainWindow.Render()
-  if MainWindow._inRender then
-    return
-  end
-  MainWindow._inRender = true
+local function render()
   local grid, right = active.build(ns.db, ns.Game.Now())
   win:UpdateGrip()
   win:SetRightText(right)
   paintTabs()
   local w, h = layout(grid)
   win:AutoFit(w, h + TAB_H + 6)
+end
+
+-- Resizing calls back into Render while it lays out; the flag stops that
+-- loop, and pcall makes sure one error can't leave the flag stuck on.
+function MainWindow.Render()
+  if MainWindow._inRender then
+    return
+  end
+  MainWindow._inRender = true
+  local ok, err = pcall(render)
   MainWindow._inRender = false
+  if not ok then
+    error(err, 0)
+  end
+end
+
+function MainWindow.IsShown()
+  return win ~= nil and win.frame:IsShown()
 end
 
 function MainWindow.Toggle()
