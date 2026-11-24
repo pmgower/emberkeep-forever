@@ -40,6 +40,17 @@ describe("Roster.Observe", function()
     assert.are.equal(2000, c.lastSeen)
   end)
 
+  it("keeps the subzone with the zone, and clears it on a new zone without one", function()
+    local store = {}
+    Roster.Observe(store, sighting({ subzone = "Valley of Strength" }), 1)
+    local c = store["Brakka-Nightfall"]
+    assert.are.equal("Valley of Strength", c.subzone)
+    Roster.Observe(store, sighting({ zone = "", subzone = "" }), 2) -- logout read
+    assert.are.equal("Valley of Strength", c.subzone)
+    Roster.Observe(store, sighting({ zone = "Durotar", subzone = "" }), 3)
+    assert.is_nil(c.subzone)
+  end)
+
   it("ignores zero gold read while logging out, but not at other times", function()
     local store = {}
     Roster.Observe(store, sighting(), 1)

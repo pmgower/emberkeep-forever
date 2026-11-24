@@ -30,7 +30,8 @@ local function present(v)
   return v ~= nil and v ~= ""
 end
 
--- sighting: { name, realm, class, classFile, race, faction, level, money, zone }
+-- sighting: { name, realm, class, classFile, race, faction, level, money, zone,
+-- subzone }
 -- opts.loggingOut: the sighting was read during logout.
 -- Returns the character's key, or nil when the sighting has no name or realm.
 function Roster.Observe(store, sighting, now, opts)
@@ -54,6 +55,11 @@ function Roster.Observe(store, sighting, now, opts)
     if present(sighting[field]) then
       c[field] = sighting[field]
     end
+  end
+  -- Subzone goes with the zone: a fresh zone read with no subzone clears an
+  -- old one, but an empty logout read keeps both.
+  if present(sighting.zone) then
+    c.subzone = present(sighting.subzone) and sighting.subzone or nil
   end
   if type(sighting.level) == "number" and sighting.level > 0 then
     c.level = sighting.level

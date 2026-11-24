@@ -211,6 +211,9 @@ function W.install(state)
   _G.GetRealZoneText = function()
     return state.zone
   end
+  _G.GetSubZoneText = function()
+    return state.subzone
+  end
   _G.time = function()
     return state.now
   end

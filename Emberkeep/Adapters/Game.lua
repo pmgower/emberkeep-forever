@@ -51,6 +51,7 @@ function Game.Sighting()
     level = plain(UnitLevel("player")),
     money = plain(GetMoney()),
     zone = plain(GetRealZoneText()),
+    subzone = plain(GetSubZoneText and GetSubZoneText()),
   }
 end
 

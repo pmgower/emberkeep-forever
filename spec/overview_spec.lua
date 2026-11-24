@@ -10,18 +10,22 @@ describe("Overview.Build", function()
       { name = "Saelra", realm = "R", classFile = "MAGE", level = 60, money = 12040000 },
       0
     )
-    Roster.Observe(
-      store,
-      { name = "Quill", realm = "R", classFile = "ROGUE", level = 18, money = 36100, zone = "The Barrens" },
-      0
-    )
+    Roster.Observe(store, {
+      name = "Quill",
+      realm = "R",
+      classFile = "ROGUE",
+      level = 18,
+      money = 36100,
+      zone = "The Barrens",
+      subzone = "The Crossroads",
+    }, 0)
     local rows, summary = Overview.Build(store, Roster, Format, 4 * 86400)
     assert.are.equal(2, summary.count)
     assert.are.equal("1,207g", summary.money.gold)
     assert.are.equal("Saelra", rows[1].name)
     assert.are.equal("60", rows[1].level)
     assert.are.equal("Quill", rows[2].name)
-    assert.are.equal("The Barrens", rows[2].zone)
+    assert.are.equal("The Barrens", rows[2].zone) -- the subzone is for the tooltip
     assert.are.equal("4 days ago", rows[2].seen)
   end)
 

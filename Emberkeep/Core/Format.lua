@@ -23,6 +23,15 @@ function Format.Money(copper)
   }
 end
 
+-- Where a character is, zone and subzone together: "Orgrimmar, Valley of
+-- Strength", or just the zone when there's no subzone. nil if never read.
+function Format.Place(c)
+  if c.subzone and c.subzone ~= "" and c.zone and c.subzone ~= c.zone then
+    return c.zone .. ", " .. c.subzone
+  end
+  return c.zone or c.subzone
+end
+
 -- How long ago a timestamp was, in the words the window uses.
 function Format.Ago(then_, now)
   if not then_ then
