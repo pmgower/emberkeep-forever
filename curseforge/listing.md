@@ -41,6 +41,8 @@ seen, in the default Frost Steel scheme, with UI scale and window scale at 100%:
 
 *Formerly Kinfolk: Forever. After updating, log in on each alt once to fill your list again.*
 
+**A home base for all your alts.** Emberkeep keeps track of every character you play, so you can see your whole roster at a glance, whether they're levelling or already at the cap. It starts with rested XP and an overview of every alt, with gear, bags, bank and mail on the way.
+
 **Always know which alt to play next.** Rested XP builds up while you're logged out, but it stops at 150% of a level. Past that, it's wasted. Emberkeep remembers every character you log in on and works out where each one's rested XP is right now. It tells you who to play next and which alts are already full.
 
 It's a small, read-only helper. It never changes your characters, gold or items, and it doesn't talk to other players.
