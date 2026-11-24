@@ -74,6 +74,9 @@ local commands = {
       say("|cffff6060error|r " .. e)
     end
   end,
+  feedback = function()
+    ns.App.OpenFeedback()
+  end,
   options = function()
     ns.OptionsPage.Open()
   end,
@@ -94,5 +97,5 @@ SlashCmdList.KINFOLK = function(input)
   if fn then
     return fn(rest)
   end
-  say("/kinfolk opens the window. Also: options, version, forget <name>, reset")
+  say("/kinfolk opens the window. Also: options, feedback (report a bug), version, forget <name>, reset")
 end

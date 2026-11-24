@@ -20,4 +20,6 @@ read_globals = {
   -- Rested XP (slice 2)
   "C_Traits", "Enum", "GetMaxPlayerLevel", "GetXPExhaustion", "IsResting", "UnitXPMax", "geterrorhandler",
   "GetNormalizedRealmName", "UnitFullName",
+  -- Bug reports
+  "seterrorhandler", "debugstack", "GetBuildInfo", "GetLocale", "IsControlKeyDown", "C_Timer", "BugSack", "BugGrabber",
 }

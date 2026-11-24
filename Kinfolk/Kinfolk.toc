@@ -6,7 +6,7 @@
 ## SavedVariables: KinfolkDB
 ## IconTexture: Interface\AddOns\Kinfolk\Media\kinfolk
 ## X-License: MIT
-## OptionalDeps: LibDBIcon-1.0
+## OptionalDeps: LibDBIcon-1.0, !BugGrabber
 
 Libs\LibStub\LibStub.lua
 Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
@@ -22,10 +22,12 @@ Core\Columns.lua
 Core\Overview.lua
 Core\Rest.lua
 Core\RestedView.lua
+Core\Feedback.lua
 Adapters\Game.lua
 App.lua
 UI\Window.lua
 UI\MainWindow.lua
+UI\FeedbackWindow.lua
 UI\MinimapButton.lua
 UI\OptionsPage.lua
 Adapters\Commands.lua

@@ -60,9 +60,72 @@ frame:RegisterEvent("PLAYER_XP_UPDATE")
 frame:RegisterEvent("UPDATE_EXHAUSTION")
 frame:RegisterEvent("PLAYER_UPDATE_RESTING")
 frame:RegisterEvent("TRAIT_CONFIG_UPDATED")
--- The last few errors Kinfolk hit, for /kinfolk debug. WoW hides Lua errors
--- by default, so the first one in a session is also said once in chat.
+-- The last few errors Kinfolk hit this session, for /kinfolk feedback and
+-- /kinfolk debug. Kept in memory only, never saved.
 App.errors = {}
+
+-- The game's error handler from before ours, so BugSack and the game's own
+-- error popup still see every error first.
+local previousHandler, ourHandler
+-- True while we pass an event error on, so we don't note it a second time.
+local forwarding = false
+
+-- The first error each session offers a bug report (unless that option is
+-- off); later ones are only remembered.
+function App.NoteError(text)
+  ns.Feedback.Remember(App.errors, text)
+  if App.warned then
+    return
+  end
+  App.warned = true
+  local function offer()
+    if ns.db and ns.db.settings.errorPrompt and ns.FeedbackWindow then
+      ns.FeedbackWindow.ShowErrorPrompt(text)
+    else
+      DEFAULT_CHAT_FRAME:AddMessage("|cff9fd0ffKinfolk:|r hit an error. Type /kinfolk feedback to report it.")
+    end
+  end
+  if C_Timer and C_Timer.After then
+    C_Timer.After(0, offer) -- not from inside the error
+  else
+    offer()
+  end
+end
+
+-- Notes an error that reached the game's handler, if it came from our folder.
+local function noteIfOurs(msg, stack)
+  if forwarding then
+    return
+  end
+  pcall(function()
+    if ns.Feedback.IsOurs(msg, stack) then
+      App.NoteError(ns.Feedback.ShortError(msg, stack))
+    end
+  end)
+end
+
+-- Errors from our windows and buttons (outside the event handler below) reach
+-- the game's error handler. BugGrabber (BugSack) owns that handler and blocks
+-- seterrorhandler, but tells listeners about each error it grabs; without it
+-- we chain onto the handler ourselves.
+if BugGrabber and BugGrabber.RegisterCallback then
+  BugGrabber.RegisterCallback(App, "BugGrabber_BugGrabbed", function(_, err)
+    if type(err) == "table" then
+      noteIfOurs(err.message, err.stack)
+    end
+  end)
+elseif geterrorhandler and seterrorhandler then
+  previousHandler = geterrorhandler()
+  ourHandler = function(msg, ...)
+    -- Level 2 starts below this handler, so its own line (in our folder)
+    -- doesn't make every error look like ours.
+    noteIfOurs(msg, debugstack and debugstack(2, 20, 0) or nil)
+    if previousHandler then
+      return previousHandler(msg, ...)
+    end
+  end
+  seterrorhandler(ourHandler)
+end
 
 local function handle(event, arg1)
   if event == "ADDON_LOADED" then
@@ -90,21 +153,13 @@ end
 frame:SetScript("OnEvent", function(_, event, arg1)
   local ok, err = pcall(handle, event, arg1)
   if not ok then
-    local errors = App.errors
-    errors[#errors + 1] = event .. ": " .. tostring(err)
-    if #errors > 5 then
-      table.remove(errors, 1)
-    end
+    App.NoteError(ns.Feedback.ShortError(event .. ": " .. tostring(err)))
     -- Hand it on, so BugSack and the game's own error popup still see it.
     local report = geterrorhandler and geterrorhandler()
     if report then
+      forwarding = true
       pcall(report, err)
-    end
-    if not App.warned then
-      App.warned = true
-      DEFAULT_CHAT_FRAME:AddMessage(
-        "|cff9fd0ffKinfolk:|r hit an error. Type /kinfolk debug and send it to the author."
-      )
+      forwarding = false
     end
   end
 end)
@@ -119,4 +174,80 @@ function App.LoginHint()
   if line then
     ns.Say(line)
   end
+end
+
+-- fn's result, or fallback if it errors: the report has to open even when
+-- the thing being reported is what's broken.
+local function try(fallback, fn, ...)
+  local ok, a, b = pcall(fn, ...)
+  if ok then
+    return a, b
+  end
+  return fallback
+end
+
+-- Everything /kinfolk feedback reports, read from the game. No names.
+function App.FeedbackContext()
+  local db = ns.db or { characters = {}, settings = {} }
+  local client = {}
+  if GetBuildInfo then
+    client.version, client.build, client.date, client.interface = GetBuildInfo()
+  end
+  client.locale = GetLocale and GetLocale() or nil
+  local race, class, faction
+  if UnitRace then
+    race = select(2, UnitRace("player"))
+  end
+  if UnitClass then
+    class = select(2, UnitClass("player"))
+  end
+  if UnitFactionGroup then
+    faction = UnitFactionGroup("player")
+  end
+  local s = try({}, ns.Game.Sighting)
+  local rest = try(nil, ns.Game.RestObservation, db.wellRested)
+  local rows, summary = try({}, function()
+    return ns.RestedView.Build(db.characters, ns, ns.Game.RestContext(db))
+  end)
+  summary = summary or {}
+  local alts = {}
+  for i, r in ipairs(rows) do
+    alts[i] =
+      { level = r.level, class = r.classFile, percent = r.percent, full = r.full, resting = r.resting }
+  end
+  local saved = 0
+  for _ in pairs(db.characters) do
+    saved = saved + 1
+  end
+  return {
+    version = metadata("Version"),
+    client = client,
+    character = {
+      level = s.level,
+      race = race,
+      class = class,
+      faction = faction,
+      realm = s.realm,
+      maxLevel = try(nil, ns.Game.MaxLevel),
+    },
+    rest = rest,
+    wellRested = db.wellRested,
+    settings = db.settings,
+    saved = saved,
+    atMax = summary.atMax,
+    alts = alts,
+    addons = {
+      BugSack = BugSack ~= nil,
+      LibDBIcon = LibStub ~= nil and LibStub("LibDBIcon-1.0", true) ~= nil,
+    },
+    errors = App.errors,
+  }
+end
+
+-- Opens the feedback window. Shared by /kinfolk feedback, the options page,
+-- the minimap button and the error prompt.
+function App.OpenFeedback()
+  local report = ns.Feedback.Report(App.FeedbackContext())
+  local url, prefilled = ns.Feedback.IssueUrl(report)
+  ns.FeedbackWindow.Show(url, report, prefilled)
 end

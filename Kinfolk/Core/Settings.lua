@@ -11,6 +11,7 @@ Settings.DEFAULTS = {
   locked = false,
   theme = "frost",
   scale = 1.0,
+  errorPrompt = true,
 }
 
 Settings.SCALE_MIN, Settings.SCALE_MAX = 0.7, 1.5

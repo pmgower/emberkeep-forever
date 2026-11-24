@@ -74,6 +74,7 @@ Rested XP is only readable on the character you're logged in on. For your other 
 | `/kinfolk forget <name>` | Remove a character you deleted |
 | `/kinfolk reset` | Put the window back in the middle of the screen |
 | `/kinfolk version` | Show the version |
+| `/kinfolk feedback` | Report a bug: a link to a GitHub bug report with your details filled in (also ctrl-click the minimap button) |
 | `/kinfolk debug` | Print what Kinfolk sees, for bug reports |
 
 ## Coming next
