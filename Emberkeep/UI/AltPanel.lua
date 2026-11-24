@@ -1,17 +1,20 @@
--- AltPanel: one alt up close, docked beside the main window. It shows gear
--- now; bags, bank and mail will share it. It's a child of the main window, so
+-- AltPanel: one alt up close, docked beside the main window, with a tab for
+-- gear and one for bags; bank and mail will join them. It's a child of the main window, so
 -- it moves, scales and closes with it.
 local _, ns = ...
 local AltPanel = {}
 ns.AltPanel = AltPanel
 
 local WIDE, NARROW, HEADER_H, PAD = 400, 270, 24, 10
+local TOP = HEADER_H + 24 -- below the tabs
 local SLOT_H, ICON = 34, 28
+local CELL, CELL_GAP = 36, 2
 local DIM, WARN = "|cff8f98a5", "|cffe0a040"
 local QUESTION = "Interface\\Icons\\INV_Misc_QuestionMark"
 
 local win, panel, shownKey
-local buttons = {}
+local buttons, cells, tabs = {}, {}, {}
+local TABS = { { key = "gear", title = "Gear" }, { key = "bags", title = "Bags" } }
 
 local function settings()
   return ns.db.settings
@@ -75,18 +78,26 @@ local function build(window)
   panel.line:SetPoint("TOPRIGHT", -4, -HEADER_H)
   panel.line:SetHeight(1)
   panel.summary = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-  panel.summary:SetPoint("TOPLEFT", PAD, -(HEADER_H + 9))
+  panel.summary:SetPoint("TOPLEFT", PAD, -(TOP + 9))
   panel.view = textButton("", 80, function()
     settings().gearList = not settings().gearList
     AltPanel.Refresh()
   end)
-  panel.view:SetPoint("TOPRIGHT", -PAD, -(HEADER_H + 5))
-  panel.summary:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -(PAD + 86), -(HEADER_H + 9))
+  panel.view:SetPoint("TOPRIGHT", -PAD, -(TOP + 5))
+  panel.summary:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -(PAD + 86), -(TOP + 9))
   panel.summary:SetJustifyH("LEFT")
   panel.summary:SetWordWrap(false)
   panel.asOf = panel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
   panel.asOf:SetPoint("BOTTOMLEFT", PAD, 9)
   panel.asOf:SetJustifyH("LEFT")
+  for i, tab in ipairs(TABS) do
+    local t = textButton(tab.title, 60, function()
+      settings().panelTab = tab.key
+      AltPanel.Refresh()
+    end)
+    t:SetPoint("TOPLEFT", PAD + (i - 1) * 64, -(HEADER_H + 6))
+    tabs[i] = t
+  end
   AltPanel.ApplyTheme()
 end
 
@@ -163,7 +174,7 @@ end
 
 -- Draws the slots and returns how tall they are.
 local function layoutGear(view, list, width)
-  local top = -(HEADER_H + 30)
+  local top = -(TOP + 30)
   if list then
     for i, slot in ipairs(ns.Gear.SLOTS) do
       place(paintSlot(slot.id, view.slots[slot.id]), PAD, top - (i - 1) * SLOT_H, width - PAD * 2)
@@ -178,6 +189,68 @@ local function layoutGear(view, list, width)
     place(paintSlot(id, view.slots[id]), PAD + column + 8, top - (i - 1) * SLOT_H, column)
   end
   return math.max(#ns.Gear.LEFT, #ns.Gear.RIGHT) * SLOT_H
+end
+
+-- An item in the bags grid: icon, quality border, stack count.
+local function cell(i)
+  local b = cells[i]
+  if not b then
+    b = CreateFrame("Button", nil, panel)
+    b:SetSize(CELL, CELL)
+    b.border = b:CreateTexture(nil, "BACKGROUND")
+    b.border:SetAllPoints()
+    b.icon = b:CreateTexture(nil, "ARTWORK")
+    b.icon:SetPoint("TOPLEFT", 1, -1)
+    b.icon:SetPoint("BOTTOMRIGHT", -1, 1)
+    b.count = b:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
+    b.count:SetPoint("BOTTOMRIGHT", -2, 2)
+    b:SetScript("OnEnter", function(self)
+      if self.link then
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetHyperlink(self.link)
+        GameTooltip:Show()
+      end
+    end)
+    b:SetScript("OnLeave", function()
+      GameTooltip:Hide()
+    end)
+    b:SetScript("OnClick", function(self)
+      if self.link then
+        ns.Items.ModifiedClick(self.link)
+      end
+    end)
+    win:ForwardDrag(b)
+    cells[i] = b
+  end
+  return b
+end
+
+-- Items first, then the free slots. Returns how tall the grid is.
+local function layoutBags(view, width)
+  local perRow = math.floor((width - PAD * 2 + CELL_GAP) / (CELL + CELL_GAP))
+  local total = #view.rows + view.free
+  for i = 1, total do
+    local b, row = cell(i), view.rows[i] or {}
+    b.link = row.link or false
+    b.icon:SetTexture(row.link and (row.icon or QUESTION) or nil)
+    b.count:SetText((row.count or 1) > 1 and row.count or "")
+    local r, g, bl = ns.Items.Rgb(row.quality)
+    b.border:SetColorTexture(r or 0.3, g or 0.35, bl or 0.4, row.link and 1 or 0.25)
+    b:ClearAllPoints()
+    local column, line = (i - 1) % perRow, math.floor((i - 1) / perRow)
+    b:SetPoint(
+      "TOPLEFT",
+      panel,
+      "TOPLEFT",
+      PAD + column * (CELL + CELL_GAP),
+      -(TOP + 30) - line * (CELL + CELL_GAP)
+    )
+    b:Show()
+  end
+  for i = total + 1, #cells do
+    cells[i]:Hide()
+  end
+  return math.max(1, math.ceil(total / perRow)) * (CELL + CELL_GAP)
 end
 
 -- To the right of the window, or to its left when the right has no room.
@@ -209,14 +282,24 @@ function AltPanel.Refresh()
   if not c then
     return AltPanel.Close() -- removed while open
   end
-  local list = settings().gearList
+  local bags = settings().panelTab == "bags"
+  local list = settings().gearList and not bags
   local width = list and NARROW or WIDE
   local name = classColored(ns.Roster.DisplayName(c, settings().hideSurnames), c.classFile)
   panel.title:SetText(name .. DIM .. "  " .. tostring(c.level or "?") .. " " .. (c.class or "") .. "|r")
   panel.view.label:SetText(list and "Two columns" or "List")
-  local view = ns.Gear.View(c, ns.Items.Info)
+  AltPanel.PaintTabs()
+  for _, b in pairs(bags and buttons or cells) do
+    b:Hide() -- the other tab's
+  end
+  local view = (bags and ns.Bags or ns.Gear).View(c, ns.Items.Info)
   local height = SLOT_H
-  if view then
+  if view and bags then
+    panel.summary:SetText(ns.Bags.Summary(view))
+    panel.asOf:SetText("Bags as of " .. ns.Format.Ago(view.at, ns.Game.Now()))
+    panel.view:Hide()
+    height = layoutBags(view, width)
+  elseif view then
     panel.summary:SetText(ns.Gear.Summary(view))
     panel.asOf:SetText("Gear as of " .. ns.Format.Ago(view.at, ns.Game.Now()))
     panel.view:Show()
@@ -224,16 +307,38 @@ function AltPanel.Refresh()
     -- one under the mouse would blink its tooltip and drop a click.
     height = layoutGear(view, list, width)
   else
-    for _, b in pairs(buttons) do
+    for _, b in pairs(bags and cells or buttons) do
       b:Hide()
     end
-    panel.summary:SetText(DIM .. "No gear saved yet|r")
+    panel.summary:SetText(DIM .. (bags and "No bags saved yet|r" or "No gear saved yet|r"))
     panel.asOf:SetText("Log in here once to save it.")
     panel.view:Hide()
   end
-  panel:SetSize(width, HEADER_H + 30 + height + 26)
+  panel:SetSize(width, TOP + 30 + height + 26)
   AltPanel.Dock()
   panel:Show()
+end
+
+-- Redraws if the panel is on screen showing this character.
+function AltPanel.RefreshIfShowing(key)
+  if shownKey == key and ns.MainWindow.IsShown() then
+    AltPanel.Refresh()
+  end
+end
+
+function AltPanel.PaintTabs()
+  local e = ns.Window.Current().edge
+  for i, tab in ipairs(TABS) do
+    local on = settings().panelTab == tab.key or (tab.key == "gear" and settings().panelTab ~= "bags")
+    if tabs[i].SetBackdropBorderColor then
+      tabs[i]:SetBackdropBorderColor(e[1], e[2], e[3], on and 1 or 0.35)
+    end
+    if on then
+      tabs[i].label:SetTextColor(0.9, 0.94, 1)
+    else
+      tabs[i].label:SetTextColor(0.56, 0.6, 0.65)
+    end
+  end
 end
 
 function AltPanel.IsShown()
@@ -292,6 +397,7 @@ function AltPanel.ApplyTheme()
       b:SetBackdropBorderColor(e[1], e[2], e[3], 0.5)
     end
   end
+  AltPanel.PaintTabs()
 end
 
 -- Item names and levels load a moment after they're asked for. A panel full

@@ -485,6 +485,38 @@ describe("the addon in a stand-in client", function()
       assert.is_false(ns.MainWindow.IsShown())
     end)
 
+    it("shows bags on their own tab, and keeps the tab while stepping between alts", function()
+      state.bag = { size = 16, [1] = { id = 50, name = "Linen", count = 18 } }
+      wow.fire("BAG_UPDATE_DELAYED")
+      click("Brakka-Nightfall")
+      for _, f in ipairs(wow.frames) do
+        if rawget(f, "label") and f.label._text == "Bags" then
+          f._scripts.OnClick(f)
+        end
+      end
+      assert.is_true(drawn("15 of 16 slots free"))
+      assert.is_true(drawn("18"))
+      ns.AltPanel.Step(1)
+      assert.is_true(drawn("No bags saved yet"))
+      ns.AltPanel.Step(1)
+      state.bag[2] = { id = 51, name = "Wool", count = 4 }
+      wow.fire("BAG_UPDATE_DELAYED")
+      assert.is_true(drawn("14 of 16 slots free"), "the open panel follows the bags")
+    end)
+
+    it("doesn't read bags while zoning or logging out", function()
+      state.bag = { size = 16, [1] = { id = 50, name = "Linen", count = 18 } }
+      wow.fire("BAG_UPDATE_DELAYED")
+      local saved = EmberkeepDB.characters["Brakka-Nightfall"].bags
+      wow.fire("PLAYER_LEAVING_WORLD")
+      state.bag = { size = 16 }
+      wow.fire("BAG_UPDATE_DELAYED")
+      assert.are.equal(saved, EmberkeepDB.characters["Brakka-Nightfall"].bags)
+      wow.fire("PLAYER_ENTERING_WORLD", false, false)
+      wow.fire("BAG_UPDATE_DELAYED")
+      assert.are.equal(16, EmberkeepDB.characters["Brakka-Nightfall"].bags.free)
+    end)
+
     it("reads again until every link has loaded", function()
       local later = {}
       _G.C_Timer = {
