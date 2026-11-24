@@ -49,26 +49,28 @@ function Gear.LinkName(link)
 end
 
 -- reading: { [slot id] = { id = item id, link = item link or nil } }, only the
--- slots with something in them. Saves it on the character, and returns true
--- if anything was saved. An empty reading is ignored: it means the game had
--- nothing to say far more often than that a character took everything off.
+-- slots with something in them. Saves it on the character. Returns whether
+-- anything was saved, and whether a link was missing (so read again shortly).
+-- An empty reading is ignored: it means the game had nothing to say far more
+-- often than that a character took everything off.
 function Gear.Observe(c, reading, now)
   if not next(reading) then
-    return false
+    return false, false
   end
   local old = c.gear and c.gear.slots or {}
-  local slots = {}
+  local slots, missing = {}, false
   for slot, item in pairs(reading) do
     if item.link then
       slots[slot] = item.link
-    elseif Gear.ItemId(old[slot]) == item.id then
-      slots[slot] = old[slot] -- same item, link not loaded yet
     else
-      slots[slot] = "item:" .. tostring(item.id)
+      missing = true
+      -- The same item keeps its saved link until the new one loads.
+      local same = Gear.ItemId(old[slot]) == item.id
+      slots[slot] = same and old[slot] or ("item:" .. tostring(item.id))
     end
   end
   c.gear = { slots = slots, at = now }
-  return true
+  return true, missing
 end
 
 -- What a window shows for a character's gear, or nil if none was ever saved.

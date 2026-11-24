@@ -43,6 +43,15 @@ describe("Gear.Observe", function()
     Gear.Observe(c, { [1] = { id = 12 } }, 900)
     assert.are.equal("item:12", c.gear.slots[1])
   end)
+
+  it("says when a link is missing, so it can be read again", function()
+    local c = {}
+    local _, missing = Gear.Observe(c, { [1] = { id = 12 } }, 900)
+    assert.is_true(missing)
+    _, missing = Gear.Observe(c, { [1] = { id = 12, link = link(12, "Hood") } }, 902)
+    assert.is_false(missing)
+    assert.are.equal(link(12, "Hood"), c.gear.slots[1])
+  end)
 end)
 
 describe("Gear.View", function()

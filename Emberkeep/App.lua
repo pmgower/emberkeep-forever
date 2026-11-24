@@ -18,6 +18,24 @@ end
 -- When what the character is wearing is read. Not at logout: it reads empty.
 local GEAR_EVENTS = { PLAYER_LOGIN = true, PLAYER_ENTERING_WORLD = true, PLAYER_EQUIPMENT_CHANGED = true }
 
+-- Just after login or an equip the game can know an item before its link, so
+-- read again a few times until every link is in.
+local RETRY_SECONDS, RETRIES = 2, 5
+
+local function readGear(key, tries)
+  local c = ns.db.characters[key]
+  if not c then
+    return
+  end
+  local _, missing = ns.Gear.Observe(c, ns.Items.Worn(), ns.Game.Now())
+  if missing and tries > 0 and C_Timer and C_Timer.After then
+    C_Timer.After(RETRY_SECONDS, function()
+      readGear(key, tries - 1)
+      ns.MainWindow.RefreshIfShown()
+    end)
+  end
+end
+
 local function observe(event, arg1)
   if not ns.db then
     return
@@ -42,7 +60,7 @@ local function observe(event, arg1)
     ns.Rest.Observe(ns.db.characters[key], ns.Game.RestObservation(ns.db.wellRested))
   end
   if key and GEAR_EVENTS[event] then
-    ns.Gear.Observe(ns.db.characters[key], ns.Items.Worn(), ns.Game.Now())
+    readGear(key, RETRIES)
   end
   if event == "TIME_PLAYED_MSG" then
     if key then
