@@ -22,4 +22,6 @@ read_globals = {
   "GetNormalizedRealmName", "UnitFullName",
   -- Bug reports
   "seterrorhandler", "debugstack", "GetBuildInfo", "GetLocale", "IsControlKeyDown", "C_Timer", "BugSack", "BugGrabber",
+  -- Right-click menu
+  "MenuUtil",
 }

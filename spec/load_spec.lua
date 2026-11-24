@@ -275,6 +275,29 @@ describe("the addon in a stand-in client", function()
     assert.truthy(last:find("removed Quill", 1, true), last)
   end)
 
+  it("removes a character from the window's right-click menu", function()
+    EmberkeepDB.characters["Quill-Nightfall"] =
+      { name = "Quill", realm = "Nightfall", level = 18, lastSeen = 1000 }
+    EmberkeepDB.settings.focus = "overview"
+    SlashCmdList.EMBERKEEP("")
+    local quillRow, brakkaRow
+    for _, f in ipairs(wow.frames) do
+      if f.key == "Quill-Nightfall" and f._scripts.OnClick then
+        quillRow = f
+      elseif f.key == "Brakka-Nightfall" and f._scripts.OnClick then
+        brakkaRow = f
+      end
+    end
+    brakkaRow._scripts.OnClick(brakkaRow, "RightButton")
+    assert.is_nil(wow.menu.buttons.Remove, "no Remove for the character you're on")
+    quillRow._scripts.OnClick(quillRow, "LeftButton")
+    assert.are.equal(brakkaRow, wow.menu.owner, "left-click opens no menu")
+    quillRow._scripts.OnClick(quillRow, "RightButton")
+    assert.are.same({ "Quill" }, wow.menu.titles)
+    wow.menu.buttons.Remove()
+    assert.is_nil(EmberkeepDB.characters["Quill-Nightfall"])
+  end)
+
   it("won't remove the logged-in character", function()
     assert.is_false(ns.CharactersPage.Remove("Brakka-Nightfall"))
     assert.is_not_nil(EmberkeepDB.characters["Brakka-Nightfall"])

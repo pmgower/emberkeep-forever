@@ -160,6 +160,22 @@ function W.install(state)
       W.settings.opened = id
     end,
   }
+  -- Context menus: records the last one opened, with its titles and buttons.
+  W.menu = nil
+  _G.MenuUtil = {
+    CreateContextMenu = function(owner, generator)
+      local menu = { owner = owner, titles = {}, buttons = {} }
+      generator(owner, {
+        CreateTitle = function(_, text)
+          table.insert(menu.titles, text)
+        end,
+        CreateButton = function(_, text, fn)
+          menu.buttons[text] = fn
+        end,
+      })
+      W.menu = menu
+    end,
+  }
   _G.CreateSettingsButtonInitializer = function(name, label, onClick)
     return { name = name, label = label, onClick = onClick }
   end
