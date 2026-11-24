@@ -6,29 +6,31 @@ ns = ns or {}
 local RestedView = {}
 ns.RestedView = RestedView
 
--- rows: rank, key, name, classFile, level, percent (whole number), fill (0 to
--- 1 of the cap), full, fullIn ("Full" or "1d 18h"), resting.
--- summary: levelling, atMax, full (how many are full), next (the top row that
--- isn't the character you're on, or nil).
-function RestedView.Build(store, deps, maxLevel, now, currentKey)
+-- ctx: maxLevel, now, currentKey (the character you're on), wellRested (the
+-- account's Well Rested rank, if known).
+-- rows: rank, key, name, classFile, level, percent (whole number, rounded
+-- down until full so 150% always means full), fill (0 to 1 of the cap), full,
+-- fullIn ("Full" or "1d 18h"), fullAt, resting.
+-- summary: levelling (rows shown), atMax, full (how many are full), next (the
+-- top row that isn't the character you're on and has rested XP, or nil).
+function RestedView.Build(store, deps, ctx)
   local characters = deps.Roster.Characters(store)
   local rows, summary = {}, { levelling = 0, atMax = 0, full = 0 }
   for _, c in ipairs(characters) do
-    if (c.level or 0) >= maxLevel then
+    if (c.level or 0) >= ctx.maxLevel then
       summary.atMax = summary.atMax + 1
-    else
-      summary.levelling = summary.levelling + 1
     end
   end
-  for i, ranked in ipairs(deps.Rest.Ranking(characters, maxLevel, now)) do
-    local c, p = ranked.character, ranked.projection
+  local ranked = deps.Rest.Ranking(characters, ctx.maxLevel, ctx.now, ctx.wellRested)
+  for i, entry in ipairs(ranked) do
+    local c, p = entry.character, entry.projection
     local row = {
       rank = i,
       key = c.key,
       name = c.name,
       classFile = c.classFile,
       level = tostring(c.level or "?"),
-      percent = math.floor(p.percent + 0.5),
+      percent = p.full and math.floor(p.percent + 0.5) or math.floor(p.percent),
       fill = p.cap > 0 and p.rested / p.cap or 0,
       full = p.full,
       fullIn = p.full and "Full" or deps.Format.Duration(p.secondsToFull),
@@ -39,10 +41,11 @@ function RestedView.Build(store, deps, maxLevel, now, currentKey)
     if p.full then
       summary.full = summary.full + 1
     end
-    if not summary.next and row.key ~= currentKey then
+    if not summary.next and row.key ~= ctx.currentKey and row.percent >= 1 then
       summary.next = row
     end
   end
+  summary.levelling = #rows
   return rows, summary
 end
 
@@ -59,7 +62,7 @@ end
 function RestedView.CountText(rows, summary)
   local filling = #rows - summary.full
   if #rows == 0 then
-    return "No alts below max level yet"
+    return "No levelling alts seen yet"
   end
   local parts = {}
   if summary.full > 0 then
@@ -74,7 +77,7 @@ end
 -- The login line, or nil when nobody else has rested XP worth mentioning.
 function RestedView.HintText(summary)
   local top = summary.next
-  if not top or top.percent < 1 then
+  if not top then
     return nil
   end
   return string.format("play next %s (%d%% rested%s)", top.name, top.percent, top.full and ", full" or "")

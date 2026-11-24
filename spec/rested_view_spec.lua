@@ -20,6 +20,14 @@ local function rest(over)
   return r
 end
 
+local function ctx(over)
+  local c = { maxLevel = 60, now = NOW }
+  for k, v in pairs(over or {}) do
+    c[k] = v
+  end
+  return c
+end
+
 local function store()
   local s = {}
   alt(s, "Brakka", 34, rest()) -- full
@@ -31,7 +39,7 @@ end
 
 describe("RestedView.Build", function()
   it("ranks the levelling alts and leaves max level out", function()
-    local rows, summary = RestedView.Build(store(), deps, 60, NOW)
+    local rows, summary = RestedView.Build(store(), deps, ctx())
     local names = {}
     for _, r in ipairs(rows) do
       names[#names + 1] = r.rank .. " " .. r.name
@@ -41,7 +49,7 @@ describe("RestedView.Build", function()
   end)
 
   it("gives each row its percent, bar fill and time to full", function()
-    local rows = RestedView.Build(store(), deps, 60, NOW)
+    local rows = RestedView.Build(store(), deps, ctx())
     assert.are.equal(150, rows[1].percent)
     assert.are.equal(1, rows[1].fill)
     assert.are.equal("Full", rows[1].fullIn)
@@ -51,26 +59,46 @@ describe("RestedView.Build", function()
     assert.is_false(rows[3].resting)
   end)
 
+  it("uses the account's Well Rested rank for every alt", function()
+    local rows = RestedView.Build(store(), deps, ctx({ wellRested = 5 }))
+    assert.are.equal(180, rows[1].percent) -- Brakka's cap is 150% x 1.2
+  end)
+
+  it("rounds down until full, so 150% always means full", function()
+    local s = {}
+    alt(s, "Elowen", 41, rest({ rested = 14960, at = NOW })) -- 149.6%
+    local rows = RestedView.Build(s, deps, ctx())
+    assert.are.equal(149, rows[1].percent)
+    assert.is_false(rows[1].full)
+  end)
+
+  it("counts only alts it has a reading for as levelling", function()
+    local s = store()
+    s["New-Nightfall"] = { name = "New", realm = "Nightfall", level = 5 }
+    local _, summary = RestedView.Build(s, deps, ctx())
+    assert.are.equal(3, summary.levelling)
+  end)
+
   it("skips the character you're on when picking who to play next", function()
-    local _, summary = RestedView.Build(store(), deps, 60, NOW, "Brakka-Nightfall")
+    local _, summary = RestedView.Build(store(), deps, ctx({ currentKey = "Brakka-Nightfall" }))
     assert.are.equal("Elowen", summary.next.name)
   end)
 end)
 
 describe("RestedView text", function()
   it("sums up the title bar and the minimap tooltip", function()
-    local rows, summary = RestedView.Build(store(), deps, 60, NOW)
+    local rows, summary = RestedView.Build(store(), deps, ctx())
     assert.are.equal("3 levelling · 1 at max", RestedView.RightText(summary))
     assert.are.equal("1 alt full, 2 still resting", RestedView.CountText(rows, summary))
-    assert.are.equal("No alts below max level yet", RestedView.CountText({}, { full = 0 }))
+    assert.are.equal("No levelling alts seen yet", RestedView.CountText({}, { full = 0 }))
   end)
 
   it("names who to play next on login, or stays quiet", function()
-    local _, summary = RestedView.Build(store(), deps, 60, NOW)
+    local _, summary = RestedView.Build(store(), deps, ctx())
     assert.are.equal("play next Brakka (150% rested, full)", RestedView.HintText(summary))
     local quiet = {}
     alt(quiet, "Morvain", 27, rest({ at = NOW }))
-    local _, s2 = RestedView.Build(quiet, deps, 60, NOW)
+    local _, s2 = RestedView.Build(quiet, deps, ctx())
     assert.is_nil(RestedView.HintText(s2))
   end)
 end)
