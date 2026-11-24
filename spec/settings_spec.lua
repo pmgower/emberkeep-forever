@@ -16,6 +16,12 @@ describe("Settings.Apply", function()
     assert.are.equal(1.2, s.scale)
   end)
 
+  it("swaps a color scheme the window doesn't have for the default", function()
+    local keys = { frost = true, twilight = true }
+    assert.are.equal("frost", Settings.Apply({ theme = "gone" }, keys).theme)
+    assert.are.equal("twilight", Settings.Apply({ theme = "twilight" }, keys).theme)
+  end)
+
   it("pulls a broken or out-of-range scale back in range", function()
     assert.are.equal(0.7, Settings.Apply({ scale = 0 }).scale)
     assert.are.equal(1.5, Settings.Apply({ scale = 9 }).scale)

@@ -14,12 +14,16 @@ Settings.DEFAULTS = {
 Settings.SCALE_MIN, Settings.SCALE_MAX = 0.7, 1.5
 
 -- Fills in any option the player hasn't set and pulls bad values back in
--- range, so the windows never read a nil or a scale of 0.
-function Settings.Apply(settings)
+-- range, so the windows never read a nil or a scale of 0. themeKeys is a set
+-- of the color schemes the window has; an unknown one falls back to the default.
+function Settings.Apply(settings, themeKeys)
   for key, value in pairs(Settings.DEFAULTS) do
     if settings[key] == nil or type(settings[key]) ~= type(value) then
       settings[key] = value
     end
+  end
+  if themeKeys and not themeKeys[settings.theme] then
+    settings.theme = Settings.DEFAULTS.theme
   end
   settings.scale = math.max(Settings.SCALE_MIN, math.min(Settings.SCALE_MAX, settings.scale))
   return settings
