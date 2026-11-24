@@ -466,6 +466,9 @@ local function build()
         MainWindow.Render()
       end
     end,
+    onMove = function()
+      ns.AltPanel.Dock()
+    end,
     onTheme = function()
       ns.AltPanel.ApplyTheme()
       if tabs[1] then

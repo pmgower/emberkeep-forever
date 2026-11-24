@@ -43,6 +43,7 @@ end
 local function changed()
   ns.MinimapButton.Apply(ns.db)
   ns.MainWindow.ApplySettings()
+  ns.MainWindow.RefreshIfShown()
 end
 
 local function addTheme(cat)
