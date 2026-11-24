@@ -22,4 +22,8 @@ jobs:
         run: |
           v="${GITHUB_REF_NAME#v}"
           head -n 1 CHANGELOG.md | grep -qx "## $v" || { echo "CHANGELOG.md must start with '## $v'"; exit 1; }
+      - name: TOC has a CurseForge project id
+        run: |
+          grep -q '^## X-Curse-Project-ID: [0-9]' Kinfolk/Kinfolk.toc \
+            || { echo "Add '## X-Curse-Project-ID: <id>' to Kinfolk/Kinfolk.toc, or the packager skips CurseForge"; exit 1; }
       - uses: BigWigsMods/packager@v2

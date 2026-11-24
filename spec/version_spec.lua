@@ -9,4 +9,8 @@ describe("Version.Line", function()
     assert.are.equal("Kinfolk: Forever dev", Version.Line("Kinfolk: Forever", nil))
     assert.are.equal("Kinfolk: Forever dev", Version.Line("Kinfolk: Forever", ""))
   end)
+
+  it("reads dev for an unpackaged checkout", function()
+    assert.are.equal("Kinfolk: Forever dev", Version.Line("Kinfolk: Forever", "@project-version@"))
+  end)
 end)

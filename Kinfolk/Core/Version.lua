@@ -4,10 +4,14 @@ ns = ns or {}
 local Version = {}
 ns.Version = Version
 
--- metadata is whatever the TOC reported; anything missing reads "dev" so a
--- checkout run straight from git still says something useful.
+-- metadata is whatever the TOC reported. The packager swaps @project-version@
+-- for the tag; a checkout run straight from git still has the token, or nothing,
+-- and reads "dev".
 function Version.Line(title, metadata)
-  local version = metadata and metadata ~= "" and metadata or "dev"
+  local version = "dev"
+  if metadata and metadata ~= "" and not metadata:match("^@.*@$") then
+    version = metadata
+  end
   return string.format("%s %s", title or "Kinfolk", version)
 end
 
