@@ -1,7 +1,6 @@
 # CurseForge listing: copy and paste
 
-Written for the rename from Kinfolk to **Emberkeep**. The 0.1.0 screenshots still show "Kinfolk" in the title bar, so retake them with the next release. Paste everything below the "Description" line into the
-project's **Description** field (CurseForge accepts Markdown).
+Paste everything below the "Description" line into the project's **Description** field (CurseForge accepts Markdown).
 
 **Logo:** `curseforge/emberkeep-logo.png` (400x400).
 
@@ -38,8 +37,6 @@ seen, in the default Frost Steel scheme, with UI scale and window scale at 100%:
 ## Description
 
 # Emberkeep: Forever
-
-*Formerly Kinfolk: Forever. After updating, log in on each alt once to fill your list again.*
 
 **A home base for all your alts.** Emberkeep keeps track of every character you play, so you can see your whole roster at a glance, whether they're levelling or already at the cap. It starts with rested XP and an overview of every alt, with gear, bags, bank and mail on the way.
 
