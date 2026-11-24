@@ -166,6 +166,9 @@ local function tooltip(owner, key)
   if levelling and key == nextKey and ns.Rest.Project(c.rest, now, ns.db.wellRested).full then
     GameTooltip:AddLine("Rested XP past full is wasted: play " .. shown .. " next.", 0.62, 0.82, 1, true)
   end
+  if MenuUtil and key ~= ns.Game.CurrentKey() then
+    GameTooltip:AddLine("Right-click to remove", 0.56, 0.6, 0.65)
+  end
   GameTooltip:Show()
 end
 
@@ -207,8 +210,29 @@ local function bar(r)
   return b
 end
 
--- An invisible button per row for the hover tooltip; it forwards drags so the
--- window still moves when grabbed by a row.
+-- Right-click on a character's row: a menu with Remove. The All characters
+-- row has no key, so it gets none.
+local function rowMenu(owner)
+  local key = owner.key
+  local c = key and ns.db.characters[key]
+  if not (c and MenuUtil and MenuUtil.CreateContextMenu) then
+    return
+  end
+  GameTooltip:Hide()
+  MenuUtil.CreateContextMenu(owner, function(_, root)
+    root:CreateTitle(ns.Roster.DisplayName(c))
+    if key == ns.Game.CurrentKey() then
+      root:CreateTitle("You're on this character")
+    else
+      root:CreateButton("Remove", function()
+        ns.CharactersPage.Remove(key)
+      end)
+    end
+  end)
+end
+
+-- An invisible button per row for the hover tooltip and right-click menu; it
+-- forwards drags so the window still moves when grabbed by a row.
 local function hover(r)
   local b = hovers[r]
   if not b then
@@ -221,6 +245,12 @@ local function hover(r)
     end)
     b:SetScript("OnLeave", function()
       GameTooltip:Hide()
+    end)
+    b:RegisterForClicks("RightButtonUp")
+    b:SetScript("OnClick", function(self, button)
+      if button == "RightButton" then
+        rowMenu(self)
+      end
     end)
     win:ForwardDrag(b)
     hovers[r] = b
