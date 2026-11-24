@@ -11,7 +11,7 @@ seen, in the default Frost Steel scheme, with UI scale and window scale at 100%:
    filling in an inn (green) and one is outside (orange). File: `emberkeep-rested-screenshot-001.png`
 2. **Row tooltip:** hover the top row (a full alt) so the tooltip shows Rested, Full for, Well
    Rested, Last zone (inn) and "play … next". File: `emberkeep-tooltip-screenshot-001.png`
-3. **Overview tab:** every alt with level, gold, zone and last seen, plus the All characters total row.
+3. **Overview tab:** every alt with level, time played, gold, zone and last seen, plus the All characters total row.
    File: `emberkeep-overview-screenshot-001.png`
 4. **Minimap button tooltip:** hover the keep tower button to show "Play next" and the counts.
    File: `emberkeep-minimap-screenshot-001.png`
@@ -52,7 +52,7 @@ It's a small, read-only helper. It never changes your characters, gold or items,
   * **Bars:** each alt has one, coloured blue when full and rested XP is going to waste, green when filling in an inn, and orange when filling outside.
   * **Full in:** time until each alt is full.
   * Max-level alts are left out.
-* **Overview tab**: every character with level, gold, zone and when you last played them, plus your **total gold** across all of them.
+* **Overview tab**: every character with level, time played, gold, zone and when you last played them, plus your **total gold** and **total time played** across all of them.
 * **Row tooltips**: rested %, when it fills (or how long it has been full), your Well Rested rank, and where you logged out.
 * **Minimap button**: hover for "Play next" and a count of full alts. Left-click toggles the window and right-click opens the options.
 * **Login reminder**: one chat line when you log in, naming who to play next. You can turn it off.
