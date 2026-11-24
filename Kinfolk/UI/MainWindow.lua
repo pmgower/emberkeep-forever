@@ -269,6 +269,7 @@ local function build()
       end
     end,
   })
+  MainWindow.ApplySettings()
   -- Room for the tab strip between the title bar and the table.
   local top = -(ns.Window.HEADER_H + 4 + TAB_H + 6)
   win.scroll:SetPoint("TOPLEFT", ns.Window.PAD, top)
@@ -308,6 +309,16 @@ end
 
 function MainWindow.IsShown()
   return win ~= nil and win.frame:IsShown()
+end
+
+-- Theme, scale and lock from the options page.
+function MainWindow.ApplySettings()
+  if not win then
+    return
+  end
+  ns.Window.SetTheme(settings().theme)
+  win.frame:SetScale(settings().scale)
+  win:UpdateGrip()
 end
 
 function MainWindow.Toggle()

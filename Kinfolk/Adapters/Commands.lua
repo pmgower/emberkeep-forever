@@ -30,6 +30,9 @@ local commands = {
     say(string.format("forgot %d character(s) named %s", n, name))
     ns.MainWindow.RefreshIfShown()
   end,
+  options = function()
+    ns.OptionsPage.Open()
+  end,
   reset = function()
     ns.Window.ResetAll()
     say("window moved back to the middle of the screen")
@@ -47,5 +50,5 @@ SlashCmdList.KINFOLK = function(input)
   if fn then
     return fn(rest)
   end
-  say("/kinfolk opens the window. Also: version, forget <name>, reset")
+  say("/kinfolk opens the window. Also: options, version, forget <name>, reset")
 end

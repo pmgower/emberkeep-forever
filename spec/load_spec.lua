@@ -66,6 +66,45 @@ describe("the addon in a stand-in client", function()
     assert.are.equal("Orgrimmar", KinfolkDB.characters["Brakka-Nightfall"].zone)
   end)
 
+  it("shows the minimap button and hides it when the option is off", function()
+    local button = wow.icons.Kinfolk
+    assert.is_true(button.shown)
+    KinfolkDB.settings.minimapButton = false
+    ns.MinimapButton.Apply(KinfolkDB)
+    assert.is_false(button.shown)
+    assert.is_true(button.db.hide)
+  end)
+
+  it("opens the window from a minimap left-click", function()
+    wow.icons.Kinfolk.obj.OnClick(nil, "LeftButton")
+    assert.is_true(ns.MainWindow.IsShown())
+  end)
+
+  it("builds the options page and applies a changed color scheme and scale", function()
+    assert.are.equal("Kinfolk", wow.settings.name)
+    assert.are.equal(5, #wow.settings.controls) -- 2 checkboxes, scheme, scale, character
+    SlashCmdList.KINFOLK("")
+    KinfolkDB.settings.theme = "twilight"
+    wow.settings.callbacks.theme()
+    assert.are.equal("twilight", ns.Window.Current().key)
+    wow.fire("PLAYER_MONEY")
+    SlashCmdList.KINFOLK("options")
+    assert.are.equal(7, wow.settings.opened)
+  end)
+
+  it("forgets a character picked on the options page", function()
+    KinfolkDB.characters["Quill-Nightfall"] = { name = "Quill", realm = "Nightfall", level = 18 }
+    local picker = wow.settings.controls[5]
+    local names = {}
+    for _, o in ipairs(picker.options()) do
+      names[#names + 1] = o.value
+    end
+    assert.are.same({ "Brakka", "Quill" }, names)
+    picker.tbl.forget = "Quill"
+    wow.settings.buttons[1].onClick()
+    assert.is_nil(KinfolkDB.characters["Quill-Nightfall"])
+  end)
+
   it("won't forget the character you're logged in on", function()
     SlashCmdList.KINFOLK("forget Brakka")
     assert.is_not_nil(KinfolkDB.characters["Brakka-Nightfall"])
