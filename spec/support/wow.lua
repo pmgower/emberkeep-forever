@@ -266,6 +266,24 @@ function W.install(state)
     end,
     RequestLoadItemDataByID = function() end,
   }
+  -- The backpack: state.bag is { size, [slot] = { id, name, count } }.
+  _G.C_Container = {
+    GetContainerNumSlots = function(bag)
+      return bag == 0 and state.bag and state.bag.size or 0
+    end,
+    GetContainerNumFreeSlots = function(bag)
+      local used = 0
+      for slot in pairs(bag == 0 and state.bag or {}) do
+        used = used + (type(slot) == "number" and 1 or 0)
+      end
+      return bag == 0 and state.bag and state.bag.size - used or 0, 0
+    end,
+    GetContainerItemInfo = function(_, slot)
+      local it = state.bag and state.bag[slot]
+      local link = it and ("|Hitem:" .. it.id .. "::|h[" .. it.name .. "]|h")
+      return it and { itemID = it.id, hyperlink = link, stackCount = it.count }
+    end,
+  }
   W.linked = {}
   _G.IsModifiedClick = function()
     return state.shift == true

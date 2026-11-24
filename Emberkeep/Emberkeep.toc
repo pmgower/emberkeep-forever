@@ -26,6 +26,7 @@ Core\Played.lua
 Core\RestedView.lua
 Core\Feedback.lua
 Core\Gear.lua
+Core\Bags.lua
 Adapters\Game.lua
 Adapters\Items.lua
 App.lua

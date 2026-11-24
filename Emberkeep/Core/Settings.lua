@@ -12,6 +12,7 @@ Settings.DEFAULTS = {
   theme = "frost",
   scale = 1.0,
   errorPrompt = true,
+  panelTab = "gear", -- the alt panel's open tab
   gearList = false, -- gear as one list instead of two columns
 }
 
