@@ -4,6 +4,7 @@ local addonName, ns = ...
 local function say(text)
   DEFAULT_CHAT_FRAME:AddMessage("|cff9fd0ffKinfolk:|r " .. text)
 end
+ns.Say = say
 
 local function metadata(field)
   local get = (C_AddOns and C_AddOns.GetAddOnMetadata) or GetAddOnMetadata

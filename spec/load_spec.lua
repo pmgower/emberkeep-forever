@@ -84,9 +84,20 @@ describe("the addon in a stand-in client", function()
     assert.are.equal("Kinfolk", wow.settings.name)
     assert.are.equal(5, #wow.settings.controls) -- 2 checkboxes, scheme, scale, character
     SlashCmdList.KINFOLK("")
-    KinfolkDB.settings.theme = "twilight"
-    wow.settings.callbacks.theme()
+    local theme = wow.settings.controls[3]
+    theme:SetValue("twilight")
     assert.are.equal("twilight", ns.Window.Current().key)
+    wow.settings.controls[4]:SetValue(1.5)
+    local scaled
+    for _, f in ipairs(wow.frames) do
+      if f._scale == 1.5 then
+        scaled = f
+      end
+    end
+    assert.is_not_nil(scaled, "the window should take the new scale")
+    -- Centre 600,400 at scale 1 is 400,266.7 at scale 1.5: same spot on screen.
+    assert.are.equal("CENTER", scaled._point[1])
+    assert.are.equal(400, scaled._point[4])
     wow.fire("PLAYER_MONEY")
     SlashCmdList.KINFOLK("options")
     assert.are.equal(7, wow.settings.opened)
@@ -99,10 +110,18 @@ describe("the addon in a stand-in client", function()
     for _, o in ipairs(picker.options()) do
       names[#names + 1] = o.value
     end
-    assert.are.same({ "Brakka", "Quill" }, names)
-    picker.tbl.forget = "Quill"
+    assert.are.same({ "Brakka-Nightfall", "Quill-Nightfall" }, names)
+    picker:SetValue("Quill-Nightfall")
     wow.settings.buttons[1].onClick()
     assert.is_nil(KinfolkDB.characters["Quill-Nightfall"])
+    assert.are.equal("", picker.tbl.forget, "the picker should clear after a forget")
+  end)
+
+  it("won't forget the logged-in character from the options page", function()
+    local picker = wow.settings.controls[5]
+    picker:SetValue("Brakka-Nightfall")
+    wow.settings.buttons[1].onClick()
+    assert.is_not_nil(KinfolkDB.characters["Brakka-Nightfall"])
   end)
 
   it("won't forget the character you're logged in on", function()

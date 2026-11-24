@@ -37,7 +37,18 @@ local function fakeObject(kind)
         elseif k == "GetStringWidth" then
           return 40
         elseif k == "GetPoint" then
+          if self._point then
+            return unpack(self._point)
+          end
           return "CENTER", nil, "CENTER", 0, 0
+        elseif k == "SetPoint" then
+          self._point = { ... }
+        elseif k == "SetScale" then
+          self._scale = ...
+        elseif k == "GetScale" then
+          return self._scale or 1
+        elseif k == "GetCenter" then
+          return 600, 400
         elseif k:match("^Create") then
           local child = fakeObject(k)
           table.insert(W.frames, child)
@@ -76,11 +87,20 @@ function W.install(state)
     end,
   }
   -- Just enough of the Settings API to build the options page and change values.
-  W.settings = { controls = {}, callbacks = {}, buttons = {} }
+  -- Like the real one, it refuses a variable name used twice or a default of
+  -- the wrong type, and SetValue writes the table and runs the callback.
+  W.settings = { controls = {}, callbacks = {}, buttons = {}, variables = {} }
+  local kinds = { boolean = "boolean", number = "number", string = "string" }
   local function setting(key, tbl)
     return {
       SetValueChangedCallback = function(_, fn)
         W.settings.callbacks[key] = fn
+      end,
+      SetValue = function(_, value)
+        tbl[key] = value
+        if W.settings.callbacks[key] then
+          W.settings.callbacks[key]()
+        end
       end,
       tbl = tbl,
     }
@@ -98,7 +118,10 @@ function W.install(state)
         end,
       }
     end,
-    RegisterAddOnSetting = function(_, _, key, tbl)
+    RegisterAddOnSetting = function(_, variable, key, tbl, kind, _, default)
+      assert(not W.settings.variables[variable], "setting registered twice: " .. variable)
+      W.settings.variables[variable] = true
+      assert(type(default) == kinds[kind], "default for " .. key .. " isn't a " .. tostring(kind))
       return setting(key, tbl)
     end,
     CreateCheckbox = function(_, s)

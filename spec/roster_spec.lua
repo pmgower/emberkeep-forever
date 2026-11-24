@@ -80,6 +80,17 @@ describe("Roster.Forget", function()
   end)
 end)
 
+describe("Roster.ForgetKey", function()
+  it("removes only that realm's character", function()
+    local store = {}
+    Roster.Observe(store, sighting(), 1)
+    Roster.Observe(store, sighting({ realm = "Other" }), 1)
+    assert.is_true(Roster.ForgetKey(store, "Brakka-Other"))
+    assert.is_false(Roster.ForgetKey(store, "Brakka-Other"))
+    assert.is_not_nil(store["Brakka-Nightfall"])
+  end)
+end)
+
 describe("Roster.Characters", function()
   it("lists highest level first, then by name", function()
     local store = {}
