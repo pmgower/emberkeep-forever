@@ -58,6 +58,13 @@ function Roster.Forget(store, name)
   return removed
 end
 
+-- Removes one character by its key. Returns true if it was there.
+function Roster.ForgetKey(store, key)
+  local found = store[key] ~= nil
+  store[key] = nil
+  return found
+end
+
 -- Characters as a list of copies (each with its key), highest level first,
 -- then by name. Copies, so nothing a window adds ends up in SavedVariables.
 function Roster.Characters(store)

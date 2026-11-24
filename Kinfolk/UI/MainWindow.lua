@@ -317,7 +317,23 @@ function MainWindow.ApplySettings()
     return
   end
   ns.Window.SetTheme(settings().theme)
-  win.frame:SetScale(settings().scale)
+  local frame, new = win.frame, settings().scale
+  local old = win.appliedScale
+  win.appliedScale = new
+  if old == nil or old == new then
+    -- First build: the saved position was saved at this scale already.
+    frame:SetScale(new)
+  else
+    -- Positions are in the frame's own scaled units, so convert the centre
+    -- to screen units and back, or the window jumps when the scale changes.
+    local x, y = frame:GetCenter()
+    frame:SetScale(new)
+    if x and y then
+      frame:ClearAllPoints()
+      frame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x * old / new, y * old / new)
+      win:SavePosition()
+    end
+  end
   win:UpdateGrip()
 end
 

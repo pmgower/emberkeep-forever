@@ -67,22 +67,46 @@ local function addForget(cat, layout)
   if not (create and Settings.CreateControlTextContainer and layout and CreateSettingsButtonInitializer) then
     return
   end
+  -- Values are roster keys (Name-Realm), so two alts with one name on
+  -- different realms are told apart.
   local pick = { forget = "" }
   local setting =
     Settings.RegisterAddOnSetting(cat, "Kinfolk_forget", "forget", pick, "string", "Character", "")
   create(cat, setting, function()
     local c = Settings.CreateControlTextContainer()
     for _, ch in ipairs(ns.Roster.Characters(ns.db.characters)) do
-      c:Add(ch.name, string.format("%s (%s)", ch.name, tostring(ch.level or "?")))
+      c:Add(ch.key, string.format("%s (%s)", ch.key, tostring(ch.level or "?")))
     end
     return c:GetData()
   end, "Pick a character you deleted or don't want listed, then press Forget.")
-  layout:AddInitializer(CreateSettingsButtonInitializer("", "Forget", function()
-    if pick.forget ~= "" then
-      SlashCmdList.KINFOLK("forget " .. pick.forget)
+  local function forget()
+    local key = pick.forget
+    if key == "" then
+      return
+    end
+    local me = ns.Game.Sighting()
+    if key == ns.Roster.Key(me.name, me.realm) then
+      return ns.Say("you're logged in on " .. key .. ", so they'd be added straight back.")
+    end
+    if ns.Roster.ForgetKey(ns.db.characters, key) then
+      ns.Say("forgot " .. key)
+      ns.MainWindow.RefreshIfShown()
+    end
+    if setting.SetValue then
+      setting:SetValue("")
+    else
       pick.forget = ""
     end
-  end, "Removes the picked character from Kinfolk. They come back if you log in on them again.", true))
+  end
+  layout:AddInitializer(
+    CreateSettingsButtonInitializer(
+      "",
+      "Forget",
+      forget,
+      "Removes the picked character from Kinfolk. They come back if you log in on them again.",
+      true
+    )
+  )
 end
 
 function OptionsPage.Init()
