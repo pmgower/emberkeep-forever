@@ -11,8 +11,12 @@ local icon
 -- Tooltip lines, kept separate from the frame so tests can read them.
 function MinimapButton.TooltipLines(db, now)
   local lines = { "Kinfolk" }
-  local _, summary = ns.Overview.Build(db.characters, ns.Roster, ns.Format, now)
-  lines[#lines + 1] = summary.count == 1 and "1 alt" or (summary.count .. " alts")
+  local rows, summary = ns.RestedView.Build(db.characters, ns, ns.Game.MaxLevel(), now, ns.Game.CurrentKey())
+  local top = summary.next
+  if top then
+    lines[#lines + 1] = string.format("Play next: %s |cff4da6ff%d%%|r", top.name, top.percent)
+  end
+  lines[#lines + 1] = "|cff8f98a5" .. ns.RestedView.CountText(rows, summary) .. "|r"
   lines[#lines + 1] = "|cff9fd0ffLeft-click:|r show or hide the window"
   lines[#lines + 1] = "|cff9fd0ffRight-click:|r options"
   lines[#lines + 1] = "|cff9fd0ffDrag:|r move this button"

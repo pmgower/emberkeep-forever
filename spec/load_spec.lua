@@ -14,6 +14,9 @@ describe("the addon in a stand-in client", function()
       money = 421800,
       zone = "Orgrimmar",
       now = 1000,
+      xpMax = 10000,
+      rested = 2500,
+      resting = true,
     }
     _G.KinfolkDB = nil
     wow.install(state)
@@ -29,6 +32,54 @@ describe("the addon in a stand-in client", function()
     assert.are.equal("v0.1.0", ns.versionText)
   end)
 
+  it("saves the character's rested XP, and keeps it when logout reads XP to level as 0", function()
+    local r = KinfolkDB.characters["Brakka-Nightfall"].rest
+    assert.are.same({ rested = 2500, xpMax = 10000, resting = true, wellRested = 0, at = 1000 }, r)
+    state.xpMax, state.rested = 0, nil
+    wow.fire("PLAYER_LOGOUT")
+    assert.are.equal(2500, KinfolkDB.characters["Brakka-Nightfall"].rest.rested)
+  end)
+
+  it("says who to play next on login, skipping the character you're on", function()
+    local full = { rested = 15000, xpMax = 10000, resting = true, wellRested = 0, at = 0 }
+    KinfolkDB.characters["Quill-Nightfall"] = { name = "Quill", realm = "Nightfall", level = 18, rest = full }
+    wow.fire("PLAYER_ENTERING_WORLD")
+    local last = DEFAULT_CHAT_FRAME.lines[#DEFAULT_CHAT_FRAME.lines]
+    assert.truthy(last and last:find("play next Quill (150% rested, full)", 1, true))
+    local count = #DEFAULT_CHAT_FRAME.lines
+    wow.fire("PLAYER_ENTERING_WORLD") -- zoning in again doesn't repeat it
+    assert.are.equal(count, #DEFAULT_CHAT_FRAME.lines)
+  end)
+
+  it("opens on the Rested tab with each alt's rested percent", function()
+    SlashCmdList.KINFOLK("")
+    local seen = {}
+    for _, f in ipairs(wow.frames) do
+      if f._text then
+        seen[tostring(f._text)] = true
+      end
+    end
+    assert.is_true(seen["25%"], "Brakka's 25% rested should be drawn")
+    -- Hovering each row builds its tooltip without an error, full or not.
+    KinfolkDB.characters["Brakka-Nightfall"].rest.rested = 15000
+    local hovered = 0
+    for _, f in ipairs(wow.frames) do
+      if f.key and f._scripts.OnEnter then
+        f._scripts.OnEnter(f)
+        hovered = hovered + 1
+      end
+    end
+    assert.is_true(hovered > 0)
+  end)
+
+  it("names who to play next in the minimap tooltip", function()
+    local full = { rested = 15000, xpMax = 10000, resting = true, wellRested = 0, at = 0 }
+    KinfolkDB.characters["Quill-Nightfall"] = { name = "Quill", realm = "Nightfall", level = 18, rest = full }
+    local lines = ns.MinimapButton.TooltipLines(KinfolkDB, 1000)
+    assert.truthy(lines[2]:find("Play next: Quill", 1, true))
+    assert.truthy(lines[3]:find("1 alt full, 1 still resting", 1, true))
+  end)
+
   it("keeps saved data when logout reads come back empty", function()
     state.level, state.money, state.zone = 0, 0, ""
     wow.fire("PLAYER_LOGOUT")
@@ -39,6 +90,7 @@ describe("the addon in a stand-in client", function()
 
   it("opens and closes the window with /kinfolk, and refreshes it while open", function()
     assert.is_false(ns.MainWindow.IsShown())
+    KinfolkDB.settings.focus = "overview" -- the gold column is on Overview
     SlashCmdList.KINFOLK("")
     assert.is_true(ns.MainWindow.IsShown())
     state.money = 12345678
@@ -82,12 +134,12 @@ describe("the addon in a stand-in client", function()
 
   it("builds the options page and applies a changed color scheme and scale", function()
     assert.are.equal("Kinfolk", wow.settings.name)
-    assert.are.equal(5, #wow.settings.controls) -- 2 checkboxes, scheme, scale, character
+    assert.are.equal(6, #wow.settings.controls) -- 3 checkboxes, scheme, scale, character
     SlashCmdList.KINFOLK("")
-    local theme = wow.settings.controls[3]
+    local theme = wow.settings.controls[4]
     theme:SetValue("twilight")
     assert.are.equal("twilight", ns.Window.Current().key)
-    wow.settings.controls[4]:SetValue(1.5)
+    wow.settings.controls[5]:SetValue(1.5)
     local scaled
     for _, f in ipairs(wow.frames) do
       if f._scale == 1.5 then
@@ -105,7 +157,7 @@ describe("the addon in a stand-in client", function()
 
   it("forgets a character picked on the options page", function()
     KinfolkDB.characters["Quill-Nightfall"] = { name = "Quill", realm = "Nightfall", level = 18 }
-    local picker = wow.settings.controls[5]
+    local picker = wow.settings.controls[6]
     local names = {}
     for _, o in ipairs(picker.options()) do
       names[#names + 1] = o.value
@@ -118,7 +170,7 @@ describe("the addon in a stand-in client", function()
   end)
 
   it("won't forget the logged-in character from the options page", function()
-    local picker = wow.settings.controls[5]
+    local picker = wow.settings.controls[6]
     picker:SetValue("Brakka-Nightfall")
     wow.settings.buttons[1].onClick()
     assert.is_not_nil(KinfolkDB.characters["Brakka-Nightfall"])

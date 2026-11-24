@@ -25,7 +25,11 @@ local function observe(event, arg1)
   if event == "PLAYER_LEVEL_UP" and type(arg1) == "number" then
     sighting.level = arg1
   end
-  ns.Roster.Observe(ns.db.characters, sighting, ns.Game.Now(), { loggingOut = event == "PLAYER_LOGOUT" })
+  local key =
+    ns.Roster.Observe(ns.db.characters, sighting, ns.Game.Now(), { loggingOut = event == "PLAYER_LOGOUT" })
+  if key then
+    ns.Rest.Observe(ns.db.characters[key], ns.Game.RestObservation())
+  end
   for _, fn in ipairs(listeners) do
     fn()
   end
@@ -43,6 +47,11 @@ frame:RegisterEvent("PLAYER_LEVEL_UP")
 frame:RegisterEvent("PLAYER_MONEY")
 frame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 frame:RegisterEvent("PLAYER_LOGOUT")
+frame:RegisterEvent("PLAYER_ENTERING_WORLD")
+frame:RegisterEvent("PLAYER_XP_UPDATE")
+frame:RegisterEvent("UPDATE_EXHAUSTION")
+frame:RegisterEvent("PLAYER_UPDATE_RESTING")
+frame:RegisterEvent("TRAIT_CONFIG_UPDATED")
 frame:SetScript("OnEvent", function(_, event, arg1)
   if event == "ADDON_LOADED" then
     if arg1 == addonName then
@@ -60,4 +69,21 @@ frame:SetScript("OnEvent", function(_, event, arg1)
     return
   end
   observe(event, arg1)
+  if event == "PLAYER_ENTERING_WORLD" and not App.greeted then
+    App.greeted = true
+    App.LoginHint()
+  end
 end)
+
+-- The chat line on login: who to play next, if anyone is full or filling.
+function App.LoginHint()
+  if not (ns.db and ns.db.settings.loginHint) then
+    return
+  end
+  local _, summary =
+    ns.RestedView.Build(ns.db.characters, ns, ns.Game.MaxLevel(), ns.Game.Now(), ns.Game.CurrentKey())
+  local line = ns.RestedView.HintText(summary)
+  if line then
+    ns.Say(line)
+  end
+end

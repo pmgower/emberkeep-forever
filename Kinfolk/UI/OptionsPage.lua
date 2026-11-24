@@ -14,6 +14,11 @@ local CHECKBOXES = {
     "Show minimap button",
     "Left-click shows or hides the window, right-click opens this page.",
   },
+  {
+    "loginHint",
+    "Say who to play next when I log in",
+    "One chat line naming the alt with the most rested XP.",
+  },
   { "locked", "Lock window position and size", "Stops the window from being dragged or resized." },
 }
 
