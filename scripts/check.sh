@@ -10,4 +10,6 @@ run luacheck Kinfolk/Core --no-config --std lua51 --ignore 212 --formatter plain
 run stylua --check .
 run busted --output=utfTerminal
 run lua5.1 scripts/toc-check.lua Kinfolk/Kinfolk.toc
+# Bundled libraries must be byte-for-byte the pinned versions.
+run bash -c 'cd Kinfolk/Libs && sha256sum --quiet -c ../../scripts/libs.sha256 && test "$(find . -name "*.lua" | wc -l)" -eq "$(wc -l < ../../scripts/libs.sha256)"'
 exit $status
