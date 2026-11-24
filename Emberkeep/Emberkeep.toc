@@ -22,6 +22,7 @@ Core\Settings.lua
 Core\Columns.lua
 Core\Overview.lua
 Core\Rest.lua
+Core\Played.lua
 Core\RestedView.lua
 Core\Feedback.lua
 Adapters\Game.lua
