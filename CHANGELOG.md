@@ -1,3 +1,13 @@
+## 0.2.0
+
+- Renamed from Kinfolk: Forever (if you installed by hand, delete the old Kinfolk folder, then log in on each alt once to fill your list again)
+- Rested tab: Zone column next to Inn/Outside, and the tooltip names the inn or city district
+- Overview tab: time played for each alt, plus a total
+- Characters page in the options to remove alts you've deleted, or right-click an alt in the window
+- Report a bug with /emberkeep feedback or ctrl-click on the minimap button, and Emberkeep offers a report if it hits an error
+- Character and Rested columns widen as you resize the window
+- Fixed the cut-off login reminder label in the options
+
 ## 0.1.0
 
 - Rested tab: who to play next, with full alts first, a rested bar for each alt, and time until full
