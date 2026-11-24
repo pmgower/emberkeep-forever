@@ -104,11 +104,12 @@ local focuses = {
           },
         }
       end
-      local right = summary.count == 1 and "1 alt" or (summary.count .. " alts")
-      if summary.money.gold ~= "" then
-        right = right .. "  " .. GOLD .. summary.money.gold .. "|r"
+      -- The account total gets its own row with no character name, so it
+      -- can't be read as one character's gold.
+      if #rows > 0 then
+        grid[#grid + 1] = { cells = { DIM .. "All characters|r", "", moneyText(summary.money), "", "" } }
       end
-      return grid, right
+      return grid, summary.count == 1 and "1 alt" or (summary.count .. " alts")
     end,
   },
 }
