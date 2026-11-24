@@ -15,11 +15,17 @@ function App.DB()
   return ns.db
 end
 
-local function observe()
+local function observe(event, arg1)
   if not ns.db then
     return
   end
-  ns.Roster.Observe(ns.db.characters, ns.Game.Sighting(), ns.Game.Now())
+  local sighting = ns.Game.Sighting()
+  -- During PLAYER_LEVEL_UP the game can still report the old level; the new
+  -- one is the event's first argument.
+  if event == "PLAYER_LEVEL_UP" and type(arg1) == "number" then
+    sighting.level = arg1
+  end
+  ns.Roster.Observe(ns.db.characters, sighting, ns.Game.Now(), { loggingOut = event == "PLAYER_LOGOUT" })
   for _, fn in ipairs(listeners) do
     fn()
   end
@@ -46,5 +52,5 @@ frame:SetScript("OnEvent", function(_, event, arg1)
     end
     return
   end
-  observe()
+  observe(event, arg1)
 end)
