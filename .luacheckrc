@@ -18,5 +18,5 @@ read_globals = {
   "Settings", "RAID_CLASS_COLORS", "UIParent", "UISpecialFrames", "UnitClass",
   "UnitFactionGroup", "UnitLevel", "UnitName", "UnitRace", "issecretvalue", "time", "tinsert",
   -- Rested XP (slice 2)
-  "C_Traits", "Enum", "GetMaxPlayerLevel", "GetXPExhaustion", "IsResting", "UnitXPMax", "date",
+  "C_Traits", "Enum", "GetMaxPlayerLevel", "GetXPExhaustion", "IsResting", "UnitXPMax",
 }

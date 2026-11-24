@@ -27,8 +27,16 @@ local function observe(event, arg1)
   end
   local key =
     ns.Roster.Observe(ns.db.characters, sighting, ns.Game.Now(), { loggingOut = event == "PLAYER_LOGOUT" })
-  if key then
-    ns.Rest.Observe(ns.db.characters[key], ns.Game.RestObservation())
+  if event == "PLAYER_ENTERING_WORLD" or event == "TRAIT_CONFIG_UPDATED" then
+    local rank = ns.Game.WellRestedRank()
+    if rank then
+      ns.db.wellRested = rank -- account-wide perk, so saved once for every alt
+    end
+  end
+  -- Not on level-up (XP to level can still be the old level's) or logout
+  -- (reads can come back empty); the readings just before are good.
+  if key and event ~= "PLAYER_LEVEL_UP" and event ~= "PLAYER_LOGOUT" then
+    ns.Rest.Observe(ns.db.characters[key], ns.Game.RestObservation(ns.db.wellRested))
   end
   for _, fn in ipairs(listeners) do
     fn()
@@ -69,8 +77,8 @@ frame:SetScript("OnEvent", function(_, event, arg1)
     return
   end
   observe(event, arg1)
-  if event == "PLAYER_ENTERING_WORLD" and not App.greeted then
-    App.greeted = true
+  -- arg1 is isInitialLogin: true on login, false on /reload and zoning.
+  if event == "PLAYER_ENTERING_WORLD" and arg1 == true then
     App.LoginHint()
   end
 end)
@@ -80,8 +88,7 @@ function App.LoginHint()
   if not (ns.db and ns.db.settings.loginHint) then
     return
   end
-  local _, summary =
-    ns.RestedView.Build(ns.db.characters, ns, ns.Game.MaxLevel(), ns.Game.Now(), ns.Game.CurrentKey())
+  local _, summary = ns.RestedView.Build(ns.db.characters, ns, ns.Game.RestContext(ns.db))
   local line = ns.RestedView.HintText(summary)
   if line then
     ns.Say(line)

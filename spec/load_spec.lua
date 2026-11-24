@@ -41,13 +41,18 @@ describe("the addon in a stand-in client", function()
   end)
 
   it("says who to play next on login, skipping the character you're on", function()
-    local full = { rested = 15000, xpMax = 10000, resting = true, wellRested = 0, at = 0 }
-    KinfolkDB.characters["Quill-Nightfall"] = { name = "Quill", realm = "Nightfall", level = 18, rest = full }
-    wow.fire("PLAYER_ENTERING_WORLD")
+    -- You're on Brakka, who is full; Quill is next at 60%.
+    KinfolkDB.characters["Brakka-Nightfall"].rest.rested = 15000
+    local partly = { rested = 6000, xpMax = 10000, resting = true, wellRested = 0, at = 1000 }
+    KinfolkDB.characters["Quill-Nightfall"] =
+      { name = "Quill", realm = "Nightfall", level = 18, rest = partly }
+    state.rested = 15000
+    wow.fire("PLAYER_ENTERING_WORLD", true, false)
     local last = DEFAULT_CHAT_FRAME.lines[#DEFAULT_CHAT_FRAME.lines]
-    assert.truthy(last and last:find("play next Quill (150% rested, full)", 1, true))
+    assert.truthy(last and last:find("play next Quill (60% rested)", 1, true), tostring(last))
     local count = #DEFAULT_CHAT_FRAME.lines
-    wow.fire("PLAYER_ENTERING_WORLD") -- zoning in again doesn't repeat it
+    wow.fire("PLAYER_ENTERING_WORLD", false, true) -- a /reload doesn't repeat it
+    wow.fire("PLAYER_ENTERING_WORLD", false, false) -- nor does zoning
     assert.are.equal(count, #DEFAULT_CHAT_FRAME.lines)
   end)
 
@@ -72,12 +77,39 @@ describe("the addon in a stand-in client", function()
     assert.is_true(hovered > 0)
   end)
 
-  it("names who to play next in the minimap tooltip", function()
-    local full = { rested = 15000, xpMax = 10000, resting = true, wellRested = 0, at = 0 }
-    KinfolkDB.characters["Quill-Nightfall"] = { name = "Quill", realm = "Nightfall", level = 18, rest = full }
+  it("names who to play next in the minimap tooltip, not the character you're on", function()
+    KinfolkDB.characters["Brakka-Nightfall"].rest.rested = 15000
+    local partly = { rested = 6000, xpMax = 10000, resting = true, wellRested = 0, at = 1000 }
+    KinfolkDB.characters["Quill-Nightfall"] =
+      { name = "Quill", realm = "Nightfall", level = 18, rest = partly }
     local lines = ns.MinimapButton.TooltipLines(KinfolkDB, 1000)
-    assert.truthy(lines[2]:find("Play next: Quill", 1, true))
-    assert.truthy(lines[3]:find("1 alt full, 1 still resting", 1, true))
+    assert.truthy(lines[2]:find("Play next: Quill", 1, true), lines[2])
+    assert.truthy(lines[3]:find("1 alt full, 1 still resting", 1, true), lines[3])
+  end)
+
+  it("doesn't save a rested reading on level-up, when XP to level can be stale", function()
+    state.xpMax, state.rested = 12000, 9999
+    wow.fire("PLAYER_LEVEL_UP", 35)
+    assert.are.equal(10000, KinfolkDB.characters["Brakka-Nightfall"].rest.xpMax)
+  end)
+
+  it("reads the account's Well Rested rank from whichever Generic tree has it", function()
+    _G.Enum = { TraitConfigType = { Generic = 3 } }
+    _G.C_Traits = {
+      GetConfigsByType = function()
+        return { 11, 22 } -- Skyriding first, Legacy second
+      end,
+      GetNodeInfo = function(config, node)
+        if config == 22 then
+          return { ID = node, currentRank = 3 }
+        end
+        return { ID = 0, currentRank = 0 }
+      end,
+    }
+    wow.fire("TRAIT_CONFIG_UPDATED")
+    _G.C_Traits, _G.Enum = nil, nil
+    assert.are.equal(3, KinfolkDB.wellRested)
+    assert.are.equal(3, KinfolkDB.characters["Brakka-Nightfall"].rest.wellRested)
   end)
 
   it("keeps saved data when logout reads come back empty", function()
