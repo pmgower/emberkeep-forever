@@ -16,8 +16,8 @@ local CHECKBOXES = {
   },
   {
     "loginHint",
-    "Say who to play next when I log in",
-    "One chat line naming the alt with the most rested XP.",
+    "Suggest an alt at login",
+    "When you log in, one chat line names the alt with the most rested XP to play next.",
   },
   { "hideSurnames", "First names only", "Show 'Jango' instead of 'Jango Fett'." },
   { "locked", "Lock window position and size", "Stops the window from being dragged or resized." },
