@@ -55,6 +55,7 @@ local focuses = {
       { "Rested", 130, grow = 1 },
       { "Full in", 64 },
       { "Resting", 70 },
+      { "Zone", 130, grow = 1 },
     },
     bar = 4, -- the column that draws a fill bar before its text
     build = function(db, now)
@@ -72,6 +73,7 @@ local focuses = {
             (r.full and BLUE or "") .. r.percent .. "%" .. (r.full and "|r" or ""),
             r.full and (BLUE .. r.fullIn .. "|r") or r.fullIn,
             r.resting and (DIM .. "Inn|r") or (WARN .. "Outside|r"),
+            r.zone,
           },
         }
       end
@@ -164,8 +166,9 @@ local function tooltip(owner, key)
   if played then
     GameTooltip:AddDoubleLine("Played", ns.Format.Duration(played), 1, 0.82, 0, 1, 1, 1)
   end
-  if c.zone then
-    local where = c.zone
+  local place = ns.Format.Place(c)
+  if place then
+    local where = place
     if levelling then
       where = where .. (c.rest.resting and " (inn)" or " (outside)")
     end

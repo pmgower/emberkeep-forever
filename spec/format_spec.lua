@@ -40,3 +40,14 @@ describe("Format.Ago", function()
     assert.are.equal("never", Format.Ago(nil, 10))
   end)
 end)
+
+describe("Format.Place", function()
+  it("names the zone and subzone together", function()
+    local inn = { zone = "Elwynn Forest", subzone = "Lion's Pride Inn" }
+    assert.are.equal("Elwynn Forest, Lion's Pride Inn", Format.Place(inn))
+    assert.are.equal("Durotar", Format.Place({ zone = "Durotar" }))
+    local same = { zone = "Orgrimmar", subzone = "Orgrimmar" }
+    assert.are.equal("Orgrimmar", Format.Place(same))
+    assert.is_nil(Format.Place({}))
+  end)
+end)

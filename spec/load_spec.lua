@@ -13,6 +13,7 @@ describe("the addon in a stand-in client", function()
       level = 34,
       money = 421800,
       zone = "Orgrimmar",
+      subzone = "Valley of Strength",
       now = 1000,
       xpMax = 10000,
       rested = 2500,
@@ -29,6 +30,7 @@ describe("the addon in a stand-in client", function()
     local c = EmberkeepDB.characters["Brakka-Nightfall"]
     assert.are.equal(34, c.level)
     assert.are.equal("Orgrimmar", c.zone)
+    assert.are.equal("Valley of Strength", c.subzone)
     assert.are.equal("v0.1.0", ns.versionText)
   end)
 

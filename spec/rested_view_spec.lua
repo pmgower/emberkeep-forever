@@ -59,6 +59,15 @@ describe("RestedView.Build", function()
     assert.is_false(rows[3].resting)
   end)
 
+  it("gives each row its zone", function()
+    local s = store()
+    s["Brakka-Nightfall"].zone = "Orgrimmar"
+    s["Brakka-Nightfall"].subzone = "Valley of Strength"
+    local rows = RestedView.Build(s, deps, ctx())
+    assert.are.equal("Orgrimmar", rows[1].zone, "the subzone is for the tooltip")
+    assert.are.equal("", rows[2].zone)
+  end)
+
   it("uses the account's Well Rested rank for every alt", function()
     local rows = RestedView.Build(store(), deps, ctx({ wellRested = 5 }))
     assert.are.equal(180, rows[1].percent) -- Brakka's cap is 150% x 1.2

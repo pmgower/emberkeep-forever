@@ -26,4 +26,6 @@ read_globals = {
   "MenuUtil",
   -- Time played
   "RequestTimePlayed", "NUM_CHAT_WINDOWS",
+  -- Location column
+  "GetSubZoneText",
 }
