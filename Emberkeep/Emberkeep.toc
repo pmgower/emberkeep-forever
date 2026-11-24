@@ -32,6 +32,7 @@ App.lua
 UI\Window.lua
 UI\MainWindow.lua
 UI\AltPanel.lua
+UI\CharacterButton.lua
 UI\FeedbackWindow.lua
 UI\MinimapButton.lua
 UI\CharactersPage.lua
