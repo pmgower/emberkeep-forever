@@ -1,0 +1,23 @@
+package-as: Kinfolk
+
+move-folders:
+  Kinfolk/Kinfolk: Kinfolk
+
+ignore:
+  - spec
+  - scripts
+  - docs
+  - .github
+  - .claude
+  - .busted
+  - .luacheckrc
+  - .stylua.toml
+  - CLAUDE.md
+  - CONTEXT.md
+  - README.md
+  - "*.zip"
+
+# Release notes come from this hand-written, player-facing file, never the commit list.
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
