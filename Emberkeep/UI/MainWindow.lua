@@ -558,6 +558,23 @@ function MainWindow.Toggle()
   end
 end
 
+-- Opens the window with the alt panel on one character. If the panel is
+-- already open, closes the window instead.
+function MainWindow.ShowAlt(key)
+  if not (key and ns.db.characters[key]) then
+    return
+  end
+  if MainWindow.IsShown() and ns.AltPanel.Key() then
+    return MainWindow.Toggle()
+  end
+  if not MainWindow.IsShown() then
+    MainWindow.Toggle()
+  end
+  if ns.AltPanel.Key() ~= key then
+    ns.AltPanel.Toggle(win, key)
+  end
+end
+
 function MainWindow.RefreshIfShown()
   if win and win.frame:IsShown() then
     MainWindow.Render()

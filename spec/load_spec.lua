@@ -456,6 +456,28 @@ describe("the addon in a stand-in client", function()
       assert.is_true(drawn("Head  33"))
     end)
 
+    it("opens from a button on the game's Character window, and closes from it", function()
+      SlashCmdList.EMBERKEEP("") -- close it
+      local before = #wow.frames
+      _G.CharacterFrame = _G.CreateFrame("Frame")
+      wow.fire("ADDON_LOADED", "Blizzard_SomethingElse")
+      wow.fire("ADDON_LOADED", "Blizzard_Another")
+      local made = {}
+      for i = before + 2, #wow.frames do
+        if wow.frames[i]._kind == "Button" then
+          made[#made + 1] = wow.frames[i]
+        end
+      end
+      _G.CharacterFrame = nil
+      assert.are.equal(1, #made, "one button, however many addons load")
+      made[1]._scripts.OnEnter(made[1])
+      made[1]._scripts.OnClick(made[1])
+      assert.is_true(ns.MainWindow.IsShown())
+      assert.are.equal("Brakka-Nightfall", ns.AltPanel.Key())
+      made[1]._scripts.OnClick(made[1])
+      assert.is_false(ns.MainWindow.IsShown())
+    end)
+
     it("reads again until every link has loaded", function()
       local later = {}
       _G.C_Timer = {
