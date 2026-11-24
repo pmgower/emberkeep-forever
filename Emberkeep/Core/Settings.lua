@@ -12,6 +12,7 @@ Settings.DEFAULTS = {
   theme = "frost",
   scale = 1.0,
   errorPrompt = true,
+  gearList = false, -- gear as one list instead of two columns
 }
 
 Settings.SCALE_MIN, Settings.SCALE_MAX = 0.7, 1.5

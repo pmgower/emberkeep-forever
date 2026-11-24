@@ -131,6 +131,8 @@ local focuses = {
 
 local win, tabs, cells, stripes, headerLine, hovers, bars = nil, {}, {}, {}, nil, {}, {}
 local active = focuses[1]
+-- The rows on screen, top to bottom, as character keys, and the selected row's mark.
+local keys, selected = {}, nil
 
 local function settings()
   return ns.db.settings
@@ -178,6 +180,7 @@ local function tooltip(owner, key)
   if levelling and key == nextKey and ns.Rest.Project(c.rest, now, ns.db.wellRested).full then
     GameTooltip:AddLine("Rested XP past full is wasted: play " .. shown .. " next.", 0.62, 0.82, 1, true)
   end
+  GameTooltip:AddLine("Click to see gear", 0.56, 0.6, 0.65)
   if MenuUtil and key ~= ns.Game.CurrentKey() then
     GameTooltip:AddLine("Right-click to remove", 0.56, 0.6, 0.65)
   end
@@ -243,8 +246,9 @@ local function rowMenu(owner)
   end)
 end
 
--- An invisible button per row for the hover tooltip and right-click menu; it
--- forwards drags so the window still moves when grabbed by a row.
+-- An invisible button per row for the hover tooltip, the alt panel (left-click)
+-- and the right-click menu; it forwards drags so the window still moves when
+-- grabbed by a row.
 local function hover(r)
   local b = hovers[r]
   if not b then
@@ -258,10 +262,12 @@ local function hover(r)
     b:SetScript("OnLeave", function()
       GameTooltip:Hide()
     end)
-    b:RegisterForClicks("RightButtonUp")
+    b:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     b:SetScript("OnClick", function(self, button)
       if button == "RightButton" then
         rowMenu(self)
+      elseif self.key and ns.db.characters[self.key] then
+        ns.AltPanel.Toggle(win, self.key)
       end
     end)
     win:ForwardDrag(b)
@@ -329,6 +335,32 @@ local function stretchWidth()
   return win:ContentWidth() - 4
 end
 
+-- Marks the row of the alt the panel is showing.
+function MainWindow.PaintSelected()
+  if selected then
+    selected:Hide()
+  end
+  local key = ns.AltPanel.Key()
+  if not (win and key) then
+    return
+  end
+  for _, b in pairs(hovers) do
+    if b:IsShown() and b.key == key then
+      selected = selected or win.content:CreateTexture(nil, "BACKGROUND")
+      local e = ns.Window.Current().edge
+      selected:SetColorTexture(e[1], e[2], e[3], 0.25)
+      selected:ClearAllPoints()
+      selected:SetPoint("TOPLEFT", b, "TOPLEFT", 0, 0)
+      selected:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT", 0, 0)
+      selected:Show()
+    end
+  end
+end
+
+function MainWindow.Keys()
+  return keys
+end
+
 local function layout(grid)
   local content = win.content
   local widths, width = ns.Columns.Fit(active.columns, stretchWidth())
@@ -353,8 +385,10 @@ local function layout(grid)
     header[i] = col[1]
   end
   local lines = { { cells = header } }
+  keys = {}
   for _, row in ipairs(grid) do
     lines[#lines + 1] = row
+    keys[#keys + 1] = row.key -- rows without a character have none
   end
   for r, row in ipairs(lines) do
     local x, y = 2, -(r - 1) * ROW_H - (r > 1 and 4 or 0)
@@ -433,6 +467,7 @@ local function build()
       end
     end,
     onTheme = function()
+      ns.AltPanel.ApplyTheme()
       if tabs[1] then
         paintTabs()
       end
@@ -460,6 +495,8 @@ local function render()
   paintTabs()
   local w, h = layout(grid)
   win:AutoFit(w, h + TAB_H + 6)
+  ns.AltPanel.Refresh()
+  MainWindow.PaintSelected()
 end
 
 -- Resizing calls back into Render while it lays out; the flag stops that
