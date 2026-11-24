@@ -156,6 +156,23 @@ describe("the addon in a stand-in client", function()
     assert.is_true(drawn("Brakka"))
   end)
 
+  it("puts the account's gold total on its own row with no character name", function()
+    KinfolkDB.characters["Quill-Nightfall"] =
+      { name = "Quill", realm = "Nightfall", level = 18, money = 10000 }
+    KinfolkDB.settings.focus = "overview"
+    SlashCmdList.KINFOLK("")
+    local total = false
+    for _, f in ipairs(wow.frames) do
+      if f._text and tostring(f._text):find("All characters", 1, true) then
+        total = true
+      end
+      if f._text and tostring(f._text):find("alts", 1, true) then
+        assert.is_nil(tostring(f._text):find("g", 1, true) and tostring(f._text):find("|cffffd100", 1, true))
+      end
+    end
+    assert.is_true(total)
+  end)
+
   it("keeps saved data when logout reads come back empty", function()
     state.level, state.money, state.zone = 0, 0, ""
     wow.fire("PLAYER_LOGOUT")
