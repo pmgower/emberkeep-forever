@@ -285,7 +285,7 @@ describe("the addon in a stand-in client", function()
     assert.is_not_nil(EmberkeepDB.characters["Brakka-Nightfall"])
   end)
 
-  it("answers version, forget and reset", function()
+  it("answers version, remove (by its old name, forget) and reset", function()
     EmberkeepDB.characters["Quill-Nightfall"] = { name = "Quill", realm = "Nightfall", level = 18 }
     SlashCmdList.EMBERKEEP("")
     SlashCmdList.EMBERKEEP("version")
@@ -294,7 +294,7 @@ describe("the addon in a stand-in client", function()
     SlashCmdList.EMBERKEEP("nonsense")
     local lines = DEFAULT_CHAT_FRAME.lines
     assert.truthy(lines[1]:find("Emberkeep:|r version 0.1.0", 1, true), lines[1])
-    assert.truthy(lines[2]:find("forgot 1", 1, true))
+    assert.truthy(lines[2]:find("removed 1", 1, true))
     assert.is_nil(EmberkeepDB.characters["Quill-Nightfall"])
   end)
 

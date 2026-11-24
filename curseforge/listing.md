@@ -76,7 +76,7 @@ Rested XP is only readable on the character you're logged in on. For your other 
 | --- | --- |
 | `/emberkeep` | Show or hide the window |
 | `/emberkeep options` | Open the options page |
-| `/emberkeep forget <name>` | Remove a character you deleted |
+| `/emberkeep remove <name>` | Remove a character you deleted (also Options > AddOns > Emberkeep > Characters, or right-click their row) |
 | `/emberkeep reset` | Put the window back in the middle of the screen |
 | `/emberkeep version` | Show the version |
 | `/emberkeep feedback` | Report a bug: a link to a GitHub bug report with your details filled in (also ctrl-click the minimap button) |

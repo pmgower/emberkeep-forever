@@ -11,13 +11,14 @@ local function metadata(field)
   return get and get(addonName, field) or nil
 end
 
-local commands = {
+local commands
+commands = {
   version = function()
     say(ns.Version.Line("version", metadata("Version")))
   end,
-  forget = function(name)
+  remove = function(name)
     if name == "" then
-      return say("type /emberkeep forget <name>")
+      return say("type /emberkeep remove <name>")
     end
     local s = ns.Game.Sighting()
     local me = s.name and ns.Roster.DisplayName(s)
@@ -26,12 +27,16 @@ local commands = {
       return say(
         "you're logged in on "
           .. me
-          .. ", so they'd be added straight back. Forget them from another character."
+          .. ", so they'd be added straight back. Remove them from another character."
       )
     end
     local n = ns.Roster.Forget(ns.db.characters, name)
-    say(string.format("forgot %d character(s) named %s", n, name))
+    say(string.format("removed %d character(s) named %s", n, name))
     ns.MainWindow.RefreshIfShown()
+  end,
+  -- The command's old name, still accepted.
+  forget = function(name)
+    return commands.remove(name)
   end,
   -- What the game reports and what Emberkeep saved, for bug reports.
   debug = function()
@@ -97,5 +102,5 @@ SlashCmdList.EMBERKEEP = function(input)
   if fn then
     return fn(rest)
   end
-  say("/emberkeep opens the window. Also: options, feedback (report a bug), version, forget <name>, reset")
+  say("/emberkeep opens the window. Also: options, feedback (report a bug), version, remove <name>, reset")
 end
