@@ -7,7 +7,7 @@ local RestedView = {}
 ns.RestedView = RestedView
 
 -- ctx: maxLevel, now, currentKey (the character you're on), wellRested (the
--- account's Well Rested rank, if known).
+-- account's Well Rested rank, if known), hideSurnames (first names only).
 -- rows: rank, key, name, classFile, level, percent (whole number, rounded
 -- down until full so 150% always means full), fill (0 to 1 of the cap), full,
 -- fullIn ("Full" or "1d 18h"), fullAt, resting.
@@ -27,7 +27,7 @@ function RestedView.Build(store, deps, ctx)
     local row = {
       rank = i,
       key = c.key,
-      name = c.name,
+      name = deps.Roster.DisplayName(c, ctx.hideSurnames),
       classFile = c.classFile,
       level = tostring(c.level or "?"),
       percent = p.full and math.floor(p.percent + 0.5) or math.floor(p.percent),

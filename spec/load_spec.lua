@@ -122,6 +122,40 @@ describe("the addon in a stand-in client", function()
     assert.is_not_nil(c.rest)
   end)
 
+  it("saves the surname, keys by full name, and moves an entry saved without it", function()
+    local old = KinfolkDB.characters["Brakka-Nightfall"]
+    state.surname = "Stonefist"
+    wow.fire("PLAYER_LOGIN")
+    assert.is_nil(KinfolkDB.characters["Brakka-Nightfall"])
+    local c = KinfolkDB.characters["Brakka Stonefist-Nightfall"]
+    assert.are.equal(old, c, "the earlier entry should move, not be duplicated")
+    assert.are.equal("Stonefist", c.surname)
+  end)
+
+  it("shows full names, or first names only when that option is on", function()
+    state.surname = "Stonefist"
+    wow.fire("PLAYER_LOGIN")
+    local function drawn(text)
+      for _, f in ipairs(wow.frames) do
+        if f._text and tostring(f._text):find(text, 1, true) then
+          return true
+        end
+      end
+      return false
+    end
+    SlashCmdList.KINFOLK("")
+    assert.is_true(drawn("Brakka Stonefist"))
+    wow.settings.controls[3]:SetValue(true) -- First names only
+    for _, f in ipairs(wow.frames) do
+      if f._text and tostring(f._text):find("Brakka Stonefist", 1, true) then
+        f._text = nil -- clear what the first draw left behind
+      end
+    end
+    ns.MainWindow.Render()
+    assert.is_false(drawn("Brakka Stonefist"))
+    assert.is_true(drawn("Brakka"))
+  end)
+
   it("keeps saved data when logout reads come back empty", function()
     state.level, state.money, state.zone = 0, 0, ""
     wow.fire("PLAYER_LOGOUT")
@@ -176,12 +210,12 @@ describe("the addon in a stand-in client", function()
 
   it("builds the options page and applies a changed color scheme and scale", function()
     assert.are.equal("Kinfolk", wow.settings.name)
-    assert.are.equal(6, #wow.settings.controls) -- 3 checkboxes, scheme, scale, character
+    assert.are.equal(7, #wow.settings.controls) -- 4 checkboxes, scheme, scale, character
     SlashCmdList.KINFOLK("")
-    local theme = wow.settings.controls[4]
+    local theme = wow.settings.controls[5]
     theme:SetValue("twilight")
     assert.are.equal("twilight", ns.Window.Current().key)
-    wow.settings.controls[5]:SetValue(1.5)
+    wow.settings.controls[6]:SetValue(1.5)
     local scaled
     for _, f in ipairs(wow.frames) do
       if f._scale == 1.5 then
@@ -199,7 +233,7 @@ describe("the addon in a stand-in client", function()
 
   it("forgets a character picked on the options page", function()
     KinfolkDB.characters["Quill-Nightfall"] = { name = "Quill", realm = "Nightfall", level = 18 }
-    local picker = wow.settings.controls[6]
+    local picker = wow.settings.controls[7]
     local names = {}
     for _, o in ipairs(picker.options()) do
       names[#names + 1] = o.value
@@ -212,7 +246,7 @@ describe("the addon in a stand-in client", function()
   end)
 
   it("won't forget the logged-in character from the options page", function()
-    local picker = wow.settings.controls[6]
+    local picker = wow.settings.controls[7]
     picker:SetValue("Brakka-Nightfall")
     wow.settings.buttons[1].onClick()
     assert.is_not_nil(KinfolkDB.characters["Brakka-Nightfall"])

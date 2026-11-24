@@ -84,7 +84,13 @@ local focuses = {
     title = "Overview",
     columns = { { "Character", 150 }, { "Lvl", 34 }, { "Gold", 100 }, { "Zone", 130 }, { "Last seen", 90 } },
     build = function(db, now)
-      local rows, summary = ns.Overview.Build(db.characters, ns.Roster, ns.Format, now)
+      local rows, summary = ns.Overview.Build(
+        db.characters,
+        ns.Roster,
+        ns.Format,
+        now,
+        { hideSurnames = db.settings.hideSurnames }
+      )
       local grid = {}
       for _, r in ipairs(rows) do
         grid[#grid + 1] = {
@@ -120,7 +126,8 @@ local function tooltip(owner, key)
     return
   end
   GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
-  GameTooltip:AddLine(classColored(c.name, c.classFile))
+  local shown = ns.Roster.DisplayName(c, settings().hideSurnames)
+  GameTooltip:AddLine(classColored(shown, c.classFile))
   local who = string.format("Level %s %s %s", tostring(c.level or "?"), c.race or "", c.class or "")
   GameTooltip:AddLine(who, 0.79, 0.81, 0.84)
   local now = ns.Game.Now()
@@ -148,7 +155,7 @@ local function tooltip(owner, key)
   end
   GameTooltip:AddDoubleLine("Last seen", ns.Format.Ago(c.lastSeen, now), 1, 0.82, 0, 1, 1, 1)
   if levelling and key == nextKey and ns.Rest.Project(c.rest, now, ns.db.wellRested).full then
-    GameTooltip:AddLine("Rested XP past full is wasted: play " .. c.name .. " next.", 0.62, 0.82, 1, true)
+    GameTooltip:AddLine("Rested XP past full is wasted: play " .. shown .. " next.", 0.62, 0.82, 1, true)
   end
   GameTooltip:Show()
 end

@@ -8,8 +8,22 @@ ns = ns or {}
 local Roster = {}
 ns.Roster = Roster
 
-function Roster.Key(name, realm)
-  return tostring(name) .. "-" .. tostring(realm)
+-- Forever names have a first name and a surname, so the key holds both:
+-- "Jango Fett-Forever". Without a surname it's "Jango-Forever".
+function Roster.Key(name, realm, surname)
+  local full = tostring(name)
+  if surname ~= nil and surname ~= "" then
+    full = full .. " " .. tostring(surname)
+  end
+  return full .. "-" .. tostring(realm)
+end
+
+-- "Jango Fett", or "Jango" when the player picked first names only.
+function Roster.DisplayName(c, hideSurnames)
+  if c.surname and c.surname ~= "" and not hideSurnames then
+    return tostring(c.name) .. " " .. c.surname
+  end
+  return tostring(c.name)
 end
 
 local function present(v)
@@ -24,9 +38,18 @@ function Roster.Observe(store, sighting, now, opts)
   if not (present(sighting.name) and present(sighting.realm)) then
     return nil
   end
-  local key = Roster.Key(sighting.name, sighting.realm)
-  local c = store[key] or {}
+  local key = Roster.Key(sighting.name, sighting.realm, sighting.surname)
+  local c = store[key]
+  if not c and present(sighting.surname) then
+    -- Saved before surnames were read: move it to the full-name key.
+    local old = Roster.Key(sighting.name, sighting.realm)
+    c, store[old] = store[old], nil
+  end
+  c = c or {}
   c.name, c.realm = sighting.name, sighting.realm
+  if present(sighting.surname) then
+    c.surname = sighting.surname
+  end
   for _, field in ipairs({ "class", "classFile", "race", "faction", "zone" }) do
     if present(sighting[field]) then
       c[field] = sighting[field]
@@ -45,12 +68,13 @@ function Roster.Observe(store, sighting, now, opts)
   return key
 end
 
--- Removes every character whose name matches (any realm, any case).
+-- Removes every character whose first or full name matches (any realm,
+-- any case).
 -- Returns how many were removed.
 function Roster.Forget(store, name)
   local wanted, removed = tostring(name):lower(), 0
   for key, c in pairs(store) do
-    if tostring(c.name):lower() == wanted then
+    if tostring(c.name):lower() == wanted or Roster.DisplayName(c):lower() == wanted then
       store[key] = nil
       removed = removed + 1
     end
