@@ -108,7 +108,7 @@ Tell us what you'd like next in the comments.
 
 ## Please help verify
 
-Two rested numbers aren't confirmed in WoW Forever yet: the rate away from an inn, and exactly how Well Rested raises the cap. If an alt's "Full in" is off when you log back in, please tell us in the comments.
+One rested number isn't confirmed in WoW Forever yet: the rate away from an inn. If an alt's "Full in" is off when you log back in, please tell us in the comments.
 
 ## Credits
 
