@@ -59,6 +59,7 @@ It's a small, read-only helper. It never changes your characters, gold or items,
   * **Order:** full alts first (alphabetically), then by how full they are.
   * **Bars:** each alt has one, coloured blue when full and rested XP is going to waste, green when filling in an inn, and orange when filling outside.
   * **Full in:** time until each alt is full.
+  * **Well Rested:** each alt's rank in the Legacy perk, with what it does in the tooltip.
   * **Zone:** where each alt logged out, next to whether they're in an inn or outside.
   * Max-level alts are left out.
 * **Overview tab**: every character with level, time played, gold, zone and when you last played them, plus your **total gold** and **total time played** across all of them.
@@ -81,7 +82,7 @@ It's a small, read-only helper. It never changes your characters, gold or items,
 2. **Play as normal.** It updates as you level, earn gold and walk in and out of inns.
 3. **Open `/emberkeep`** (or click the minimap button) to see who's full and who to play next.
 
-Rested XP is only readable on the character you're logged in on. For your other alts, Emberkeep works it out from their last reading: 5% of a level per 8 hours in an inn, a quarter of that elsewhere, up to 150%. It includes the Legacy **Well Rested** perk, which adds 4% to the rate and the cap per rank.
+Rested XP is only readable on the character you're logged in on. For your other alts, Emberkeep works it out from their last reading: 5% of a level per 8 hours in an inn, a quarter of that elsewhere, up to 150%. It includes each alt's own rank in the Legacy **Well Rested** perk, which adds 4% to the rate and the cap per rank.
 
 ## Commands
 

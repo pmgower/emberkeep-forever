@@ -4,7 +4,7 @@ local HOUR, DAY = 3600, 86400
 local LEVEL = 10000 -- XP to level, a round number
 
 local function rest(over)
-  local r = { rested = 0, xpMax = LEVEL, resting = true, wellRested = 0, at = 0 }
+  local r = { rested = 0, xpMax = LEVEL, resting = true, at = 0 }
   for k, v in pairs(over or {}) do
     r[k] = v
   end
@@ -37,9 +37,9 @@ describe("Rest.Project", function()
   end)
 
   it("raises the rate and the cap with Well Rested", function()
-    local p = Rest.Project(rest({ wellRested = 5 }), 8 * HOUR)
+    local p = Rest.Project(rest(), 8 * HOUR, 5)
     assert.are.near(6, p.percent, 1e-9) -- 5% x 1.2
-    local full = Rest.Project(rest({ wellRested = 5 }), 60 * DAY)
+    local full = Rest.Project(rest(), 60 * DAY, 5)
     assert.are.near(180, full.percent, 1e-9) -- 150% x 1.2
   end)
 
@@ -53,8 +53,8 @@ end)
 describe("Rest.Observe", function()
   it("saves a good reading", function()
     local c = {}
-    assert.is_true(Rest.Observe(c, { rested = 500, xpMax = LEVEL, resting = 1, wellRested = 2, at = 5 }))
-    assert.are.same({ rested = 500, xpMax = LEVEL, resting = true, wellRested = 2, at = 5 }, c.rest)
+    assert.is_true(Rest.Observe(c, { rested = 500, xpMax = LEVEL, resting = 1, at = 5 }))
+    assert.are.same({ rested = 500, xpMax = LEVEL, resting = true, at = 5 }, c.rest)
   end)
 
   it("ignores the zero XP-to-level the game reports while logging out", function()
@@ -64,13 +64,6 @@ describe("Rest.Observe", function()
     assert.are.equal(500, c.rest.rested)
   end)
 
-  it("keeps the last Well Rested rank when it couldn't be read", function()
-    local c = {}
-    Rest.Observe(c, { rested = 0, xpMax = LEVEL, wellRested = 3, at = 1 })
-    Rest.Observe(c, { rested = 10, xpMax = LEVEL, at = 2 })
-    assert.are.equal(3, c.rest.wellRested)
-  end)
-
   it("treats no rested XP (nil from the game) as 0", function()
     local c = {}
     Rest.Observe(c, { xpMax = LEVEL, at = 1 })
@@ -78,7 +71,44 @@ describe("Rest.Observe", function()
   end)
 end)
 
+describe("Rest.ObserveRank", function()
+  it("saves a character's own rank, 0 included", function()
+    local c = {}
+    assert.is_true(Rest.ObserveRank(c, 3))
+    assert.are.equal(3, c.wellRested)
+    assert.is_true(Rest.ObserveRank(c, 0))
+    assert.are.equal(0, c.wellRested)
+  end)
+
+  it("keeps the last rank when it couldn't be read", function()
+    local c = { wellRested = 3 }
+    assert.is_false(Rest.ObserveRank(c, nil))
+    assert.is_false(Rest.ObserveRank(c, 9))
+    assert.are.equal(3, c.wellRested)
+  end)
+
+  it("says what a rank does", function()
+    assert.are.equal("Fills 8% faster, holds up to 162%", Rest.RankEffect(2))
+    assert.are.equal("Fills 20% faster, holds up to 180%", Rest.RankEffect(5))
+  end)
+end)
+
 describe("Rest.Ranking", function()
+  it("uses each character's own Well Rested rank", function()
+    local list = {
+      { name = "None", level = 20, rest = rest(), wellRested = 0 },
+      { name = "Five", level = 20, rest = rest(), wellRested = 5 },
+      { name = "Unread", level = 20, rest = rest() },
+    }
+    local percents = {}
+    for _, row in ipairs(Rest.Ranking(list, 60, DAY)) do
+      percents[row.character.name] = row.projection.percent
+    end
+    assert.are.near(15, percents.None, 1e-9)
+    assert.are.near(18, percents.Five, 1e-9)
+    assert.are.near(15, percents.Unread, 1e-9)
+  end)
+
   local function char(name, level, r)
     return { name = name, level = level, rest = r }
   end

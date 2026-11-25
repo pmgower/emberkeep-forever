@@ -1,3 +1,9 @@
+## 0.3.1
+
+- Rested tab: a Well Rested column shows each alt's Legacy rank, and the tooltip says what it does
+- Fixed: rested XP and time until full now use each alt's own Well Rested rank, not the rank of the character you last played
+- Log in on each alt once to read its rank; until then it shows "Not read yet" and counts as 0
+
 ## 0.3.0
 
 - Click an alt to open a panel beside the window with their gear: item names, item levels, tooltips, and shift-click to link

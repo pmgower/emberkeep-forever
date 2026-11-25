@@ -124,7 +124,7 @@ end
 --   client = { version, build, date, interface, locale },
 --   character = { level, race, class, faction, realm, maxLevel },
 --   rest = { rested, xpMax, resting },     -- this character's reading, or nil
---   wellRested,                            -- account Well Rested rank, or nil
+--   wellRested,                            -- this character's Well Rested rank, or nil
 --   settings = {...},
 --   saved, atMax,                          -- how many alts are saved / at max level
 --   alts = { { level, class, percent, full, resting }, ... }, -- Rested tab order

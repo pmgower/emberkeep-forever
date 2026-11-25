@@ -4,7 +4,7 @@
 | --- | --- |
 | Character | One alt, keyed `Name-Realm`: class, faction, level, last seen. |
 | Roster | The account-wide set of characters and what was last observed about each. |
-| Rest observation | What the game reported at one moment: rested XP, XP to level, resting or not, Well Rested rank, time. |
+| Rest observation | What the game reported at one moment: rested XP, XP to level, resting or not, time. |
 | Rest projection | Rested XP now, the cap, and time until full, computed from the last rest observation. |
 | Capped | Projected rested XP has reached the cap; further rest is wasted. |
 | Well Rested | Forever Legacy perk, 0 to 5 ranks per character: +4% rested rate and +4% cap per rank. |
