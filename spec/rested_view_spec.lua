@@ -54,6 +54,8 @@ describe("RestedView.Build", function()
     assert.are.equal(1, rows[1].fill)
     assert.are.equal("Full", rows[1].fullIn)
     assert.are.equal(118, rows[2].percent)
+    assert.are.equal("118.0%", rows[2].percentText)
+    assert.are.equal("150%", rows[1].percentText)
     assert.are.near(118 / 150, rows[2].fill, 1e-9)
     assert.are.equal("2d 3h", rows[2].fullIn) -- 32 points at 15% a day
     assert.is_false(rows[3].resting)

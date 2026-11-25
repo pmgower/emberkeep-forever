@@ -6,8 +6,8 @@ local MainWindow = {}
 ns.MainWindow = MainWindow
 
 local ROW_H, TAB_H, TAB_GAP = 18, 20, 4
--- A bar column keeps BAR_TEXT px for its "150%" text; the rest is bar, up to BAR_MAX.
-local BAR_TEXT, BAR_MAX = 50, 220
+-- A bar column keeps BAR_TEXT px for its "149.9%" text; the rest is bar, up to BAR_MAX.
+local BAR_TEXT, BAR_MAX = 60, 220
 local GOLD, SILVER, COPPER, DIM = "|cffffd100", "|cffc7c7cf", "|cffeda55f", "|cff8f98a5"
 local BLUE, WARN = "|cff4da6ff", "|cffe0a040"
 -- Bar colors: full (wasting rest), filling in an inn, filling outside.
@@ -52,7 +52,7 @@ local focuses = {
       { "", 20 },
       { "Character", 140, grow = 2 },
       { "Lvl", 34 },
-      { "Rested", 130, grow = 1 },
+      { "Rested", 140, grow = 1 },
       { "Full in", 64 },
       { "Well Rested", 88 },
       { "Resting", 70 },
@@ -73,7 +73,7 @@ local focuses = {
             DIM .. r.rank .. "|r",
             classColored(r.name, r.classFile),
             r.level,
-            (r.full and BLUE or "") .. r.percent .. "%" .. (r.full and "|r" or ""),
+            (r.full and BLUE or "") .. r.percentText .. (r.full and "|r" or ""),
             r.full and (BLUE .. r.fullIn .. "|r") or r.fullIn,
             r.wellRested and (r.wellRested .. " / 5") or (DIM .. "Not read yet|r"),
             r.resting and (DIM .. "Inn|r") or (WARN .. "Outside|r"),
@@ -158,7 +158,7 @@ local function tooltip(owner, key)
   local levelling = c.rest and (c.level or 0) < ns.Game.MaxLevel()
   if levelling then
     local p = ns.Rest.Project(c.rest, now, c.wellRested)
-    local pct = (p.full and math.floor(p.percent + 0.5) or math.floor(p.percent)) .. "%"
+    local pct = ns.Rest.PercentText(p)
     GameTooltip:AddDoubleLine("Rested", p.full and (BLUE .. pct .. " (full)|r") or pct, 1, 0.82, 0, 1, 1, 1)
     if p.full then
       -- At least this long: a reading taken already full can't say when it filled.

@@ -8,7 +8,7 @@ ns.RestedView = RestedView
 
 -- ctx: maxLevel, now, currentKey (the character you're on), hideSurnames
 -- (first names only).
--- rows: rank, key, name, classFile, level, percent (whole number, rounded
+-- rows: rank, key, name, classFile, level, percentText ("12.5%"), percent (whole number, rounded
 -- down until full so 150% always means full), fill (0 to 1 of the cap), full,
 -- fullIn ("Full" or "1d 18h"), fullAt, wellRested (0 to 5, or nil when it was
 -- never read), resting, zone.
@@ -31,6 +31,7 @@ function RestedView.Build(store, deps, ctx)
       name = deps.Roster.DisplayName(c, ctx.hideSurnames),
       classFile = c.classFile,
       level = tostring(c.level or "?"),
+      percentText = deps.Rest.PercentText(p),
       percent = p.full and math.floor(p.percent + 0.5) or math.floor(p.percent),
       fill = p.cap > 0 and p.rested / p.cap or 0,
       full = p.full,

@@ -66,7 +66,7 @@ describe("the addon in a stand-in client", function()
         seen[tostring(f._text)] = true
       end
     end
-    assert.is_true(seen["25%"], "Brakka's 25% rested should be drawn")
+    assert.is_true(seen["25.0%"], "Brakka's 25% rested should be drawn")
     -- Hovering each row builds its tooltip without an error, full or not.
     EmberkeepDB.characters["Brakka-Nightfall"].rest.rested = 15000
     local hovered = 0

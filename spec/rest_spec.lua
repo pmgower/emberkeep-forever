@@ -71,6 +71,22 @@ describe("Rest.Observe", function()
   end)
 end)
 
+describe("Rest.PercentText", function()
+  local function text(xp)
+    return Rest.PercentText(Rest.Project(rest({ rested = xp }), 0))
+  end
+
+  it("shows one decimal, rounded", function()
+    assert.are.equal("12.5%", text(1246))
+    assert.are.equal("0.0%", text(0))
+  end)
+
+  it("shows a full alt as a whole number, and only a full one at the cap", function()
+    assert.are.equal("150%", text(15000))
+    assert.are.equal("149.9%", text(14999))
+  end)
+end)
+
 describe("Rest.ObserveRank", function()
   it("saves a character's own rank, 0 included", function()
     local c = {}
