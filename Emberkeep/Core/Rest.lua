@@ -73,10 +73,24 @@ function Rest.Project(rest, now, rank)
     rested = rested,
     cap = cap,
     percent = rested / rest.xpMax * 100,
+    capPercent = cap / rest.xpMax * 100,
     full = full,
     fullAt = fullAt,
     secondsToFull = full and 0 or (fullAt - now),
   }
+end
+
+-- "12.5%", or "150%" when full. Rounded like other XP bars, except that an alt
+-- not yet full never rounds up to its cap: "150.0%" would read as full.
+function Rest.PercentText(p)
+  if p.full then
+    return math.floor(p.percent + 0.5) .. "%"
+  end
+  local tenths = math.floor(p.percent * 10 + 0.5)
+  if tenths >= math.floor(p.capPercent * 10 + 0.5) then
+    tenths = tenths - 1
+  end
+  return string.format("%.1f%%", tenths / 10)
 end
 
 -- Characters to show on the Rested focus: below max level, with a rest
