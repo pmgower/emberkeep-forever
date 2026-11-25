@@ -1,3 +1,10 @@
+## 0.4.0
+
+- Professions tab: every alt's profession skills side by side, with a column for each profession, including Cooking, Fishing and First Aid
+- See at a glance which professions none of your alts have (gray titles), and which alts share one
+- Click a column title to sort by that skill; hover it for the full name
+- Log in on each alt once to read its professions
+
 ## 0.3.1
 
 - Rested tab: a Well Rested column shows each alt's Legacy rank, and the tooltip says what it does

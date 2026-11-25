@@ -27,8 +27,9 @@ seen, in the default Frost Steel scheme, with UI scale and window scale at 100%:
 9. **Bug report window:** `/emberkeep feedback`. File: `emberkeep-feedback-screenshot-001.png`
 10. **Alt panel, Gear tab:** File: `emberkeep-gear-screenshot-001.png`
 11. **Alt panel, Bags tab:** File: `emberkeep-bags-screenshot-001.png`
-12. **Character window button:** File: `emberkeep-character-button-screenshot-001.png`
-13. **Optional: color schemes.** The window in Deepwater or Twilight next to Frost Steel.
+12. **Professions tab:** every alt's skills, a column per profession. File: `emberkeep-professions-screenshot-001.png`
+13. **Character window button:** File: `emberkeep-character-button-screenshot-001.png`
+14. **Optional: color schemes.** The window in Deepwater or Twilight next to Frost Steel.
    File: `emberkeep-themes-screenshot-001.png`
 
 **Project name:** Emberkeep: Forever
@@ -62,6 +63,7 @@ It's a small, read-only helper. It never changes your characters, gold or items,
   * **Well Rested:** each alt's rank in the Legacy perk, with what it does in the tooltip.
   * **Zone:** where each alt logged out, next to whether they're in an inn or outside.
   * Max-level alts are left out.
+* **Professions tab**: every alt's profession skills side by side, with a column for each profession, Cooking, Fishing and First Aid included. Gray titles show the ones none of your alts have; click a title to sort.
 * **Overview tab**: every character with level, time played, gold, zone and when you last played them, plus your **total gold** and **total time played** across all of them.
 * **Alt panel**: click an alt to see their gear and bags beside the window, without logging in on them.
   * **Gear:** item names, item levels and tooltips, in two columns or a list. Empty slots and outleveled items are marked.
@@ -78,7 +80,7 @@ It's a small, read-only helper. It never changes your characters, gold or items,
 
 ## How it works
 
-1. **Log in on each alt once.** Emberkeep saves its level, gold, zone, rested XP, gear and bags.
+1. **Log in on each alt once.** Emberkeep saves its level, gold, zone, rested XP, gear, bags and professions.
 2. **Play as normal.** It updates as you level, earn gold and walk in and out of inns.
 3. **Open `/emberkeep`** (or click the minimap button) to see who's full and who to play next.
 
