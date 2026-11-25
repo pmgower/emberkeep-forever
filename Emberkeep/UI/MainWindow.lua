@@ -606,7 +606,8 @@ local function layout(grid)
           local b = titleButton(c)
           b.sort, b.full = col.sort, col.full
           b:ClearAllPoints()
-          b:SetPoint("TOPLEFT", content, "TOPLEFT", x - 2, y + 2)
+          -- Not above the top edge: the scroll range would count it.
+          b:SetPoint("TOPLEFT", content, "TOPLEFT", x - 2, y)
           b:SetWidth(w)
           b:Show()
         end
