@@ -6,8 +6,8 @@
 -- 8 hours (measured about 4.9% on Forever), a quarter of that elsewhere (the
 -- Classic rule, not yet measured on Forever), up to 150% of a level. Legacy's
 -- Well Rested perk (0 to 5 ranks) adds 4% to the rate and 4% to the cap per
--- rank. Whether the cap becomes 150% x (1 + 0.04 per rank) or 150% plus 4
--- points per rank is not yet checked in game; this takes the first.
+-- rank, so the cap is 150% x (1 + 0.04 per rank): 162.0% at rank 2, as the game
+-- reports it (checked 2026-11-24).
 local _, ns = ...
 ns = ns or {}
 local Rest = {}
