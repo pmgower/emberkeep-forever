@@ -3,7 +3,7 @@
 - Rested tab: a Well Rested column shows each alt's Legacy rank, and the tooltip says what it does
 - Fixed: rested XP and time until full now use each alt's own Well Rested rank, not the rank of the character you last played
 - Rested percentages show one decimal on the Rested tab and in row tooltips
-- Log in on each alt once to read its rank; until then it shows "Not read yet" and times use the rank Emberkeep had before
+- Log in on each alt once to read its rank; until then it shows "Not read yet" and counts as 0
 
 ## 0.3.0
 
