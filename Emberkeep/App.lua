@@ -36,6 +36,15 @@ local function readGear(key, tries)
   end
 end
 
+local RANK_DELAY = 3
+
+local function readRank()
+  local c = ns.db.characters[ns.Game.CurrentKey() or ""]
+  if c and ns.Rest.ObserveRank(c, ns.Game.WellRestedRank()) then
+    ns.MainWindow.RefreshIfShown()
+  end
+end
+
 local function observe(event, arg1)
   if not ns.db then
     return
@@ -48,16 +57,17 @@ local function observe(event, arg1)
   end
   local key =
     ns.Roster.Observe(ns.db.characters, sighting, ns.Game.Now(), { loggingOut = event == "PLAYER_LOGOUT" })
-  if event == "PLAYER_ENTERING_WORLD" or event == "TRAIT_CONFIG_UPDATED" then
-    local rank = ns.Game.WellRestedRank()
-    if rank then
-      ns.db.wellRested = rank -- account-wide perk, so saved once for every alt
-    end
+  if key and (event == "PLAYER_ENTERING_WORLD" or event == "TRAIT_CONFIG_UPDATED") then
+    ns.Rest.ObserveRank(ns.db.characters[key], ns.Game.WellRestedRank())
+  end
+  -- The Legacy trees may not be loaded on entering the world, so look again.
+  if event == "PLAYER_ENTERING_WORLD" and C_Timer and C_Timer.After then
+    C_Timer.After(RANK_DELAY, readRank)
   end
   -- Not on level-up (XP to level can still be the old level's) or logout
   -- (reads can come back empty); the readings just before are good.
   if key and event ~= "PLAYER_LEVEL_UP" and event ~= "PLAYER_LOGOUT" then
-    ns.Rest.Observe(ns.db.characters[key], ns.Game.RestObservation(ns.db.wellRested))
+    ns.Rest.Observe(ns.db.characters[key], ns.Game.RestObservation())
   end
   if key and GEAR_EVENTS[event] then
     readGear(key, RETRIES)
@@ -312,7 +322,8 @@ function App.FeedbackContext()
     faction = UnitFactionGroup("player")
   end
   local s = try({}, ns.Game.Sighting)
-  local rest = try(nil, ns.Game.RestObservation, db.wellRested)
+  local current = db.characters[try(nil, ns.Game.CurrentKey) or ""]
+  local rest = try(nil, ns.Game.RestObservation)
   local rows, summary = try({}, function()
     return ns.RestedView.Build(db.characters, ns, ns.Game.RestContext(db))
   end)
@@ -338,7 +349,7 @@ function App.FeedbackContext()
       maxLevel = try(nil, ns.Game.MaxLevel),
     },
     rest = rest,
-    wellRested = db.wellRested,
+    wellRested = current and current.wellRested,
     settings = db.settings,
     saved = saved,
     atMax = summary.atMax,

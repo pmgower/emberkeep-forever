@@ -13,7 +13,7 @@ local function alt(store, name, level, rest)
 end
 
 local function rest(over)
-  local r = { rested = 0, xpMax = LEVEL, resting = true, wellRested = 0, at = 0 }
+  local r = { rested = 0, xpMax = LEVEL, resting = true, at = 0 }
   for k, v in pairs(over or {}) do
     r[k] = v
   end
@@ -68,9 +68,14 @@ describe("RestedView.Build", function()
     assert.are.equal("", rows[2].zone)
   end)
 
-  it("uses the account's Well Rested rank for every alt", function()
-    local rows = RestedView.Build(store(), deps, ctx({ wellRested = 5 }))
-    assert.are.equal(180, rows[1].percent) -- Brakka's cap is 150% x 1.2
+  it("gives each row its own Well Rested rank, and uses it", function()
+    local s = store()
+    s["Brakka-Nightfall"].wellRested = 5
+    local rows = RestedView.Build(s, deps, ctx())
+    assert.are.equal(5, rows[1].wellRested)
+    assert.are.equal(180, rows[1].percent)
+    assert.is_nil(rows[2].wellRested)
+    assert.are.equal(118, rows[2].percent)
   end)
 
   it("rounds down until full, so 150% always means full", function()

@@ -36,7 +36,7 @@ describe("the addon in a stand-in client", function()
 
   it("saves the character's rested XP, and keeps it when logout reads XP to level as 0", function()
     local r = EmberkeepDB.characters["Brakka-Nightfall"].rest
-    assert.are.same({ rested = 2500, xpMax = 10000, resting = true, wellRested = 0, at = 1000 }, r)
+    assert.are.same({ rested = 2500, xpMax = 10000, resting = true, at = 1000 }, r)
     state.xpMax, state.rested = 0, nil
     wow.fire("PLAYER_LOGOUT")
     assert.are.equal(2500, EmberkeepDB.characters["Brakka-Nightfall"].rest.rested)
@@ -45,7 +45,7 @@ describe("the addon in a stand-in client", function()
   it("says who to play next on login, skipping the character you're on", function()
     -- You're on Brakka, who is full; Quill is next at 60%.
     EmberkeepDB.characters["Brakka-Nightfall"].rest.rested = 15000
-    local partly = { rested = 6000, xpMax = 10000, resting = true, wellRested = 0, at = 1000 }
+    local partly = { rested = 6000, xpMax = 10000, resting = true, at = 1000 }
     EmberkeepDB.characters["Quill-Nightfall"] =
       { name = "Quill", realm = "Nightfall", level = 18, rest = partly }
     state.rested = 15000
@@ -81,7 +81,7 @@ describe("the addon in a stand-in client", function()
 
   it("names who to play next in the minimap tooltip, not the character you're on", function()
     EmberkeepDB.characters["Brakka-Nightfall"].rest.rested = 15000
-    local partly = { rested = 6000, xpMax = 10000, resting = true, wellRested = 0, at = 1000 }
+    local partly = { rested = 6000, xpMax = 10000, resting = true, at = 1000 }
     EmberkeepDB.characters["Quill-Nightfall"] =
       { name = "Quill", realm = "Nightfall", level = 18, rest = partly }
     local lines = ns.MinimapButton.TooltipLines(EmberkeepDB, 1000)
@@ -95,7 +95,7 @@ describe("the addon in a stand-in client", function()
     assert.are.equal(10000, EmberkeepDB.characters["Brakka-Nightfall"].rest.xpMax)
   end)
 
-  it("reads the account's Well Rested rank from whichever Generic tree has it", function()
+  it("reads the character's own Well Rested rank from whichever Generic tree has it", function()
     _G.Enum = { TraitConfigType = { Generic = 3 } }
     _G.C_Traits = {
       GetConfigsByType = function()
@@ -108,10 +108,22 @@ describe("the addon in a stand-in client", function()
         return { ID = 0, currentRank = 0 }
       end,
     }
+    local partly = { rested = 6000, xpMax = 10000, resting = true, at = 1000 }
+    EmberkeepDB.characters["Quill-Nightfall"] =
+      { name = "Quill", realm = "Nightfall", level = 18, rest = partly }
     wow.fire("TRAIT_CONFIG_UPDATED")
     _G.C_Traits, _G.Enum = nil, nil
-    assert.are.equal(3, EmberkeepDB.wellRested)
-    assert.are.equal(3, EmberkeepDB.characters["Brakka-Nightfall"].rest.wellRested)
+    assert.are.equal(3, EmberkeepDB.characters["Brakka-Nightfall"].wellRested)
+    assert.is_nil(EmberkeepDB.characters["Quill-Nightfall"].wellRested, "another alt keeps its own")
+    assert.is_nil(EmberkeepDB.wellRested)
+    EmberkeepDB.settings.focus = "rested"
+    SlashCmdList.EMBERKEEP("")
+    local drawn = {}
+    for _, f in ipairs(wow.frames) do
+      drawn[tostring(f._text)] = true
+    end
+    assert.is_true(drawn["3 / 5"])
+    assert.is_true(drawn["|cff8f98a5Not read yet|r"])
   end)
 
   it("saves the character when the game reports no realm name, as WoW Forever does", function()

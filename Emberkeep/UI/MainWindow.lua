@@ -54,10 +54,12 @@ local focuses = {
       { "Lvl", 34 },
       { "Rested", 130, grow = 1 },
       { "Full in", 64 },
+      { "Well Rested", 100 },
       { "Resting", 70 },
       { "Zone", 130, grow = 1 },
     },
     bar = 4, -- the column that draws a fill bar before its text
+    pips = 6, -- the column that draws Well Rested pips before its text
     build = function(db, now)
       local rows, summary = restedBuild(db, now)
       local grid = {}
@@ -65,6 +67,7 @@ local focuses = {
         grid[#grid + 1] = {
           key = r.key,
           fill = r.fill,
+          pips = r.wellRested,
           color = r.full and BAR_FULL or (r.resting and BAR_INN or BAR_OUT),
           cells = {
             DIM .. r.rank .. "|r",
@@ -72,6 +75,7 @@ local focuses = {
             r.level,
             (r.full and BLUE or "") .. r.percent .. "%" .. (r.full and "|r" or ""),
             r.full and (BLUE .. r.fullIn .. "|r") or r.fullIn,
+            r.wellRested and (r.wellRested .. " / 5") or (DIM .. "Not read yet|r"),
             r.resting and (DIM .. "Inn|r") or (WARN .. "Outside|r"),
             r.zone,
           },
@@ -130,6 +134,8 @@ local focuses = {
 }
 
 local win, tabs, cells, stripes, headerLine, hovers, bars = nil, {}, {}, {}, nil, {}, {}
+local pips = {}
+local PIP, PIP_GAP, PIPS = 7, 2, 5
 local active = focuses[1]
 -- The rows on screen, top to bottom, as character keys, and the selected row's mark.
 local keys, selected = {}, nil
@@ -151,7 +157,7 @@ local function tooltip(owner, key)
   local now = ns.Game.Now()
   local levelling = c.rest and (c.level or 0) < ns.Game.MaxLevel()
   if levelling then
-    local p = ns.Rest.Project(c.rest, now, ns.db.wellRested)
+    local p = ns.Rest.Project(c.rest, now, c.wellRested)
     local pct = (p.full and math.floor(p.percent + 0.5) or math.floor(p.percent)) .. "%"
     GameTooltip:AddDoubleLine("Rested", p.full and (BLUE .. pct .. " (full)|r") or pct, 1, 0.82, 0, 1, 1, 1)
     if p.full then
@@ -160,8 +166,13 @@ local function tooltip(owner, key)
     else
       GameTooltip:AddDoubleLine("Full in", ns.Format.Duration(p.secondsToFull), 1, 0.82, 0, 1, 1, 1)
     end
-    local rank = ns.db.wellRested or c.rest.wellRested or 0
-    GameTooltip:AddDoubleLine("Well Rested", rank .. " / 5", 1, 0.82, 0, 1, 1, 1)
+    local rank = c.wellRested
+    GameTooltip:AddDoubleLine("Well Rested", rank and (rank .. " / 5") or "not read yet", 1, 0.82, 0, 1, 1, 1)
+    local effect = "Log in on them once to read it"
+    if rank then
+      effect = rank > 0 and ns.Rest.RankEffect(rank) or "No points in it"
+    end
+    GameTooltip:AddLine(effect, 0.56, 0.6, 0.65)
   end
   GameTooltip:AddDoubleLine("Gold", moneyText(ns.Format.Money(c.money)), 1, 0.82, 0)
   local played = ns.Played.Total(c, now, key == ns.Game.CurrentKey())
@@ -177,7 +188,7 @@ local function tooltip(owner, key)
     GameTooltip:AddDoubleLine("Last zone", where, 1, 0.82, 0, 1, 1, 1)
   end
   GameTooltip:AddDoubleLine("Last seen", ns.Format.Ago(c.lastSeen, now), 1, 0.82, 0, 1, 1, 1)
-  if levelling and key == nextKey and ns.Rest.Project(c.rest, now, ns.db.wellRested).full then
+  if levelling and key == nextKey and ns.Rest.Project(c.rest, now, c.wellRested).full then
     GameTooltip:AddLine("Rested XP past full is wasted: play " .. shown .. " next.", 0.62, 0.82, 1, true)
   end
   GameTooltip:AddLine("Click to see gear", 0.56, 0.6, 0.65)
@@ -223,6 +234,33 @@ local function bar(r)
     bars[r] = b
   end
   return b
+end
+
+-- Five small squares per row, the first ank of them gold.
+local function pipRow(r)
+  local row = pips[r]
+  if not row then
+    row = {}
+    for i = 1, PIPS do
+      row[i] = win.content:CreateTexture(nil, "ARTWORK")
+      row[i]:SetSize(PIP, PIP)
+    end
+    pips[r] = row
+  end
+  return row
+end
+
+local function drawPips(r, x, y, rank)
+  for i, pip in ipairs(pipRow(r)) do
+    if i <= rank then
+      pip:SetColorTexture(1, 0.82, 0, 1)
+    else
+      pip:SetColorTexture(1, 1, 1, 0.15)
+    end
+    pip:ClearAllPoints()
+    pip:SetPoint("TOPLEFT", win.content, "TOPLEFT", x + (i - 1) * (PIP + PIP_GAP), y - 3)
+    pip:Show()
+  end
 end
 
 -- Right-click on a character's row: a menu with Remove. The All characters
@@ -379,6 +417,11 @@ local function layout(grid)
     b.track:Hide()
     b.fill:Hide()
   end
+  for _, row in pairs(pips) do
+    for _, pip in ipairs(row) do
+      pip:Hide()
+    end
+  end
   local tr, tg, tb = ns.Window.Rgb(ns.Window.Current().title)
   local header = {}
   for i, col in ipairs(active.columns) do
@@ -427,6 +470,11 @@ local function layout(grid)
           b.fill:Show()
         end
         textX, textW = x + barW + 6, w - barW - 12
+      end
+      if r > 1 and c == active.pips and row.pips then
+        drawPips(r, x, y, row.pips)
+        local pipsW = PIPS * (PIP + PIP_GAP)
+        textX, textW = x + pipsW + 4, w - pipsW - 8
       end
       fs:ClearAllPoints()
       fs:SetPoint("TOPLEFT", content, "TOPLEFT", textX, y)

@@ -17,35 +17,47 @@ Rest.CAP = 1.5
 Rest.PER_SECOND = 0.05 / (8 * 3600) -- share of a level per second, resting
 Rest.AWAY = 0.25
 Rest.WELL_RESTED_STEP = 0.04
+Rest.WELL_RESTED_MAX = 5
 
--- observation: { rested, xpMax, resting, wellRested, at }
+-- observation: { rested, xpMax, resting, at }
 -- Saves it on the character unless it's a bad read: XP to level reads 0
 -- while logging out, and that must not replace a good observation.
 function Rest.Observe(c, obs)
   if type(obs.xpMax) ~= "number" or obs.xpMax <= 0 or type(obs.at) ~= "number" then
     return false
   end
-  local rank = obs.wellRested
-  if type(rank) ~= "number" then
-    rank = c.rest and c.rest.wellRested or 0 -- keep the last rank read
-  end
   c.rest = {
     rested = math.max(0, tonumber(obs.rested) or 0),
     xpMax = obs.xpMax,
     resting = obs.resting and true or false,
-    wellRested = rank,
     at = obs.at,
   }
   return true
 end
 
+-- Legacy points are earned by the account but spent by each character, so
+-- every character has its own Well Rested rank. Saves a good reading; one the
+-- game couldn't answer keeps the last. nil on the character means never read.
+function Rest.ObserveRank(c, rank)
+  if type(rank) ~= "number" or rank < 0 or rank > Rest.WELL_RESTED_MAX then
+    return false
+  end
+  c.wellRested = rank
+  return true
+end
+
+-- What a rank does, for the tooltip: "Fills 8% faster, holds up to 162%".
+function Rest.RankEffect(rank)
+  local percent = Rest.WELL_RESTED_STEP * rank * 100
+  local cap = Rest.CAP * (1 + Rest.WELL_RESTED_STEP * rank) * 100
+  return string.format("Fills %d%% faster, holds up to %d%%", percent + 0.5, cap + 0.5)
+end
+
 -- Where a character's rested XP is at `now`: rested XP, cap, percent of a
 -- level, whether it's full, when it filled (or will), seconds to full.
--- Well Rested is account-wide, so the account's rank (when known) wins over
--- the rank saved with an alt's older reading.
-function Rest.Project(rest, now, accountRank)
-  local rank = type(accountRank) == "number" and accountRank or rest.wellRested or 0
-  local bonus = 1 + Rest.WELL_RESTED_STEP * rank
+-- rank is the character's Well Rested rank; one never read counts as 0.
+function Rest.Project(rest, now, rank)
+  local bonus = 1 + Rest.WELL_RESTED_STEP * (rank or 0)
   local cap = rest.xpMax * Rest.CAP * bonus
   local rate = rest.xpMax * Rest.PER_SECOND * bonus * (rest.resting and 1 or Rest.AWAY)
   local start = math.min(rest.rested, cap)
@@ -66,11 +78,11 @@ end
 -- Characters to show on the Rested focus: below max level, with a rest
 -- observation. Full ones first, alphabetically (the game doesn't tell addons
 -- the character select order); then the rest by how full, highest first.
-function Rest.Ranking(characters, maxLevel, now, accountRank)
+function Rest.Ranking(characters, maxLevel, now)
   local rows = {}
   for _, c in ipairs(characters) do
     if c.rest and (c.level or 0) < maxLevel then
-      rows[#rows + 1] = { character = c, projection = Rest.Project(c.rest, now, accountRank) }
+      rows[#rows + 1] = { character = c, projection = Rest.Project(c.rest, now, c.wellRested) }
     end
   end
   table.sort(rows, function(a, b)

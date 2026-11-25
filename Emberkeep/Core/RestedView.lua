@@ -6,11 +6,12 @@ ns = ns or {}
 local RestedView = {}
 ns.RestedView = RestedView
 
--- ctx: maxLevel, now, currentKey (the character you're on), wellRested (the
--- account's Well Rested rank, if known), hideSurnames (first names only).
+-- ctx: maxLevel, now, currentKey (the character you're on), hideSurnames
+-- (first names only).
 -- rows: rank, key, name, classFile, level, percent (whole number, rounded
 -- down until full so 150% always means full), fill (0 to 1 of the cap), full,
--- fullIn ("Full" or "1d 18h"), fullAt, resting, zone.
+-- fullIn ("Full" or "1d 18h"), fullAt, wellRested (0 to 5, or nil when it was
+-- never read), resting, zone.
 -- summary: levelling (rows shown), atMax, full (how many are full), next (the
 -- top row that isn't the character you're on and has rested XP, or nil).
 function RestedView.Build(store, deps, ctx)
@@ -21,7 +22,7 @@ function RestedView.Build(store, deps, ctx)
       summary.atMax = summary.atMax + 1
     end
   end
-  local ranked = deps.Rest.Ranking(characters, ctx.maxLevel, ctx.now, ctx.wellRested)
+  local ranked = deps.Rest.Ranking(characters, ctx.maxLevel, ctx.now)
   for i, entry in ipairs(ranked) do
     local c, p = entry.character, entry.projection
     local row = {
@@ -35,6 +36,7 @@ function RestedView.Build(store, deps, ctx)
       full = p.full,
       fullIn = p.full and "Full" or deps.Format.Duration(p.secondsToFull),
       fullAt = p.fullAt,
+      wellRested = c.wellRested,
       resting = c.rest.resting,
       zone = c.zone or "",
     }

@@ -6,6 +6,14 @@ describe("Store.Ensure", function()
     assert.are.same({ characters = {}, settings = { window = {} } }, db)
   end)
 
+  it("drops Well Rested ranks from before each character had its own", function()
+    local rest = { rested = 5, xpMax = 10, wellRested = 2 }
+    local db = Store.Ensure({ wellRested = 2, characters = { ["A-R"] = { wellRested = 1, rest = rest } } })
+    assert.is_nil(db.wellRested)
+    assert.is_nil(db.characters["A-R"].rest.wellRested)
+    assert.are.equal(1, db.characters["A-R"].wellRested)
+  end)
+
   it("keeps saved data", function()
     local db = Store.Ensure({ characters = { ["A-R"] = { name = "A" } }, settings = { locked = true } })
     assert.are.equal("A", db.characters["A-R"].name)

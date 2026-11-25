@@ -72,7 +72,7 @@ function Game.MaxLevel()
   return plain(GetMaxPlayerLevel and GetMaxPlayerLevel()) or 60
 end
 
--- Legacy's Well Rested perk: trait node 110301 in the account's Legacy trees
+-- Legacy's Well Rested perk: trait node 110301 in the Legacy trees
 -- (a trait config of type Generic). Node id as found in game by the author of
 -- Alts Forever (MIT). Returns nil when it can't be read.
 local WELL_RESTED_NODE = 110301
@@ -101,14 +101,12 @@ function Game.WellRestedRank()
   return nil
 end
 
--- wellRested is the account's rank, read once and passed in, so this cheap
--- read can run on every XP change.
-function Game.RestObservation(wellRested)
+-- A cheap read, so it can run on every XP change.
+function Game.RestObservation()
   return {
     rested = plain(GetXPExhaustion()),
     xpMax = plain(UnitXPMax("player")),
     resting = plain(IsResting()),
-    wellRested = wellRested,
     at = time(),
   }
 end
@@ -155,7 +153,6 @@ function Game.RestContext(db, now)
     maxLevel = Game.MaxLevel(),
     now = now or time(),
     currentKey = Game.CurrentKey(),
-    wellRested = db.wellRested,
     hideSurnames = db.settings.hideSurnames,
   }
 end
