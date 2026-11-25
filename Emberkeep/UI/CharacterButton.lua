@@ -14,11 +14,12 @@ function CharacterButton.Init()
   end
   button = CreateFrame("Button", "EmberkeepCharacterButton", CharacterFrame)
   button:SetSize(20, 20)
-  -- In the title bar, beside the close button. The window's border (NineSlice)
-  -- is drawn hundreds of levels above the window itself, so go above that.
-  local close, border = CharacterFrame.CloseButton, CharacterFrame.NineSlice
+  -- In the title bar, beside the close button. The border (NineSlice, 500) and
+  -- title (510) are drawn far above the window itself (1), so go above both.
+  local close = CharacterFrame.CloseButton
   local level = CharacterFrame:GetFrameLevel() or 1
-  for _, f in ipairs({ type(border) == "table" and border or CharacterFrame, close }) do
+  for _, part in ipairs({ "NineSlice", "TitleContainer", "CloseButton" }) do
+    local f = CharacterFrame[part]
     if type(f) == "table" then
       level = math.max(level, f:GetFrameLevel() or 1)
     end
