@@ -707,7 +707,7 @@ describe("the addon in a stand-in client", function()
 
     it("saves the skills and shows a column per profession, even one nobody has", function()
       assert.are.equal(120, EmberkeepDB.characters["Brakka-Nightfall"].professions.skills.Mining.skill)
-      for _, text in ipairs({ "Mining", "Alchemy", "First Aid", "120/150", "88/150", "41/75" }) do
+      for _, text in ipairs({ "Mining", "Alch", "Smith", "Aid", "120/150", "88/150", "41/75" }) do
         assert.is_true(drawn(text), text)
       end
       assert.is_true(drawn("|cff8f98a5-|r"))
@@ -736,6 +736,13 @@ describe("the addon in a stand-in client", function()
         return n
       end
       assert.are.equal(12, shownTitles())
+      for _, f in ipairs(wow.frames) do
+        if rawget(f, "sort") == "First Aid" then
+          assert.are.equal("First Aid", f.full)
+          f._scripts.OnEnter(f)
+          f._scripts.OnLeave(f)
+        end
+      end
       local lines = {}
       _G.GameTooltip.AddDoubleLine = function(_, left, right)
         lines[left] = right

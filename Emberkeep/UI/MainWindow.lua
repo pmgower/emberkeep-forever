@@ -147,13 +147,14 @@ focuses[3].build = function(db)
   local shown = { { "Character", 130, grow = 1 }, { "Lvl", 34 } }
   for _, c in ipairs(columns) do
     local sorted = professionSort ~= nil and professionSort.key == c.key
-    local title = c.title
+    local title = c.short
     if sorted then
       title = title .. (professionSort.ascending and " ^" or " v")
     end
     shown[#shown + 1] = {
       title,
-      math.max(54, (strlenutf8 and strlenutf8(c.title) or #c.title) * 6 + 14),
+      math.max(56, (strlenutf8 and strlenutf8(c.short) or #c.short) * 6 + 14),
+      full = c.title,
       sort = c.key,
       dim = c.missing,
       sorted = sorted,
@@ -404,6 +405,15 @@ local function titleButton(i)
       professionSort = ns.Professions.NextSort(professionSort, self.sort)
       MainWindow.Render()
     end)
+    b:SetScript("OnEnter", function(self)
+      GameTooltip:SetOwner(self, "ANCHOR_TOP")
+      GameTooltip:AddLine(self.full)
+      GameTooltip:AddLine("Click to sort", 0.56, 0.6, 0.65)
+      GameTooltip:Show()
+    end)
+    b:SetScript("OnLeave", function()
+      GameTooltip:Hide()
+    end)
     win:ForwardDrag(b)
     titleButtons[i] = b
   end
@@ -594,7 +604,7 @@ local function layout(grid)
         end
         if col.sort then
           local b = titleButton(c)
-          b.sort = col.sort
+          b.sort, b.full = col.sort, col.full
           b:ClearAllPoints()
           b:SetPoint("TOPLEFT", content, "TOPLEFT", x - 2, y + 2)
           b:SetWidth(w)
