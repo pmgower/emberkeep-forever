@@ -93,6 +93,21 @@ describe("Rest.ObserveRank", function()
   end)
 end)
 
+describe("a rank saved before 0.3.1", function()
+  it("is the guess until the character's own is read", function()
+    local old = rest({ rested = 16500, wellRested = 5 })
+    assert.are.near(165, Rest.Project(old, 0).percent, 1e-9)
+    assert.is_false(Rest.Project(old, 0).full)
+    assert.is_true(Rest.Project(old, 0, 0).full, "its own rank wins, even 0")
+    local c = { rest = old }
+    Rest.Observe(c, { rested = 1, xpMax = LEVEL, at = 1 })
+    assert.are.equal(5, c.rest.wellRested)
+    c.wellRested = 0
+    Rest.Observe(c, { rested = 1, xpMax = LEVEL, at = 2 })
+    assert.is_nil(c.rest.wellRested)
+  end)
+end)
+
 describe("Rest.Ranking", function()
   it("uses each character's own Well Rested rank", function()
     local list = {

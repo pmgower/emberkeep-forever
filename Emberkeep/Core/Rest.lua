@@ -30,6 +30,8 @@ function Rest.Observe(c, obs)
     rested = math.max(0, tonumber(obs.rested) or 0),
     xpMax = obs.xpMax,
     resting = obs.resting and true or false,
+    -- A guess from before 0.3.1, kept only until the character's own is read.
+    wellRested = c.wellRested == nil and c.rest and c.rest.wellRested or nil,
     at = obs.at,
   }
   return true
@@ -55,9 +57,11 @@ end
 
 -- Where a character's rested XP is at `now`: rested XP, cap, percent of a
 -- level, whether it's full, when it filled (or will), seconds to full.
--- rank is the character's Well Rested rank; one never read counts as 0.
+-- rank is the character's Well Rested rank. One never read uses the rank
+-- saved before 0.3.1 (it may be another character's, but it's the best guess
+-- there is), or 0.
 function Rest.Project(rest, now, rank)
-  local bonus = 1 + Rest.WELL_RESTED_STEP * (rank or 0)
+  local bonus = 1 + Rest.WELL_RESTED_STEP * (rank or rest.wellRested or 0)
   local cap = rest.xpMax * Rest.CAP * bonus
   local rate = rest.xpMax * Rest.PER_SECOND * bonus * (rest.resting and 1 or Rest.AWAY)
   local start = math.min(rest.rested, cap)

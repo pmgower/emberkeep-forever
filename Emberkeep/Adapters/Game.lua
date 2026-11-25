@@ -93,7 +93,12 @@ function Game.WellRestedRank()
     if config then
       local ok2, info = pcall(T.GetNodeInfo, config, WELL_RESTED_NODE)
       if ok2 and type(info) == "table" and plain(info.ID) == WELL_RESTED_NODE then
-        local rank = plain(info.currentRank)
+        -- activeRank is what's committed; currentRank can include points
+        -- placed in the window but not applied.
+        local rank = plain(info.activeRank)
+        if type(rank) ~= "number" then
+          rank = plain(info.currentRank)
+        end
         return type(rank) == "number" and rank or nil
       end
     end

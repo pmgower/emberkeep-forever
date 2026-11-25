@@ -38,8 +38,12 @@ end
 
 local RANK_DELAY = 3
 
+-- True between leaving the world and entering it again (zoning or logging
+-- out), when readings can come back empty.
+local leaving = true
+
 local function readRank()
-  local c = ns.db.characters[ns.Game.CurrentKey() or ""]
+  local c = not leaving and ns.db.characters[ns.Game.CurrentKey() or ""]
   if c and ns.Rest.ObserveRank(c, ns.Game.WellRestedRank()) then
     ns.MainWindow.RefreshIfShown()
   end
@@ -57,12 +61,12 @@ local function observe(event, arg1)
   end
   local key =
     ns.Roster.Observe(ns.db.characters, sighting, ns.Game.Now(), { loggingOut = event == "PLAYER_LOGOUT" })
-  if key and (event == "PLAYER_ENTERING_WORLD" or event == "TRAIT_CONFIG_UPDATED") then
-    ns.Rest.ObserveRank(ns.db.characters[key], ns.Game.WellRestedRank())
-  end
-  -- The Legacy trees may not be loaded on entering the world, so look again.
+  -- The Legacy trees may not be loaded on entering the world, and could read
+  -- as 0, so give them a moment.
   if event == "PLAYER_ENTERING_WORLD" and C_Timer and C_Timer.After then
     C_Timer.After(RANK_DELAY, readRank)
+  elseif key and event == "TRAIT_CONFIG_UPDATED" then
+    ns.Rest.ObserveRank(ns.db.characters[key], ns.Game.WellRestedRank())
   end
   -- Not on level-up (XP to level can still be the old level's) or logout
   -- (reads can come back empty); the readings just before are good.
@@ -187,7 +191,7 @@ end
 -- sighting. Not between leaving the world and entering it again (zoning or
 -- logging out), when they can read as empty.
 -- Several changes close together (looting, a shot that uses ammo) make one read.
-local leaving, queued = true, false
+local queued = false
 local BAG_DELAY, ENTER_DELAY = 0.5, 1
 local queueBags
 

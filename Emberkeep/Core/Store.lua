@@ -12,11 +12,6 @@ function Store.Ensure(db)
   db.settings = type(db.settings) == "table" and db.settings or {}
   db.settings.window = type(db.settings.window) == "table" and db.settings.window or {}
   db.wellRested = nil -- before 0.3.1, one rank for every character
-  for _, c in pairs(db.characters) do
-    if type(c) == "table" and type(c.rest) == "table" then
-      c.rest.wellRested = nil -- could be another character's, so it's read again
-    end
-  end
   return db
 end
 
