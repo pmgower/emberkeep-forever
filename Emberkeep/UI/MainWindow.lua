@@ -131,7 +131,62 @@ local focuses = {
       return grid, summary.count == 1 and "1 alt" or (summary.count .. " alts")
     end,
   },
+  {
+    key = "professions",
+    title = "Professions",
+    columns = {}, -- set by build: a column per profession
+  },
 }
+
+-- The Professions tab's sorted column, for this session: nil is by level.
+local professionSort
+
+focuses[3].build = function(db)
+  local opts = { hideSurnames = db.settings.hideSurnames, sort = professionSort }
+  local columns, rows = ns.Professions.Build(db.characters, ns.Roster, opts)
+  local shown = { { "Character", 130, grow = 1 }, { "Lvl", 34 } }
+  for _, c in ipairs(columns) do
+    shown[#shown + 1] = {
+      c.title,
+      math.max(58, #c.title * 6 + 16),
+      sort = c.key,
+      dim = c.missing,
+      sorted = professionSort ~= nil and professionSort.key == c.key,
+    }
+  end
+  focuses[3].columns = shown
+  local grid = {}
+  for _, r in ipairs(rows) do
+    local line = { key = r.key, cells = { classColored(r.name, r.classFile), r.level } }
+    if r.skills then
+      for _, c in ipairs(columns) do
+        local p = r.skills[c.key]
+        line.cells[#line.cells + 1] = p and ns.Professions.Text(p) or (DIM .. "-|r")
+      end
+    else
+      line.cells[3], line.span = DIM .. "Not read yet|r", 3
+    end
+    grid[#grid + 1] = line
+  end
+  return grid, #rows == 1 and "1 alt" or (#rows .. " alts")
+end
+
+-- The row tooltip on this tab: the character's professions.
+focuses[3].tooltip = function(c)
+  local saved = c.professions
+  if not saved then
+    GameTooltip:AddLine("Professions not read yet", 1, 1, 1)
+    GameTooltip:AddLine("Log in on them once to read them", 0.56, 0.6, 0.65)
+    return
+  end
+  for _, column in ipairs(ns.Professions.Columns({ c })) do
+    local p = saved.skills[column.key]
+    if p then
+      GameTooltip:AddDoubleLine(column.title, ns.Professions.Text(p), 1, 0.82, 0, 1, 1, 1)
+    end
+  end
+  GameTooltip:AddLine("As of " .. ns.Format.Ago(saved.at, ns.Game.Now()), 0.56, 0.6, 0.65)
+end
 
 local win, tabs, cells, stripes, headerLine, hovers, bars = nil, {}, {}, {}, nil, {}, {}
 local pips = {}
@@ -154,6 +209,15 @@ local function tooltip(owner, key)
   GameTooltip:AddLine(classColored(shown, c.classFile))
   local who = string.format("Level %s %s %s", tostring(c.level or "?"), c.race or "", c.class or "")
   GameTooltip:AddLine(who, 0.79, 0.81, 0.84)
+  if active.tooltip then
+    active.tooltip(c)
+    GameTooltip:AddLine("Click to see gear", 0.56, 0.6, 0.65)
+    if MenuUtil and key ~= ns.Game.CurrentKey() then
+      GameTooltip:AddLine("Right-click to remove", 0.56, 0.6, 0.65)
+    end
+    GameTooltip:Show()
+    return
+  end
   local now = ns.Game.Now()
   local levelling = c.rest and (c.level or 0) < ns.Game.MaxLevel()
   if levelling then
@@ -317,6 +381,27 @@ local function hover(r)
   return b
 end
 
+-- A button over a sortable column's title.
+local titleButtons = {}
+
+local function titleButton(i)
+  local b = titleButtons[i]
+  if not b then
+    b = CreateFrame("Button", nil, win.content)
+    b:SetHeight(ROW_H)
+    local hl = b:CreateTexture(nil, "HIGHLIGHT")
+    hl:SetAllPoints()
+    win:AddHighlight(hl)
+    b:SetScript("OnClick", function(self)
+      professionSort = ns.Professions.NextSort(professionSort, self.sort)
+      MainWindow.Render()
+    end)
+    win:ForwardDrag(b)
+    titleButtons[i] = b
+  end
+  return b
+end
+
 local function buildTabs()
   local x = 0
   for i, focus in ipairs(focuses) do
@@ -425,6 +510,9 @@ local function layout(grid)
       pip:Hide()
     end
   end
+  for _, b in pairs(titleButtons) do
+    b:Hide()
+  end
   local tr, tg, tb = ns.Window.Rgb(ns.Window.Current().title)
   local header = {}
   for i, col in ipairs(active.columns) do
@@ -457,6 +545,9 @@ local function layout(grid)
       local w = widths[c]
       local fs = cell(r, c)
       local textX, textW = x, w - 6
+      if row.span == c then
+        textW = width - x -- no other cells to its right
+      end
       if r > 1 and c == active.bar and row.fill then
         local b = bar(r)
         b.track:ClearAllPoints()
@@ -485,7 +576,22 @@ local function layout(grid)
       fs:SetText(text)
       fs:Show()
       if r == 1 then
-        fs:SetTextColor(tr, tg, tb)
+        local col = active.columns[c]
+        if col.sorted then
+          fs:SetTextColor(1, 0.82, 0)
+        elseif col.dim then
+          fs:SetTextColor(0.5, 0.53, 0.58)
+        else
+          fs:SetTextColor(tr, tg, tb)
+        end
+        if col.sort then
+          local b = titleButton(c)
+          b.sort = col.sort
+          b:ClearAllPoints()
+          b:SetPoint("TOPLEFT", content, "TOPLEFT", x - 2, y + 2)
+          b:SetWidth(w)
+          b:Show()
+        end
       end
       x = x + w
     end

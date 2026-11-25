@@ -644,6 +644,88 @@ describe("the addon in a stand-in client", function()
     end)
   end)
 
+  describe("the Professions tab", function()
+    local function drawn(text)
+      for _, f in ipairs(wow.frames) do
+        if f._shown and f._text == text then
+          return true
+        end
+      end
+      return false
+    end
+    local function rowOrder()
+      local seen = {}
+      for _, f in ipairs(wow.frames) do
+        if rawget(f, "key") and f._shown and f._scripts.OnEnter then
+          seen[#seen + 1] = { key = f.key, y = f._point[5] }
+        end
+      end
+      table.sort(seen, function(a, b)
+        return a.y > b.y
+      end)
+      return seen
+    end
+
+    before_each(function()
+      state.professions = {
+        { line = 186, name = "Mining", skill = 120, max = 150 },
+        { line = 164, name = "Blacksmithing", skill = 88, max = 150 },
+        { line = 185, name = "Cooking", skill = 41, max = 75 },
+      }
+      wow.fire("PLAYER_ENTERING_WORLD", false, true)
+      wow.fire("SKILL_LINES_CHANGED")
+      EmberkeepDB.characters["Quill-Nightfall"] = { name = "Quill", realm = "Nightfall", level = 40 }
+      EmberkeepDB.settings.focus = "professions"
+      SlashCmdList.EMBERKEEP("")
+    end)
+
+    it("saves the skills and shows a column per profession, even one nobody has", function()
+      assert.are.equal(120, EmberkeepDB.characters["Brakka-Nightfall"].professions.skills.Mining.skill)
+      for _, text in ipairs({ "Mining", "Alchemy", "First Aid", "120/150", "88/150", "41/75" }) do
+        assert.is_true(drawn(text), text)
+      end
+      assert.is_true(drawn("|cff8f98a5-|r"))
+      assert.is_true(drawn("|cff8f98a5Not read yet|r"))
+    end)
+
+    it("sorts by a clicked title, and keeps Up and Down in that order", function()
+      assert.are.equal("Quill-Nightfall", rowOrder()[1].key)
+      for _, f in ipairs(wow.frames) do
+        if rawget(f, "sort") == "Mining" then
+          f._scripts.OnClick(f)
+        end
+      end
+      assert.are.equal("Brakka-Nightfall", rowOrder()[1].key)
+      assert.are.same({ "Brakka-Nightfall", "Quill-Nightfall" }, ns.MainWindow.Keys())
+    end)
+
+    it("shows no title buttons on another tab, and builds its tooltips", function()
+      for _, f in ipairs(wow.frames) do
+        if rawget(f, "key") and f._scripts.OnEnter then
+          f._scripts.OnEnter(f)
+        end
+      end
+      for _, f in ipairs(wow.frames) do
+        if rawget(f, "label") and f.label._text == "Rested" then
+          f._scripts.OnClick(f)
+        end
+      end
+      for _, f in ipairs(wow.frames) do
+        assert.is_false(rawget(f, "sort") ~= nil and f._shown)
+      end
+    end)
+
+    it("keeps the saved skills when a read comes back empty, or while leaving the world", function()
+      local saved = EmberkeepDB.characters["Brakka-Nightfall"].professions
+      state.professions = {}
+      wow.fire("SKILL_LINES_CHANGED")
+      state.professions = { { line = 185, name = "Cooking", skill = 1, max = 75 } }
+      wow.fire("PLAYER_LEAVING_WORLD")
+      wow.fire("SKILL_LINES_CHANGED")
+      assert.are.equal(saved, EmberkeepDB.characters["Brakka-Nightfall"].professions)
+    end)
+  end)
+
   describe("bug reports", function()
     it("opens a report with a prefilled GitHub link and no character names", function()
       SlashCmdList.EMBERKEEP("feedback")

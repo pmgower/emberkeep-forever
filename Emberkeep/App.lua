@@ -49,6 +49,13 @@ local function readRank()
   end
 end
 
+local function readProfessions()
+  local c = not leaving and ns.db.characters[ns.Game.CurrentKey() or ""]
+  if c and ns.Professions.Observe(c, ns.Game.Professions(), ns.Game.Now()) then
+    ns.MainWindow.RefreshIfShown()
+  end
+end
+
 local function observe(event, arg1)
   if not ns.db then
     return
@@ -65,6 +72,7 @@ local function observe(event, arg1)
   -- as 0, so give them a moment.
   if event == "PLAYER_ENTERING_WORLD" and C_Timer and C_Timer.After then
     C_Timer.After(RANK_DELAY, readRank)
+    C_Timer.After(RANK_DELAY, readProfessions)
   elseif key and event == "TRAIT_CONFIG_UPDATED" then
     ns.Rest.ObserveRank(ns.db.characters[key], ns.Game.WellRestedRank())
   end
@@ -117,6 +125,7 @@ frame:RegisterEvent("TRAIT_CONFIG_UPDATED")
 frame:RegisterEvent("TIME_PLAYED_MSG")
 frame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
 frame:RegisterEvent("BAG_UPDATE_DELAYED")
+frame:RegisterEvent("SKILL_LINES_CHANGED")
 frame:RegisterEvent("PLAYER_LEAVING_WORLD")
 -- The last few errors Emberkeep hit this session, for /emberkeep feedback and
 -- /emberkeep debug. Kept in memory only, never saved.
@@ -245,6 +254,11 @@ local function handle(event, arg1)
   end
   if event == "BAG_UPDATE_DELAYED" then
     return queueBags(BAG_DELAY, RETRIES)
+  elseif event == "SKILL_LINES_CHANGED" then
+    if ns.db then
+      readProfessions()
+    end
+    return
   elseif event == "PLAYER_LEAVING_WORLD" then
     leaving = true
     return
