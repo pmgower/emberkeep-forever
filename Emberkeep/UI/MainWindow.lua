@@ -236,7 +236,7 @@ local function bar(r)
   return b
 end
 
--- Five small squares per row, the first ank of them gold.
+-- Five small squares per row; as many as the rank are gold.
 local function pipRow(r)
   local row = pips[r]
   if not row then
