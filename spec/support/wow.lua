@@ -53,6 +53,8 @@ local function fakeObject(kind)
           self._point = { ... }
         elseif k == "SetScale" then
           self._scale = ...
+        elseif k == "SetFrameLevel" then
+          self._level = ...
         elseif k == "GetScale" then
           return self._scale or 1
         elseif k == "GetCenter" then

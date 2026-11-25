@@ -14,9 +14,21 @@ function CharacterButton.Init()
   end
   button = CreateFrame("Button", "EmberkeepCharacterButton", CharacterFrame)
   button:SetSize(20, 20)
-  -- Beside the close button, in the title bar.
-  button:SetPoint("TOPRIGHT", CharacterFrame, "TOPRIGHT", -28, -2)
-  button:SetFrameLevel((CharacterFrame:GetFrameLevel() or 1) + 20)
+  -- In the title bar, beside the close button. The window's border (NineSlice)
+  -- is drawn hundreds of levels above the window itself, so go above that.
+  local close, border = CharacterFrame.CloseButton, CharacterFrame.NineSlice
+  local level = CharacterFrame:GetFrameLevel() or 1
+  for _, f in ipairs({ type(border) == "table" and border or CharacterFrame, close }) do
+    if type(f) == "table" then
+      level = math.max(level, f:GetFrameLevel() or 1)
+    end
+  end
+  if type(close) == "table" then
+    button:SetPoint("RIGHT", close, "LEFT", -2, 0)
+  else
+    button:SetPoint("TOPRIGHT", CharacterFrame, "TOPRIGHT", -28, -2)
+  end
+  button:SetFrameLevel(level + 1)
   local icon = button:CreateTexture(nil, "ARTWORK")
   icon:SetAllPoints()
   icon:SetTexture("Interface\\AddOns\\Emberkeep\\Media\\emberkeep")
