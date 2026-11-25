@@ -7,20 +7,21 @@ local Professions = {}
 ns.Professions = Professions
 
 -- Every profession gets a column, so one nobody has shows up as missing.
--- Keyed by skill line, which is the same in every language.
+-- Keyed by skill line, which is the same in every language. short is the
+-- column title; the full one shows when it's hovered.
 Professions.STANDARD = {
-  { line = 171, title = "Alchemy" },
-  { line = 164, title = "Blacksmithing" },
-  { line = 333, title = "Enchanting" },
-  { line = 202, title = "Engineering" },
-  { line = 182, title = "Herbalism" },
-  { line = 165, title = "Leatherworking" },
-  { line = 186, title = "Mining" },
-  { line = 393, title = "Skinning" },
-  { line = 197, title = "Tailoring" },
-  { line = 185, title = "Cooking" },
-  { line = 356, title = "Fishing" },
-  { line = 129, title = "First Aid" },
+  { line = 171, title = "Alchemy", short = "Alch" },
+  { line = 164, title = "Blacksmithing", short = "Smith" },
+  { line = 333, title = "Enchanting", short = "Ench" },
+  { line = 202, title = "Engineering", short = "Eng" },
+  { line = 182, title = "Herbalism", short = "Herb" },
+  { line = 165, title = "Leatherworking", short = "Leather" },
+  { line = 186, title = "Mining", short = "Mining" },
+  { line = 393, title = "Skinning", short = "Skin" },
+  { line = 197, title = "Tailoring", short = "Tailor" },
+  { line = 185, title = "Cooking", short = "Cook" },
+  { line = 356, title = "Fishing", short = "Fish" },
+  { line = 129, title = "First Aid", short = "Aid" },
 }
 
 -- The column a profession belongs in: its standard title, or its own name for
@@ -70,9 +71,10 @@ function Professions.Text(p)
   return tostring(p.skill)
 end
 
--- Columns: { key, title, missing = no character has it }, the standard ones
--- first, then any others by name. The title is the game's own name for it
--- when a character has it, so it's in the player's language.
+-- Columns: { key, title, short, missing = no character has it }, the standard
+-- ones first, then any others by name. The title is the game's own name for it
+-- when a character has it, so it's in the player's language; only an English
+-- one is shortened.
 function Professions.Columns(characters)
   local names = {}
   for _, c in ipairs(characters) do
@@ -82,12 +84,18 @@ function Professions.Columns(characters)
   end
   local columns = {}
   for _, p in ipairs(Professions.STANDARD) do
-    columns[#columns + 1] = { key = p.title, title = names[p.title] or p.title, missing = not names[p.title] }
+    local title = names[p.title] or p.title
+    columns[#columns + 1] = {
+      key = p.title,
+      title = title,
+      short = title == p.title and p.short or title,
+      missing = not names[p.title],
+    }
     names[p.title] = nil
   end
   local others = {}
   for key, name in pairs(names) do
-    others[#others + 1] = { key = key, title = name, missing = false }
+    others[#others + 1] = { key = key, title = name, short = name, missing = false }
   end
   table.sort(others, function(a, b)
     return a.title < b.title
