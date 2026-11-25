@@ -146,12 +146,17 @@ focuses[3].build = function(db)
   local columns, rows = ns.Professions.Build(db.characters, ns.Roster, opts)
   local shown = { { "Character", 130, grow = 1 }, { "Lvl", 34 } }
   for _, c in ipairs(columns) do
+    local sorted = professionSort ~= nil and professionSort.key == c.key
+    local title = c.title
+    if sorted then
+      title = title .. (professionSort.ascending and " ^" or " v")
+    end
     shown[#shown + 1] = {
-      c.title,
-      math.max(58, #c.title * 6 + 16),
+      title,
+      math.max(54, (strlenutf8 and strlenutf8(c.title) or #c.title) * 6 + 14),
       sort = c.key,
       dim = c.missing,
-      sorted = professionSort ~= nil and professionSort.key == c.key,
+      sorted = sorted,
     }
   end
   focuses[3].columns = shown
@@ -178,6 +183,9 @@ focuses[3].tooltip = function(c)
     GameTooltip:AddLine("Professions not read yet", 1, 1, 1)
     GameTooltip:AddLine("Log in on them once to read them", 0.56, 0.6, 0.65)
     return
+  end
+  if not next(saved.skills) then
+    GameTooltip:AddLine("No professions", 1, 1, 1)
   end
   for _, column in ipairs(ns.Professions.Columns({ c })) do
     local p = saved.skills[column.key]

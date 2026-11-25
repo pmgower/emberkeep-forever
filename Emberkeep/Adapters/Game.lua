@@ -165,8 +165,10 @@ function Game.Professions()
     end
     local name, _, skill, max, _, _, line = GetProfessionInfo(index)
     name, skill = plain(name), plain(skill)
-    if type(name) == "string" and type(skill) == "number" then
-      reading.list[#reading.list + 1] = { line = plain(line), name = name, skill = skill, max = plain(max) }
+    max = plain(max)
+    -- A learned profession is at least 1 of something; 0 means not loaded.
+    if type(name) == "string" and (tonumber(skill) or 0) > 0 and (tonumber(max) or 0) > 0 then
+      reading.list[#reading.list + 1] = { line = plain(line), name = name, skill = skill, max = max }
     else
       reading.unread = true
     end

@@ -49,11 +49,37 @@ local function readRank()
   end
 end
 
+-- The skill list can be incomplete just after entering the world, so it's
+-- read once the game has settled, and skill changes before then wait for it.
+-- Several changes close together make one read.
+local SKILL_DELAY = 1
+local settled, skillsQueued = false, false
+
 local function readProfessions()
   local c = not leaving and ns.db.characters[ns.Game.CurrentKey() or ""]
-  if c and ns.Professions.Observe(c, ns.Game.Professions(), ns.Game.Now()) then
+  if c and ns.Professions.Observe(c, ns.Game.Professions(), ns.Game.Now(), settled) then
     ns.MainWindow.RefreshIfShown()
   end
+end
+
+local function settle()
+  if not leaving then
+    settled = true
+    readProfessions()
+  end
+end
+
+local function skillsChanged()
+  if not (settled and C_Timer and C_Timer.After) or skillsQueued then
+    return
+  end
+  skillsQueued = true
+  C_Timer.After(SKILL_DELAY, function()
+    skillsQueued = false
+    if settled then
+      readProfessions()
+    end
+  end)
 end
 
 local function observe(event, arg1)
@@ -72,7 +98,7 @@ local function observe(event, arg1)
   -- as 0, so give them a moment.
   if event == "PLAYER_ENTERING_WORLD" and C_Timer and C_Timer.After then
     C_Timer.After(RANK_DELAY, readRank)
-    C_Timer.After(RANK_DELAY, readProfessions)
+    C_Timer.After(RANK_DELAY, settle)
   elseif key and event == "TRAIT_CONFIG_UPDATED" then
     ns.Rest.ObserveRank(ns.db.characters[key], ns.Game.WellRestedRank())
   end
@@ -255,12 +281,9 @@ local function handle(event, arg1)
   if event == "BAG_UPDATE_DELAYED" then
     return queueBags(BAG_DELAY, RETRIES)
   elseif event == "SKILL_LINES_CHANGED" then
-    if ns.db then
-      readProfessions()
-    end
-    return
+    return skillsChanged()
   elseif event == "PLAYER_LEAVING_WORLD" then
-    leaving = true
+    leaving, settled = true, false
     return
   elseif event == "PLAYER_ENTERING_WORLD" then
     leaving = false

@@ -666,14 +666,40 @@ describe("the addon in a stand-in client", function()
       return seen
     end
 
+    local later
+    -- Runs the timers due after this many seconds (3: settled, 1: a skill change).
+    local function run(delay)
+      local due = later
+      later = {}
+      for _, t in ipairs(due) do
+        if t.delay == delay then
+          t.fn()
+        end
+      end
+    end
+
+    after_each(function()
+      _G.C_Timer = nil
+    end)
+
     before_each(function()
+      later = {}
+      _G.C_Timer = {
+        After = function(delay, fn)
+          later[#later + 1] = { delay = delay, fn = fn }
+        end,
+      }
       state.professions = {
         { line = 186, name = "Mining", skill = 120, max = 150 },
         { line = 164, name = "Blacksmithing", skill = 88, max = 150 },
         { line = 185, name = "Cooking", skill = 41, max = 75 },
       }
       wow.fire("PLAYER_ENTERING_WORLD", false, true)
-      wow.fire("SKILL_LINES_CHANGED")
+      wow.fire("SKILL_LINES_CHANGED") -- too early: waits for the settled read
+      run(1)
+      assert.is_nil(EmberkeepDB.characters["Brakka-Nightfall"].professions)
+      wow.fire("PLAYER_ENTERING_WORLD", false, true)
+      run(3)
       EmberkeepDB.characters["Quill-Nightfall"] = { name = "Quill", realm = "Nightfall", level = 40 }
       EmberkeepDB.settings.focus = "professions"
       SlashCmdList.EMBERKEEP("")
@@ -699,30 +725,60 @@ describe("the addon in a stand-in client", function()
       assert.are.same({ "Brakka-Nightfall", "Quill-Nightfall" }, ns.MainWindow.Keys())
     end)
 
-    it("shows no title buttons on another tab, and builds its tooltips", function()
+    it("shows title buttons on this tab only, and lists professions in the tooltip", function()
+      local function shownTitles()
+        local n = 0
+        for _, f in ipairs(wow.frames) do
+          if rawget(f, "sort") and f._shown then
+            n = n + 1
+          end
+        end
+        return n
+      end
+      assert.are.equal(12, shownTitles())
+      local lines = {}
+      _G.GameTooltip.AddDoubleLine = function(_, left, right)
+        lines[left] = right
+      end
       for _, f in ipairs(wow.frames) do
-        if rawget(f, "key") and f._scripts.OnEnter then
+        if rawget(f, "key") == "Brakka-Nightfall" and f._shown and f._scripts.OnEnter then
           f._scripts.OnEnter(f)
         end
       end
+      assert.are.equal("120/150", lines.Mining)
+      assert.is_nil(lines.Rested)
       for _, f in ipairs(wow.frames) do
         if rawget(f, "label") and f.label._text == "Rested" then
           f._scripts.OnClick(f)
         end
       end
-      for _, f in ipairs(wow.frames) do
-        assert.is_false(rawget(f, "sort") ~= nil and f._shown)
-      end
+      assert.are.equal("rested", EmberkeepDB.settings.focus)
+      assert.are.equal(0, shownTitles())
     end)
 
     it("keeps the saved skills when a read comes back empty, or while leaving the world", function()
-      local saved = EmberkeepDB.characters["Brakka-Nightfall"].professions
-      state.professions = {}
-      wow.fire("SKILL_LINES_CHANGED")
+      local c = EmberkeepDB.characters["Brakka-Nightfall"]
+      local saved = c.professions
+      local function change(list)
+        state.professions = list
+        wow.fire("SKILL_LINES_CHANGED")
+        wow.fire("SKILL_LINES_CHANGED")
+        run(1)
+      end
+      change({})
+      change({ { nothing = true }, { line = 185, name = "Cooking", skill = 1, max = 75 } })
+      change({ { line = 186, name = "Mining", skill = 0, max = 0 } })
+      state.secret = "Hidden"
+      change({ { line = 186, name = "Hidden", skill = 5, max = 75 } })
+      assert.are.equal(saved, c.professions)
+      state.secret = nil
+      change({ { line = 186, name = "Mining", skill = 121, max = 150 } })
+      assert.are.equal(121, c.professions.skills.Mining.skill)
       state.professions = { { line = 185, name = "Cooking", skill = 1, max = 75 } }
-      wow.fire("PLAYER_LEAVING_WORLD")
       wow.fire("SKILL_LINES_CHANGED")
-      assert.are.equal(saved, EmberkeepDB.characters["Brakka-Nightfall"].professions)
+      wow.fire("PLAYER_LEAVING_WORLD")
+      run(1)
+      assert.are.equal(121, c.professions.skills.Mining.skill)
     end)
   end)
 
