@@ -10,7 +10,7 @@ describe("Store.Ensure", function()
     local rest = { rested = 5, xpMax = 10, wellRested = 2 }
     local db = Store.Ensure({ wellRested = 2, characters = { ["A-R"] = { wellRested = 1, rest = rest } } })
     assert.is_nil(db.wellRested)
-    assert.are.equal(2, db.characters["A-R"].rest.wellRested, "kept as a guess until it's read")
+    assert.is_nil(db.characters["A-R"].rest.wellRested)
     assert.are.equal(1, db.characters["A-R"].wellRested)
   end)
 
