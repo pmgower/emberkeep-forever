@@ -739,6 +739,7 @@ describe("the addon in a stand-in client", function()
       for _, f in ipairs(wow.frames) do
         if rawget(f, "sort") == "First Aid" then
           assert.are.equal("First Aid", f.full)
+          assert.is_true(f._point[5] <= 0, "nothing above the table, or it scrolls")
           f._scripts.OnEnter(f)
           f._scripts.OnLeave(f)
         end
