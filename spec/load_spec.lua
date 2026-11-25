@@ -459,7 +459,13 @@ describe("the addon in a stand-in client", function()
     it("opens from a button on the game's Character window, and closes from it", function()
       SlashCmdList.EMBERKEEP("") -- close it
       local before = #wow.frames
-      _G.CharacterFrame = _G.CreateFrame("Frame")
+      local charFrame = _G.CreateFrame("Frame")
+      charFrame.NineSlice = {
+        GetFrameLevel = function()
+          return 500
+        end,
+      }
+      _G.CharacterFrame = charFrame
       wow.fire("ADDON_LOADED", "Blizzard_SomethingElse")
       wow.fire("ADDON_LOADED", "Blizzard_Another")
       local made = {}
@@ -470,6 +476,7 @@ describe("the addon in a stand-in client", function()
       end
       _G.CharacterFrame = nil
       assert.are.equal(1, #made, "one button, however many addons load")
+      assert.is_true(made[1]._level > 500, "above the window's border")
       made[1]._scripts.OnEnter(made[1])
       made[1]._scripts.OnClick(made[1])
       assert.is_true(ns.MainWindow.IsShown())
