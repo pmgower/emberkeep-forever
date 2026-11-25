@@ -35,18 +35,31 @@ function Professions.Key(line, name)
 end
 
 -- reading: { list = { { line, name, skill, max }, ... }, unread = true when one
--- couldn't be read }. Saves it on the character and returns true. An empty or
--- partial reading is ignored: it would look like professions were dropped.
-function Professions.Observe(c, reading, now)
-  if not reading or reading.unread or #reading.list == 0 then
+-- couldn't be read }. Saves it on the character and returns true if it changed
+-- anything. A partial reading is ignored, and an empty one never replaces
+-- skills: it would look like professions were dropped. settled says the game
+-- has had time to load, so an empty list can mean a character with none.
+function Professions.Observe(c, reading, now, settled)
+  if not reading or reading.unread then
     return false
   end
-  local skills = {}
+  local old = c.professions and c.professions.skills
+  if #reading.list == 0 and (old and next(old) or not settled) then
+    return false
+  end
+  local skills, count, same = {}, 0, old ~= nil
   for _, p in ipairs(reading.list) do
-    skills[Professions.Key(p.line, p.name)] = { name = p.name, skill = p.skill, max = p.max }
+    local key = Professions.Key(p.line, p.name)
+    local was = old and old[key]
+    same = same and was ~= nil and was.skill == p.skill and was.max == p.max
+    skills[key] = { name = p.name, skill = p.skill, max = p.max }
+    count = count + 1
+  end
+  for _ in pairs(old or {}) do
+    count = count - 1
   end
   c.professions = { skills = skills, at = now }
-  return true
+  return not same or count ~= 0
 end
 
 -- "142/150", or just "142" when the limit isn't known.
@@ -127,9 +140,15 @@ function Professions.Build(store, Roster, opts)
   return Professions.Columns(characters), rows
 end
 
--- What clicking a column title does: highest first, then lowest first.
+-- What clicking a column title does: highest first, then lowest first, then
+-- back to by level (nil).
 function Professions.NextSort(sort, key)
-  return { key = key, ascending = sort ~= nil and sort.key == key and not sort.ascending }
+  if not sort or sort.key ~= key then
+    return { key = key, ascending = false }
+  elseif not sort.ascending then
+    return { key = key, ascending = true }
+  end
+  return nil
 end
 
 return Professions

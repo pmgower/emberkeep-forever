@@ -301,6 +301,9 @@ function W.install(state)
   end
   _G.GetProfessionInfo = function(index)
     local p = state.professions[index]
+    if p.nothing then
+      return nil
+    end
     return p.name, 0, p.skill, p.max, 0, 0, p.line
   end
   W.linked = {}
