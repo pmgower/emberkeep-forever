@@ -103,18 +103,20 @@ describe("the addon in a stand-in client", function()
       end,
       GetNodeInfo = function(config, node)
         if config == 22 then
-          return { ID = node, currentRank = 3 }
+          return { ID = node, activeRank = 3, currentRank = 5 } -- 2 points not applied
         end
         return { ID = 0, currentRank = 0 }
       end,
     }
     local partly = { rested = 6000, xpMax = 10000, resting = true, at = 1000 }
     EmberkeepDB.characters["Quill-Nightfall"] =
-      { name = "Quill", realm = "Nightfall", level = 18, rest = partly }
+      { name = "Quill", realm = "Nightfall", level = 18, rest = partly, wellRested = 1 }
+    EmberkeepDB.characters["Morvain-Nightfall"] =
+      { name = "Morvain", realm = "Nightfall", level = 12, rest = partly }
     wow.fire("TRAIT_CONFIG_UPDATED")
     _G.C_Traits, _G.Enum = nil, nil
     assert.are.equal(3, EmberkeepDB.characters["Brakka-Nightfall"].wellRested)
-    assert.is_nil(EmberkeepDB.characters["Quill-Nightfall"].wellRested, "another alt keeps its own")
+    assert.are.equal(1, EmberkeepDB.characters["Quill-Nightfall"].wellRested, "another alt keeps its own")
     assert.is_nil(EmberkeepDB.wellRested)
     EmberkeepDB.settings.focus = "rested"
     SlashCmdList.EMBERKEEP("")
@@ -123,7 +125,63 @@ describe("the addon in a stand-in client", function()
       drawn[tostring(f._text)] = true
     end
     assert.is_true(drawn["3 / 5"])
+    assert.is_true(drawn["1 / 5"])
     assert.is_true(drawn["|cff8f98a5Not read yet|r"])
+    local function shownPips()
+      local n = 0
+      for _, f in ipairs(wow.frames) do
+        if rawget(f, "pip") and f._shown then
+          n = n + 1
+        end
+      end
+      return n
+    end
+    assert.are.equal(10, shownPips(), "five each for the two alts with a rank")
+    for _, f in ipairs(wow.frames) do
+      if rawget(f, "label") and f.label._text == "Overview" then
+        f._scripts.OnClick(f)
+      end
+    end
+    assert.are.equal(0, shownPips())
+  end)
+
+  it("reads the rank a moment after entering the world, and not while leaving it", function()
+    local rank, later = 0, {}
+    _G.C_Traits = {
+      GetConfigsByType = function()
+        return { 22 }
+      end,
+      GetNodeInfo = function(_, node)
+        return { ID = node, currentRank = rank }
+      end,
+    }
+    _G.C_Timer = {
+      After = function(delay, fn)
+        later[#later + 1] = { delay = delay, fn = fn }
+      end,
+    }
+    local c = EmberkeepDB.characters["Brakka-Nightfall"]
+    c.wellRested = 4
+    local function runRankTimers()
+      local due = later
+      later = {}
+      for _, t in ipairs(due) do
+        if t.delay == 3 then
+          pcall(t.fn)
+        end
+      end
+    end
+    wow.fire("PLAYER_ENTERING_WORLD", true, false)
+    assert.are.equal(4, c.wellRested, "a 0 from trees that aren't loaded is never saved")
+    rank = 2
+    runRankTimers()
+    assert.are.equal(2, c.wellRested)
+    wow.fire("PLAYER_ENTERING_WORLD", false, false)
+    wow.fire("PLAYER_LEAVING_WORLD")
+    rank = 0
+    runRankTimers()
+    assert.are.equal(2, c.wellRested)
+    _G.C_Traits, _G.C_Timer = nil, nil
   end)
 
   it("saves the character when the game reports no realm name, as WoW Forever does", function()

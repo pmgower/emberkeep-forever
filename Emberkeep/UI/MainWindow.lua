@@ -54,7 +54,7 @@ local focuses = {
       { "Lvl", 34 },
       { "Rested", 130, grow = 1 },
       { "Full in", 64 },
-      { "Well Rested", 100 },
+      { "Well Rested", 88 },
       { "Resting", 70 },
       { "Zone", 130, grow = 1 },
     },
@@ -169,7 +169,9 @@ local function tooltip(owner, key)
     local rank = c.wellRested
     GameTooltip:AddDoubleLine("Well Rested", rank and (rank .. " / 5") or "not read yet", 1, 0.82, 0, 1, 1, 1)
     local effect = "Log in on them once to read it"
-    if rank then
+    if not rank and key == ns.Game.CurrentKey() then
+      effect = "Couldn't be read on this character"
+    elseif rank then
       effect = rank > 0 and ns.Rest.RankEffect(rank) or "No points in it"
     end
     GameTooltip:AddLine(effect, 0.56, 0.6, 0.65)
@@ -243,6 +245,7 @@ local function pipRow(r)
     row = {}
     for i = 1, PIPS do
       row[i] = win.content:CreateTexture(nil, "ARTWORK")
+      row[i].pip = i
       row[i]:SetSize(PIP, PIP)
     end
     pips[r] = row
