@@ -294,6 +294,15 @@ function W.install(state)
       return it and { itemID = it.id, hyperlink = link, stackCount = it.count }
     end,
   }
+  -- Professions: state.professions is a list of { line, name, skill, max }.
+  _G.GetProfessions = function()
+    local list = state.professions or {}
+    return list[1] and 1, list[2] and 2, nil, list[3] and 3, list[4] and 4, list[5] and 5
+  end
+  _G.GetProfessionInfo = function(index)
+    local p = state.professions[index]
+    return p.name, 0, p.skill, p.max, 0, 0, p.line
+  end
   W.linked = {}
   _G.IsModifiedClick = function()
     return state.shift == true

@@ -152,6 +152,35 @@ function Game.RequestPlayed()
   return true
 end
 
+-- The skill list, for Professions.Observe: two main professions, then the
+-- secondary ones, with a gap for each the character doesn't have.
+function Game.Professions()
+  if not (GetProfessions and GetProfessionInfo) then
+    return nil
+  end
+  local reading = { list = {}, unread = false }
+  local function add(index)
+    if index == nil then
+      return
+    end
+    local name, _, skill, max, _, _, line = GetProfessionInfo(index)
+    name, skill = plain(name), plain(skill)
+    if type(name) == "string" and type(skill) == "number" then
+      reading.list[#reading.list + 1] = { line = plain(line), name = name, skill = skill, max = plain(max) }
+    else
+      reading.unread = true
+    end
+  end
+  local a, b, c, d, e, f = GetProfessions()
+  add(a)
+  add(b)
+  add(c)
+  add(d)
+  add(e)
+  add(f)
+  return reading
+end
+
 -- What the Rested views need to know about this moment.
 function Game.RestContext(db, now)
   return {
