@@ -40,6 +40,13 @@ local function fakeObject(kind)
           self._w, self._h = ...
         elseif k == "SetText" then
           self._text = ...
+        elseif k == "SetOwner" then
+          self._lines = {}
+        elseif k == "AddLine" then
+          self._lines = self._lines or {}
+          table.insert(self._lines, (...))
+        elseif k == "ClearLines" then
+          self._lines = {}
         elseif k == "GetText" then
           return self._text
         elseif k == "GetStringWidth" then
@@ -312,15 +319,18 @@ function W.install(state)
     return p.name, 0, p.skill, p.max, 0, 0, p.line
   end
   -- The mailbox: state.inbox is a list of { sender, subject, money, days,
-  -- returned, items = { { id, name, count } } }. state.outgoing is what's
-  -- attached to the mail being sent.
+  -- returned, canReply, items = { { id, name, count } } }; state.inboxTotal is
+  -- how many there are when that is more than the game shows. state.outgoing
+  -- is what's attached to the mail being sent.
   _G.GetInboxNumItems = function()
-    return #(state.inbox or {})
+    local shown = #(state.inbox or {})
+    return shown, state.inboxTotal or shown
   end
   _G.GetInboxHeaderInfo = function(i)
     local m = state.inbox[i]
     local count = #(m.items or {})
-    return nil, nil, m.sender, m.subject, m.money or 0, 0, m.days, count, false, m.returned, false, true
+    local canReply = m.canReply ~= false
+    return nil, nil, m.sender, m.subject, m.money or 0, 0, m.days, count, false, m.returned, false, canReply
   end
   _G.GetInboxItem = function(i, slot)
     local it = (state.inbox[i].items or {})[slot]

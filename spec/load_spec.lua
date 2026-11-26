@@ -772,6 +772,7 @@ describe("the addon in a stand-in client", function()
         { sender = "Gamon", subject = "Loan", days = 9, money = 50000 },
         { sender = "Magtoor", subject = "Hey", days = 12 },
       }
+      state.inboxTotal = nil
     end)
 
     it("saves mail with items or gold only while the mailbox is open", function()
@@ -782,6 +783,12 @@ describe("the addon in a stand-in client", function()
       wow.fire("MAIL_INBOX_UPDATE")
       assert.are.equal(2, #c.mail.inbox)
       assert.is_false(c.mail.inbox[1].returns, "returned once already: deleted next time")
+      state.inbox[1].returned, state.inbox[1].canReply = false, false
+      wow.fire("MAIL_INBOX_UPDATE")
+      assert.is_false(c.mail.inbox[1].returns, "from a mailbox that takes no reply: deleted")
+      state.inbox[1].returned, state.inbox[1].canReply = false, true
+      wow.fire("MAIL_INBOX_UPDATE")
+      assert.is_true(c.mail.inbox[1].returns, "from a player: goes back")
       wow.fire("MAIL_CLOSED")
       state.inbox = {}
       wow.fire("MAIL_INBOX_UPDATE")
@@ -826,12 +833,76 @@ describe("the addon in a stand-in client", function()
       assert.is_true(drawn("Auction House"))
       assert.is_true(drawn("2 days left, deleted"))
       for _, f in ipairs(wow.frames) do
-        if rawget(f, "mail") and f._shown then
+        if rawget(f, "mail") and f._shown and f.mail.sender == "Auction House" then
           f._scripts.OnEnter(f)
         end
       end
+      local tip = table.concat(GameTooltip._lines or {}, "
+")
+      assert.truthy(tip:find("From Auction House", 1, true), tip)
+      assert.truthy(tip:find("Linen Cloth", 1, true), tip)
+      assert.truthy(tip:find("x20", 1, true), tip)
+      assert.truthy(tip:find("then it's deleted", 1, true), tip)
       ns.AltPanel.Step(1)
       assert.is_true(drawn("No mail saved yet"))
+    end)
+
+    it("reads the inbox again while the game is still loading it", function()
+      local later = {}
+      _G.C_Timer = {
+        After = function(_, fn)
+          later[#later + 1] = fn
+        end,
+      }
+      local full = state.inbox
+      state.inbox, state.inboxTotal = {}, 3
+      wow.fire("MAIL_SHOW")
+      wow.fire("MAIL_INBOX_UPDATE")
+      wow.fire("MAIL_INBOX_UPDATE")
+      assert.are.equal(1, #later, "one read for updates close together")
+      later[1]()
+      local c = EmberkeepDB.characters["Brakka-Nightfall"]
+      assert.is_nil(c.mail, "not an empty read while the game says there's mail")
+      state.inbox, state.inboxTotal = full, nil
+      later[2]()
+      _G.C_Timer = nil
+      assert.are.equal(2, #c.mail.inbox)
+    end)
+
+    it("shows mail you sent to an alt on another realm only for that realm", function()
+      EmberkeepDB.characters["Quill-Elsewhere"] = { name = "Quill", realm = "Elsewhere", level = 9 }
+      state.outgoing = { { id = 2589, name = "Linen Cloth", count = 5 } }
+      wow.hooks.SendMail("Quill")
+      wow.fire("MAIL_SEND_SUCCESS")
+      assert.are.equal(1, #EmberkeepDB.characters["Quill-Nightfall"].mail.sent)
+      assert.is_nil(EmberkeepDB.characters["Quill-Elsewhere"].mail)
+      wow.hooks.SendMail("Quill-Elsewhere")
+      wow.fire("MAIL_SEND_SUCCESS")
+      assert.are.equal(1, #EmberkeepDB.characters["Quill-Elsewhere"].mail.sent)
+    end)
+
+    it("shows at most 14 mails on the Mail tab, with how many more", function()
+      state.inbox = {}
+      for i = 1, 20 do
+        state.inbox[i] = { sender = "Gamon", subject = "Loan " .. i, days = i, money = 100 }
+      end
+      wow.fire("MAIL_SHOW")
+      wow.fire("MAIL_INBOX_UPDATE")
+      EmberkeepDB.settings.panelTab, EmberkeepDB.settings.focus = "mail", "overview"
+      SlashCmdList.EMBERKEEP("")
+      for _, f in ipairs(wow.frames) do
+        if rawget(f, "key") == "Brakka-Nightfall" and f._scripts.OnClick then
+          f._scripts.OnClick(f, "LeftButton")
+        end
+      end
+      assert.is_true(drawn("+6 more, expiring later"))
+      local rows = 0
+      for _, f in ipairs(wow.frames) do
+        if rawget(f, "mail") and f._shown then
+          rows = rows + 1
+        end
+      end
+      assert.are.equal(14, rows)
     end)
 
     it("warns at login about mail that's about to expire, unless that's turned off", function()
