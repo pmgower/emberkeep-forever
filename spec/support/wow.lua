@@ -318,6 +318,43 @@ function W.install(state)
     end
     return p.name, 0, p.skill, p.max, 0, 0, p.line
   end
+  -- The mailbox: state.inbox is a list of { sender, subject, money, days,
+  -- returned, items = { { id, name, count } } }. state.outgoing is what's
+  -- attached to the mail being sent.
+  _G.GetInboxNumItems = function()
+    return #(state.inbox or {})
+  end
+  _G.GetInboxHeaderInfo = function(i)
+    local m = state.inbox[i]
+    return nil, nil, m.sender, m.subject, m.money or 0, 0, m.days, #(m.items or {}), false, m.returned, false, true
+  end
+  _G.GetInboxItem = function(i, slot)
+    local it = (state.inbox[i].items or {})[slot]
+    if it then
+      return it.name, it.id, 0, it.count, 1
+    end
+  end
+  _G.GetInboxItemLink = function(i, slot)
+    local it = (state.inbox[i].items or {})[slot]
+    return it and ("|Hitem:" .. it.id .. "::|h[" .. it.name .. "]|h")
+  end
+  _G.GetSendMailItem = function(slot)
+    local it = (state.outgoing or {})[slot]
+    if it then
+      return it.name, it.id, 0, it.count, 1
+    end
+  end
+  _G.GetSendMailItemLink = function(slot)
+    local it = (state.outgoing or {})[slot]
+    return it and ("|Hitem:" .. it.id .. "::|h[" .. it.name .. "]|h")
+  end
+  _G.GetSendMailMoney = function()
+    return state.outgoingMoney or 0
+  end
+  W.hooks = {}
+  _G.hooksecurefunc = function(name, fn)
+    W.hooks[name] = fn
+  end
   W.linked = {}
   _G.IsModifiedClick = function()
     return state.shift == true

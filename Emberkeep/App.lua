@@ -155,6 +155,11 @@ frame:RegisterEvent("TRAIT_CONFIG_UPDATED")
 frame:RegisterEvent("TIME_PLAYED_MSG")
 frame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
 frame:RegisterEvent("BAG_UPDATE_DELAYED")
+frame:RegisterEvent("MAIL_SHOW")
+frame:RegisterEvent("MAIL_CLOSED")
+frame:RegisterEvent("MAIL_INBOX_UPDATE")
+frame:RegisterEvent("MAIL_SEND_SUCCESS")
+frame:RegisterEvent("MAIL_FAILED")
 frame:RegisterEvent("BANKFRAME_OPENED")
 frame:RegisterEvent("BANKFRAME_CLOSED")
 frame:RegisterEvent("PLAYERBANKSLOTS_CHANGED") -- moves within the bank itself
@@ -284,6 +289,62 @@ local queueBank = readQueue(function(tries, queue)
   end
 end)
 
+-- The inbox, read while the mailbox is open, once the game says it has loaded.
+-- At login, mail warnings wait until the rest of the login chat has passed.
+local MAIL_WARNING_DELAY = 5
+local mailOpen, MAIL_DELAY = false, 0.3
+
+local queueMail = readQueue(function(tries, queue)
+  local key = mailOpen and not leaving and ns.Game.CurrentKey()
+  local c = key and ns.db.characters[key]
+  if not c then
+    return
+  end
+  local reading = ns.Items.Inbox()
+  if ns.Mail.Observe(c, reading, ns.Game.Now()) then
+    ns.AltPanel.RefreshIfShowing(key)
+    ns.MainWindow.RefreshIfShown()
+  end
+  if reading and reading.missing and tries > 0 then
+    queue(RETRY_SECONDS, tries - 1)
+  end
+end)
+
+-- Mail you send to one of your characters shows on their Mail tab at once.
+-- What's attached is noted when you press Send, and added once it has gone.
+local outgoing
+
+local function noteSend(recipient)
+  outgoing = nil
+  if not ns.db then
+    return
+  end
+  local key = ns.Roster.FindByName(ns.db.characters, recipient)
+  if key and key ~= ns.Game.CurrentKey() then
+    outgoing = { key = key, mail = ns.Items.Outgoing() }
+  end
+end
+
+if hooksecurefunc then
+  hooksecurefunc("SendMail", function(recipient)
+    pcall(noteSend, recipient)
+  end)
+end
+
+local function mailSent()
+  local sent = outgoing
+  outgoing = nil
+  local me = ns.db and ns.db.characters[ns.Game.CurrentKey() or ""]
+  if not (sent and me) then
+    return
+  end
+  sent.mail.from = ns.Roster.DisplayName(me)
+  if ns.Mail.Sent(ns.db.characters[sent.key], sent.mail, ns.Game.Now()) then
+    ns.AltPanel.RefreshIfShowing(sent.key)
+    ns.MainWindow.RefreshIfShown()
+  end
+end
+
 local BANKER = Enum and Enum.PlayerInteractionType and Enum.PlayerInteractionType.Banker
 
 -- The bank window opening or closing, from either event that says so.
@@ -337,8 +398,23 @@ local function handle(event, arg1)
   end
   if event == "UNIT_AURA" then
     return auraChanged()
-  end
-  if event == "PLAYERBANKSLOTS_CHANGED" then
+  elseif event == "MAIL_SHOW" then
+    mailOpen = true
+    return
+  elseif event == "MAIL_CLOSED" then
+    mailOpen = false
+    return
+  elseif event == "MAIL_INBOX_UPDATE" then
+    if mailOpen then
+      queueMail(MAIL_DELAY, RETRIES)
+    end
+    return
+  elseif event == "MAIL_SEND_SUCCESS" then
+    return mailSent()
+  elseif event == "MAIL_FAILED" then
+    outgoing = nil
+    return
+  elseif event == "PLAYERBANKSLOTS_CHANGED" then
     if bankOpen then
       queueBank(BAG_DELAY, RETRIES)
     end
@@ -353,7 +429,7 @@ local function handle(event, arg1)
   elseif event == "SKILL_LINES_CHANGED" then
     return skillsChanged()
   elseif event == "PLAYER_LEAVING_WORLD" then
-    leaving, settled, bankOpen = true, false, false
+    leaving, settled, bankOpen, mailOpen = true, false, false, false
     return
   elseif event == "PLAYER_ENTERING_WORLD" then
     leaving = false
@@ -375,6 +451,11 @@ local function handle(event, arg1)
   -- arg1 is isInitialLogin: true on login, false on /reload and zoning.
   if event == "PLAYER_ENTERING_WORLD" and arg1 == true then
     App.LoginHint()
+    if C_Timer and C_Timer.After then
+      C_Timer.After(MAIL_WARNING_DELAY, App.MailWarnings)
+    else
+      App.MailWarnings()
+    end
   end
 end
 
@@ -401,6 +482,24 @@ function App.LoginHint()
   local line = ns.RestedView.HintText(summary)
   if line then
     ns.Say(line)
+  end
+end
+
+-- At login, after the rest of the login chat: one line per character with mail
+-- about to expire.
+function App.MailWarnings()
+  if not (ns.db and ns.db.settings.mailWarning) then
+    return
+  end
+  local now = ns.Game.Now()
+  for _, c in ipairs(ns.Roster.Characters(ns.db.characters)) do
+    local left, deletes = ns.Mail.Soonest(c, now, ns.Mail.WARN_WITHIN)
+    if left then
+      local name = ns.Roster.DisplayName(c, ns.db.settings.hideSurnames)
+      local when = left <= 0 and "has expired" or ("expires in " .. ns.Format.Duration(left))
+      local after = deletes and "|cffff6060it will be deleted|r" or "then it goes back to the sender"
+      ns.Say(string.format("%s has mail with items or gold that %s (%s).", name, when, after))
+    end
   end
 end
 

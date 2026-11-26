@@ -91,6 +91,21 @@ describe("Roster.Forget", function()
   end)
 end)
 
+describe("Roster.FindByName", function()
+  it("finds a character by full name or a first name only one has, any case", function()
+    local store = {
+      a = { name = "Jango", surname = "Pheu", realm = "R" },
+      b = { name = "Jango", surname = "Fett", realm = "R" },
+      c = { name = "Quill", realm = "R" },
+    }
+    assert.are.equal("a", Roster.FindByName(store, "jango pheu"))
+    assert.are.equal("c", Roster.FindByName(store, " Quill-Somewhere "))
+    assert.is_nil(Roster.FindByName(store, "Jango"), "two alts share it")
+    assert.is_nil(Roster.FindByName(store, "Nobody"))
+    assert.is_nil(Roster.FindByName(store, nil))
+  end)
+end)
+
 describe("Roster.ForgetKey", function()
   it("removes only that realm's character", function()
     local store = {}
