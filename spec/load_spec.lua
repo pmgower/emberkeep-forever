@@ -837,8 +837,7 @@ describe("the addon in a stand-in client", function()
           f._scripts.OnEnter(f)
         end
       end
-      local tip = table.concat(GameTooltip._lines or {}, "
-")
+      local tip = table.concat(GameTooltip._lines or {}, " | ")
       assert.truthy(tip:find("From Auction House", 1, true), tip)
       assert.truthy(tip:find("Linen Cloth", 1, true), tip)
       assert.truthy(tip:find("x20", 1, true), tip)
