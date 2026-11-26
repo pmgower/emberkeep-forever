@@ -300,6 +300,13 @@ function AltPanel.Refresh()
   local bags = tab == "bags" or tab == "bank" -- both are a grid of items
   local list = settings().gearList and not bags
   local width = list and NARROW or WIDE
+  if bags then
+    -- A big bank gets more cells per row rather than running off the screen.
+    local saved = c[tab]
+    local cells = saved and (#saved.items + saved.free) or 0
+    local perRow = math.max(10, math.min(20, math.ceil(cells / 12)))
+    width = PAD * 2 + perRow * (CELL + CELL_GAP) - CELL_GAP
+  end
   local name = classColored(ns.Roster.DisplayName(c, settings().hideSurnames), c.classFile)
   panel.title:SetText(name .. DIM .. "  " .. tostring(c.level or "?") .. " " .. (c.class or "") .. "|r")
   panel.view.label:SetText(list and "Two columns" or "List")

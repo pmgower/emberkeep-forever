@@ -36,7 +36,7 @@ read_globals = {
   -- Bags
   "C_Container", "GetKeyRingSize", "NUM_TOTAL_EQUIPPED_BAG_SLOTS",
   -- Bank
-  "BANK_CONTAINER", "NUM_BAG_SLOTS", "NUM_BANKBAGSLOTS",
+  "BANK_CONTAINER", "NUM_BAG_SLOTS", "NUM_BANKBAGSLOTS", "C_Bank",
   -- Button on the Character window
   "CharacterFrame",
 }

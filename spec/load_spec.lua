@@ -421,6 +421,13 @@ describe("the addon in a stand-in client", function()
   end)
 
   describe("the alt panel", function()
+    after_each(function()
+      _G.C_Timer, _G.C_Bank = nil, nil
+      if _G.Enum then
+        _G.Enum.PlayerInteractionType, _G.Enum.BankType = nil, nil
+      end
+    end)
+
     local function drawn(text)
       for _, f in ipairs(wow.frames) do
         if f._shown and f._text and tostring(f._text):find(text, 1, true) then
@@ -616,6 +623,48 @@ describe("the addon in a stand-in client", function()
       assert.is_true(drawn("Open the bank once on them to save it."))
     end)
 
+    it("reads the bank a moment after it opens, again for moves inside it, and keeps a full one", function()
+      wow.fire("PLAYER_ENTERING_WORLD", false, true)
+      local later = {}
+      _G.C_Timer = {
+        After = function(_, fn)
+          later[#later + 1] = fn
+        end,
+      }
+      local function run()
+        local due = later
+        later = {}
+        for _, fn in ipairs(due) do
+          fn()
+        end
+      end
+      local c = EmberkeepDB.characters["Brakka-Nightfall"]
+      state.bank = { size = 28, [1] = { id = 70, name = "Wool", count = 19 } }
+      wow.fire("BANKFRAME_OPENED")
+      assert.is_nil(c.bank, "not before the bank has loaded")
+      run()
+      assert.are.equal(1, #c.bank.items)
+      state.bank[2] = { id = 71, name = "Silk", count = 3 }
+      wow.fire("PLAYERBANKSLOTS_CHANGED", 2)
+      run()
+      assert.are.equal(2, #c.bank.items)
+      -- A bought tab that still has no slots: part of the bank isn't loaded.
+      _G.Enum.BankType = { Character = 0 }
+      _G.C_Bank = {
+        FetchPurchasedBankTabIDs = function()
+          return { 6, 7 }
+        end,
+      }
+      state.bank = { size = 28 }
+      wow.fire("PLAYERBANKSLOTS_CHANGED", 1)
+      run()
+      assert.are.equal(2, #c.bank.items, "an incomplete read doesn't replace it")
+      _G.C_Bank, _G.Enum.BankType = nil, nil
+      wow.fire("BANKFRAME_CLOSED")
+      run()
+      _G.C_Timer = nil
+    end)
+
     it("reads the bank from the banker interaction too, but not other ones", function()
       _G.Enum.PlayerInteractionType = { Banker = 8, Merchant = 5 }
       wow.install(state)
@@ -629,7 +678,19 @@ describe("the addon in a stand-in client", function()
       assert.is_nil(c.bank)
       wow.fire("PLAYER_INTERACTION_MANAGER_FRAME_SHOW", 8)
       assert.are.equal(28, c.bank.total)
-      _G.Enum.PlayerInteractionType = nil
+      wow.fire("PLAYER_INTERACTION_MANAGER_FRAME_HIDE", 5) -- a merchant closing
+      state.bank[2] = { id = 71, name = "Silk", count = 3 }
+      wow.fire("BAG_UPDATE_DELAYED")
+      assert.are.equal(2, #c.bank.items, "still open")
+      wow.fire("PLAYER_INTERACTION_MANAGER_FRAME_HIDE", 8)
+      state.bank = { size = 28 }
+      wow.fire("BAG_UPDATE_DELAYED")
+      assert.are.equal(2, #c.bank.items, "closed by the banker's hide")
+      wow.fire("PLAYER_INTERACTION_MANAGER_FRAME_SHOW", 8)
+      wow.fire("PLAYER_LEAVING_WORLD")
+      wow.fire("PLAYER_ENTERING_WORLD", false, false)
+      wow.fire("BAG_UPDATE_DELAYED")
+      assert.are.equal(2, #c.bank.items, "leaving the world closes it")
     end)
 
     it("doesn't read bags while zoning or logging out", function()
