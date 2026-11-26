@@ -27,6 +27,7 @@ Core\RestedView.lua
 Core\Feedback.lua
 Core\Gear.lua
 Core\Bags.lua
+Core\Mail.lua
 Core\Professions.lua
 Adapters\Game.lua
 Adapters\Items.lua

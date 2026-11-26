@@ -35,6 +35,18 @@ local function moneyText(m)
   return #parts > 0 and table.concat(parts, " ") or (DIM .. "0|r")
 end
 
+-- The Overview tab's Mail column: how soon the alt's mail expires, red within
+-- 3 days and amber within a week. Blank with nothing to collect.
+local function mailCell(c, now)
+  local left = c and ns.Mail.Soonest(c, now)
+  if not left then
+    return ""
+  end
+  local urgency = ns.Mail.Urgency(left)
+  local color = urgency == "warn" and "|cffff6060" or (urgency == "soon" and WARN or "")
+  return color .. ns.Mail.Short(left) .. (color ~= "" and "|r" or "")
+end
+
 -- Who the last Rested build said to play next, for the row tooltips.
 local nextKey
 
@@ -97,6 +109,7 @@ local focuses = {
       { "Gold", 100 },
       { "Zone", 130, grow = 1 },
       { "Last seen", 90 },
+      { "Mail", 44 },
     },
     build = function(db, now)
       local rows, summary = ns.Overview.Build(
@@ -118,6 +131,7 @@ local focuses = {
             moneyText(r.money),
             r.zone,
             DIM .. r.seen .. "|r",
+            mailCell(db.characters[r.key], now),
           },
         }
       end
@@ -125,7 +139,7 @@ local focuses = {
       -- can't be read as one character's gold.
       if #rows > 0 then
         grid[#grid + 1] = {
-          cells = { DIM .. "All characters|r", "", summary.played, moneyText(summary.money), "", "" },
+          cells = { DIM .. "All characters|r", "", summary.played, moneyText(summary.money), "", "", "" },
         }
       end
       return grid, summary.count == 1 and "1 alt" or (summary.count .. " alts")

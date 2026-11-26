@@ -12,6 +12,7 @@ Settings.DEFAULTS = {
   theme = "frost",
   scale = 1.0,
   errorPrompt = true,
+  mailWarning = true, -- a chat line at login for mail about to expire
   panelTab = "gear", -- the alt panel's open tab
   gearList = false, -- gear as one list instead of two columns
 }
