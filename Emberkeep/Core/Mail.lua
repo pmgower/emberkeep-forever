@@ -16,15 +16,26 @@ local function worthKeeping(m)
   return #(m.items or {}) > 0 or (m.money or 0) > 0
 end
 
+-- "jango" from "Jango-Nightfall" or "Jango Pheu", to match a sender to a character.
+local function firstName(name)
+  return (tostring(name or ""):gsub("%-.*$", ""):match("^%s*(%S*)") or ""):lower()
+end
+
 -- reading: { mails = { { sender, subject, money, daysLeft, returns, items =
--- { { link, count } } } } } for the whole inbox, read while it's open. Only mail
--- with items or gold is kept; an inbox with none is a real reading. Mail sent
--- to this character is dropped once the inbox has been read, except mail sent
--- within the last hour, which may not have arrived yet.
+-- { { link, count } } } }, total } for the inbox, read while it's open. The game
+-- shows at most 50 mails at a time; total counts them all. Only mail with items
+-- or gold is kept. An inbox with none is a real reading, but not an empty one
+-- while the game says there is mail (not loaded yet). Mail sent to this
+-- character is dropped once a mail from its sender shows in the inbox, or once
+-- the inbox is read more than an hour after it was sent.
 function Mail.Observe(c, reading, now)
-  if not reading or not reading.mails then
+  if not reading or not reading.mails or reading.incomplete then
     return false
   end
+  if #reading.mails == 0 and (reading.total or 0) > 0 then
+    return false
+  end
+  local hidden = math.max(0, (reading.total or #reading.mails) - #reading.mails)
   local inbox = {}
   for _, m in ipairs(reading.mails) do
     if worthKeeping(m) then
@@ -42,18 +53,26 @@ function Mail.Observe(c, reading, now)
       }
     end
   end
+  local senders = {}
+  for _, m in ipairs(reading.mails) do
+    senders[firstName(m.sender)] = true
+  end
   local sent = {}
   for _, m in ipairs(c.mail and c.mail.sent or {}) do
-    if now - m.at < Mail.DELIVERY then
+    local arrived = senders[firstName(m.fromName or m.from)]
+    local young = now - m.at < Mail.DELIVERY
+    -- While the game hides some mail, what was sent may be among it.
+    if m.expires > now and (hidden > 0 or (young and not arrived)) then
       sent[#sent + 1] = m
     end
   end
-  c.mail = { inbox = inbox, sent = sent, at = now }
+  c.mail = { inbox = inbox, sent = sent, at = now, hidden = hidden }
   return true
 end
 
--- Something you mailed to one of your characters: { from, items = { { link,
--- count } }, money }. Kept until they next open their mailbox.
+-- Something you mailed to one of your characters: { from, fromName, items =
+-- { { link, count } }, money }. from is shown; fromName is the sender's name
+-- as the inbox shows it. Kept until it shows in their mailbox.
 function Mail.Sent(c, mail, now)
   if not c or not worthKeeping(mail) then
     return false
@@ -62,6 +81,7 @@ function Mail.Sent(c, mail, now)
   c.mail.sent = c.mail.sent or {}
   table.insert(c.mail.sent, {
     from = mail.from,
+    fromName = mail.fromName,
     items = mail.items or {},
     money = mail.money or 0,
     at = now,
@@ -90,15 +110,17 @@ function Mail.View(c, now)
     }
   end
   for _, m in ipairs(saved.sent or {}) do
-    rows[#rows + 1] = {
-      sender = m.from,
-      subject = "Sent by you",
-      items = m.items,
-      money = m.money,
-      expiresIn = m.expires - now,
-      returns = true,
-      sent = true,
-    }
+    if m.expires > now then -- gone back to you by now
+      rows[#rows + 1] = {
+        sender = m.from,
+        subject = "Sent by you",
+        items = m.items,
+        money = m.money,
+        expiresIn = m.expires - now,
+        returns = true,
+        sent = true,
+      }
+    end
   end
   table.sort(rows, function(a, b)
     local x, y = a.expiresIn or math.huge, b.expiresIn or math.huge
@@ -107,7 +129,7 @@ function Mail.View(c, now)
     end
     return tostring(a.sender) < tostring(b.sender)
   end)
-  return { rows = rows, at = saved.at }
+  return { rows = rows, at = saved.at, hidden = saved.hidden or 0 }
 end
 
 -- The soonest any mail expires: seconds left, and whether it's then deleted
@@ -124,8 +146,10 @@ end
 -- "2 mails, 1 expiring within 3 days", for the line above the list.
 function Mail.Summary(view)
   local count = #view.rows
+  local hidden = view.hidden or 0
+  local more = hidden > 0 and (", " .. hidden .. " more the game didn't show") or ""
   if count == 0 then
-    return "Nothing to collect"
+    return hidden > 0 and ("Nothing to collect in the mail shown" .. more) or "Nothing to collect"
   end
   local text = count == 1 and "1 mail to collect" or (count .. " mails to collect")
   local soon = 0
@@ -137,7 +161,7 @@ function Mail.Summary(view)
   if soon > 0 then
     text = text .. ", " .. soon .. " expiring within 3 days"
   end
-  return text
+  return text .. more
 end
 
 -- "27 days left", "5h 20m left", or "expired".

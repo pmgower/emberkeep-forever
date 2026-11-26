@@ -88,19 +88,29 @@ function Roster.Forget(store, name)
   return removed
 end
 
+local function squash(realm)
+  return (tostring(realm or ""):gsub("[%s%-']", ""):lower())
+end
+
 -- The key of the one character a typed name means: their full name, or their
--- first name when no other character has it. Any "-Realm" is ignored. nil when
--- it's nobody, or more than one.
-function Roster.FindByName(store, name)
-  local wanted = tostring(name or ""):gsub("%-.*$", ""):match("^%s*(.-)%s*$"):lower()
+-- first name when no other character on that realm has it. A bare name is on
+-- `realm` (yours), "Name-Realm" on that realm. nil when it's nobody, or more
+-- than one.
+function Roster.FindByName(store, name, realm)
+  local text = tostring(name or "")
+  local given = text:match("%-(.*)$")
+  local wanted = text:gsub("%-.*$", ""):match("^%s*(.-)%s*$"):lower()
   if wanted == "" then
     return nil
   end
+  -- "Name-Realm" names its realm; a bare name is on yours.
+  local onRealm = squash(given and given ~= "" and given or realm)
   local full, first = {}, {}
   for key, c in pairs(store) do
-    if Roster.DisplayName(c):lower() == wanted then
+    local here = onRealm == "" or squash(c.realm) == onRealm
+    if here and Roster.DisplayName(c):lower() == wanted then
       full[#full + 1] = key
-    elseif tostring(c.name):lower() == wanted then
+    elseif here and tostring(c.name):lower() == wanted then
       first[#first + 1] = key
     end
   end

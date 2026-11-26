@@ -28,13 +28,43 @@ describe("Mail.Observe", function()
     assert.is_false(Mail.Observe(c, nil, 1000))
   end)
 
-  it("drops mail you sent once their inbox is read, unless it may not have arrived", function()
+  it("ignores an empty inbox while the game says there's mail", function()
+    local c = { mail = { inbox = { { items = cloth, money = 0 } }, sent = {} } }
+    assert.is_false(Mail.Observe(c, { mails = {}, total = 3 }, 1000))
+    assert.is_false(Mail.Observe(c, { mails = { mail("A", 2, cloth) }, incomplete = true }, 1000))
+    assert.are.equal(1, #c.mail.inbox)
+  end)
+
+  it("keeps mail you sent until it shows up in their inbox", function()
+    local c = {}
+    Mail.Sent(c, { from = "Jango Pheu", fromName = "Jango", items = cloth }, 1000)
+    Mail.Observe(c, { mails = {} }, 1000 + 600)
+    assert.are.equal(1, #c.mail.sent, "not arrived yet")
+    Mail.Observe(c, { mails = { mail("Jango", 30, cloth) } }, 1000 + 1200)
+    assert.are.same({}, c.mail.sent, "arrived: shown once, from the inbox")
+  end)
+
+  it("drops mail you sent once their inbox is read an hour later", function()
     local c = {}
     Mail.Sent(c, { from = "Jango", items = cloth }, 1000)
     Mail.Sent(c, { from = "Jango", money = 100 }, 1000 + 2 * 3600)
     Mail.Observe(c, { mails = {} }, 1000 + 2.5 * 3600)
     assert.are.equal(1, #c.mail.sent)
     assert.are.equal(100, c.mail.sent[1].money)
+  end)
+
+  it("keeps mail you sent while the game hides some of their mail", function()
+    local c = {}
+    Mail.Sent(c, { from = "Jango", items = cloth }, 1000)
+    local shown = {}
+    for i = 1, 50 do
+      shown[i] = mail("Vendor", 20)
+    end
+    Mail.Observe(c, { mails = shown, total = 60 }, 1000 + 5 * 3600)
+    assert.are.equal(1, #c.mail.sent)
+    assert.are.equal(10, c.mail.hidden)
+    local view = Mail.View(c, 1000 + 5 * 3600)
+    assert.are.equal("1 mail to collect, 10 more the game didn't show", Mail.Summary(view))
   end)
 end)
 
@@ -46,6 +76,13 @@ describe("Mail.Sent", function()
     assert.is_false(Mail.Sent(nil, { from = "Jango", items = cloth }, 1000))
     assert.are.equal(1, #c.mail.sent)
     assert.are.equal(1000 + 30 * DAY, c.mail.sent[1].expires)
+  end)
+
+  it("stops showing it once it would have gone back to you", function()
+    local c = {}
+    Mail.Sent(c, { from = "Jango", items = cloth }, 0)
+    assert.are.equal(1, #Mail.View(c, 29 * DAY).rows)
+    assert.are.equal(0, #Mail.View(c, 31 * DAY).rows)
   end)
 end)
 
