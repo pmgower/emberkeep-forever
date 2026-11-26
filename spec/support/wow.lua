@@ -326,7 +326,8 @@ function W.install(state)
   end
   _G.GetInboxHeaderInfo = function(i)
     local m = state.inbox[i]
-    return nil, nil, m.sender, m.subject, m.money or 0, 0, m.days, #(m.items or {}), false, m.returned, false, true
+    local count = #(m.items or {})
+    return nil, nil, m.sender, m.subject, m.money or 0, 0, m.days, count, false, m.returned, false, true
   end
   _G.GetInboxItem = function(i, slot)
     local it = (state.inbox[i].items or {})[slot]
