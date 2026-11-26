@@ -14,9 +14,11 @@ end
 -- total }. A link that hasn't loaded keeps the one saved for the same item.
 -- Saves it on the character and returns true, unless the game reported no
 -- slots at all: everyone has a backpack and a bank, so that means "not loaded".
+-- A reading marked incomplete (part of the bank not loaded yet) never replaces
+-- a saved one.
 function Bags.Observe(c, reading, now, field)
   field = field or "bags"
-  if not reading or (reading.total or 0) <= 0 then
+  if not reading or (reading.total or 0) <= 0 or (reading.incomplete and c[field]) then
     return false
   end
   local known = {}

@@ -49,6 +49,9 @@ describe("the bank", function()
     assert.are.equal(20, view.rows[1].count)
     assert.are.equal(600, view.at)
     assert.is_nil(Bags.View({ bags = c.bags }, function() end, "bank"))
+    local partial = { items = {}, free = 28, total = 28, incomplete = true }
+    assert.is_false(Bags.Observe(c, partial, 700, "bank"), "part of the bank not loaded")
+    assert.are.equal(600, c.bank.at)
   end)
 end)
 

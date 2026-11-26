@@ -153,6 +153,7 @@ frame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
 frame:RegisterEvent("BAG_UPDATE_DELAYED")
 frame:RegisterEvent("BANKFRAME_OPENED")
 frame:RegisterEvent("BANKFRAME_CLOSED")
+frame:RegisterEvent("PLAYERBANKSLOTS_CHANGED") -- moves within the bank itself
 frame:RegisterEvent("PLAYER_INTERACTION_MANAGER_FRAME_SHOW")
 frame:RegisterEvent("PLAYER_INTERACTION_MANAGER_FRAME_HIDE")
 frame:RegisterEvent("SKILL_LINES_CHANGED")
@@ -291,8 +292,7 @@ local function bankEvent(event, arg1)
   local opened = event == "BANKFRAME_OPENED" or event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW"
   if opened and not bankOpen then
     bankOpen = true
-    queueBank(0, RETRIES)
-    queueBank(BAG_DELAY, RETRIES) -- again once every slot has loaded
+    queueBank(BAG_DELAY, RETRIES) -- a moment after opening, once its slots have loaded
   elseif not opened then
     bankOpen = false
   end
@@ -317,7 +317,12 @@ local function handle(event, arg1)
     end
     return
   end
-  if event == "BAG_UPDATE_DELAYED" then
+  if event == "PLAYERBANKSLOTS_CHANGED" then
+    if bankOpen then
+      queueBank(BAG_DELAY, RETRIES)
+    end
+    return
+  elseif event == "BAG_UPDATE_DELAYED" then
     if bankOpen then
       queueBank(BAG_DELAY, RETRIES)
     end
@@ -327,7 +332,7 @@ local function handle(event, arg1)
   elseif event == "SKILL_LINES_CHANGED" then
     return skillsChanged()
   elseif event == "PLAYER_LEAVING_WORLD" then
-    leaving, settled = true, false
+    leaving, settled, bankOpen = true, false, false
     return
   elseif event == "PLAYER_ENTERING_WORLD" then
     leaving = false

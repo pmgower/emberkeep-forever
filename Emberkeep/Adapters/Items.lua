@@ -99,22 +99,51 @@ function Items.BankBags()
       bags[#bags + 1] = bag
     end
   end
-  if #bags == 0 and BANK_CONTAINER then
-    bags[1] = BANK_CONTAINER
-    local first = (NUM_BAG_SLOTS or 4) + 1
-    for bag = first, first + (NUM_BANKBAGSLOTS or 7) - 1 do
-      bags[#bags + 1] = bag
-    end
+  if #bags > 0 then
+    return bags
+  end
+  -- The bank and its bag slots by name, as newer clients number them.
+  local bank = index and index.Bank or BANK_CONTAINER
+  if not bank then
+    return bags
+  end
+  bags[1] = bank
+  for i = 1, NUM_BANKBAGSLOTS or 7 do
+    local bag = index and index["BankBag_" .. i]
+    bags[#bags + 1] = bag or ((NUM_TOTAL_EQUIPPED_BAG_SLOTS or NUM_BAG_SLOTS or 4) + i)
   end
   return bags
+end
+
+-- Whether a bank tab that's been bought still reads as having no slots: the
+-- bank isn't fully loaded yet.
+local function bankLoading()
+  local kind = Enum and Enum.BankType and Enum.BankType.Character
+  if not (kind and C_Bank and C_Bank.FetchPurchasedBankTabIDs) then
+    return false
+  end
+  local ok, ids = pcall(C_Bank.FetchPurchasedBankTabIDs, kind)
+  if not ok or type(ids) ~= "table" then
+    return false
+  end
+  for _, id in ipairs(ids) do
+    if (plain(C_Container.GetContainerNumSlots(plain(id))) or 0) <= 0 then
+      return true
+    end
+  end
+  return false
 end
 
 -- The bank's contents, for Bags.Observe(..., "bank"). Only right while the
 -- bank is open.
 function Items.Banked()
-  return readContainers(Items.BankBags(), function(_, family)
+  local reading = readContainers(Items.BankBags(), function(_, family)
     return family == 0
   end)
+  if reading and bankLoading() then
+    reading.incomplete, reading.missing = true, true -- read again shortly
+  end
+  return reading
 end
 
 local requested = {}
