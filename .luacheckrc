@@ -35,6 +35,9 @@ read_globals = {
   "GetProfessions", "GetProfessionInfo", "strlenutf8",
   -- Bags
   "C_Container", "GetKeyRingSize", "NUM_TOTAL_EQUIPPED_BAG_SLOTS",
+  -- Mail
+  "ATTACHMENTS_MAX_RECEIVE", "ATTACHMENTS_MAX_SEND", "GetInboxHeaderInfo", "GetInboxItem", "GetInboxItemLink",
+  "GetInboxNumItems", "GetSendMailItem", "GetSendMailItemLink", "GetSendMailMoney", "hooksecurefunc",
   -- Bank
   "BANK_CONTAINER", "NUM_BAG_SLOTS", "NUM_BANKBAGSLOTS", "C_Bank",
   -- Sleeping bag rest

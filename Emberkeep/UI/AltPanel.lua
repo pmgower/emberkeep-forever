@@ -1,5 +1,5 @@
 -- AltPanel: one alt up close, docked beside the main window, with a tab for
--- gear, one for bags and one for the bank; mail will join them. It's a child of the main window, so
+-- gear, bags, the bank and mail. It's a child of the main window, so
 -- it moves, scales and closes with it.
 local _, ns = ...
 local AltPanel = {}
@@ -18,7 +18,11 @@ local TABS = {
   { key = "gear", title = "Gear" },
   { key = "bags", title = "Bags" },
   { key = "bank", title = "Bank" },
+  { key = "mail", title = "Mail" },
 }
+local KNOWN = { gear = true, bags = true, bank = true, mail = true }
+local mailRows = {}
+local COIN = "Interface\\Icons\\INV_Misc_Coin_01"
 
 local function settings()
   return ns.db.settings
@@ -311,6 +315,12 @@ function AltPanel.Refresh()
   panel.title:SetText(name .. DIM .. "  " .. tostring(c.level or "?") .. " " .. (c.class or "") .. "|r")
   panel.view.label:SetText(list and "Two columns" or "List")
   AltPanel.PaintTabs()
+  for _, r in pairs(mailRows) do
+    r:Hide()
+  end
+  if tab == "mail" then
+    return AltPanel.ShowMail(c)
+  end
   for _, b in pairs(bags and buttons or cells) do
     b:Hide() -- the other tab's
   end
@@ -344,6 +354,120 @@ function AltPanel.Refresh()
   panel:Show()
 end
 
+-- A mail in the list: the first item's icon (or a coin), who it's from, what's
+-- in it, and how long is left.
+local function mailRow(i)
+  local b = mailRows[i]
+  if not b then
+    b = CreateFrame("Button", nil, panel)
+    b:SetHeight(SLOT_H)
+    b.border = b:CreateTexture(nil, "BACKGROUND")
+    b.border:SetSize(ICON + 2, ICON + 2)
+    b.border:SetPoint("LEFT", 0, 0)
+    b.icon = b:CreateTexture(nil, "ARTWORK")
+    b.icon:SetSize(ICON, ICON)
+    b.icon:SetPoint("CENTER", b.border, "CENTER")
+    b.left = b:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    b.left:SetPoint("RIGHT", b, "RIGHT", -2, 0)
+    b.left:SetJustifyH("RIGHT")
+    b.name = b:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    b.name:SetPoint("TOPLEFT", b.border, "TOPRIGHT", 6, -2)
+    b.name:SetPoint("RIGHT", b.left, "LEFT", -6, 0)
+    b.name:SetJustifyH("LEFT")
+    b.name:SetWordWrap(false)
+    b.detail = b:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    b.detail:SetPoint("BOTTOMLEFT", b.border, "BOTTOMRIGHT", 6, 2)
+    b.detail:SetPoint("RIGHT", b.left, "LEFT", -6, 0)
+    b.detail:SetJustifyH("LEFT")
+    b.detail:SetWordWrap(false)
+    b:SetScript("OnEnter", function(self)
+      local m = self.mail
+      if not m then
+        return
+      end
+      GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+      GameTooltip:AddLine(m.subject or "Mail")
+      GameTooltip:AddLine("From " .. tostring(m.sender or "?"), 0.79, 0.81, 0.84)
+      for _, item in ipairs(m.items) do
+        local name = ns.Gear.LinkName(item.link) or (ns.Items.Info(item.link).name) or "Item"
+        local q = ns.Items.Info(item.link).quality
+        local count = (item.count or 1) > 1 and (" x" .. item.count) or ""
+        GameTooltip:AddLine(ns.Items.Colored(name, q) .. count)
+      end
+      if (m.money or 0) > 0 then
+        local money = ns.Format.Money(m.money)
+        GameTooltip:AddLine(money.gold .. " " .. money.silver .. " " .. money.copper, 1, 0.82, 0)
+      end
+      local after = m.returns == false and "then it's deleted" or "then it goes back"
+      GameTooltip:AddLine(ns.Mail.Left(m.expiresIn, ns.Format) .. ", " .. after, 0.56, 0.6, 0.65)
+      GameTooltip:Show()
+    end)
+    b:SetScript("OnLeave", function()
+      GameTooltip:Hide()
+    end)
+    win:ForwardDrag(b)
+    mailRows[i] = b
+  end
+  return b
+end
+
+-- The Mail tab: mail to collect, soonest to expire first.
+function AltPanel.ShowMail(c)
+  for _, b in pairs(buttons) do
+    b:Hide()
+  end
+  for _, b in pairs(cells) do
+    b:Hide()
+  end
+  panel.view:Hide()
+  local now = ns.Game.Now()
+  local view = ns.Mail.View(c, now)
+  local rows = view and view.rows or {}
+  if view then
+    panel.summary:SetText(ns.Mail.Summary(view))
+    local seen = view.at and ns.Format.Ago(view.at, now) or "never"
+    panel.asOf:SetText("Mailbox as of " .. seen .. ". Mail from others after that isn't known.")
+  else
+    panel.summary:SetText(DIM .. "No mail saved yet|r")
+    panel.asOf:SetText("Open a mailbox once on them to save it.")
+  end
+  for i, m in ipairs(rows) do
+    local b = mailRow(i)
+    b.mail = m
+    local first = m.items[1]
+    local info = first and ns.Items.Info(first.link) or {}
+    b.icon:SetTexture(first and (info.icon or QUESTION) or COIN)
+    local r, g, bl = ns.Items.Rgb(info.quality)
+    b.border:SetColorTexture(r or 0.3, g or 0.35, bl or 0.4, 1)
+    local sender = tostring(m.sender or "?")
+    b.name:SetText(m.sent and (sender .. " |cff4fd04f(sent by you)|r") or sender)
+    local parts = {}
+    if #m.items > 0 then
+      parts[#parts + 1] = #m.items == 1 and "1 item" or (#m.items .. " items")
+    end
+    if (m.money or 0) > 0 then
+      local money = ns.Format.Money(m.money)
+      local biggest = money.silver ~= "" and money.silver or money.copper
+      parts[#parts + 1] = money.gold ~= "" and money.gold or biggest
+    end
+    b.detail:SetText(table.concat(parts, ", "))
+    local urgency = ns.Mail.Urgency(m.expiresIn)
+    local color = urgency == "warn" and "|cffff6060" or (urgency == "soon" and WARN or DIM)
+    local left = ns.Mail.Left(m.expiresIn, ns.Format)
+    if m.returns == false and urgency == "warn" then
+      left = left .. ", deleted"
+    end
+    b.left:SetText(color .. left .. "|r")
+    b:ClearAllPoints()
+    b:SetPoint("TOPLEFT", panel, "TOPLEFT", PAD, -(TOP + 30) - (i - 1) * SLOT_H)
+    b:SetWidth(WIDE - PAD * 2)
+    b:Show()
+  end
+  panel:SetSize(WIDE, TOP + 30 + math.max(1, #rows) * SLOT_H + 26)
+  AltPanel.Dock()
+  panel:Show()
+end
+
 -- Redraws if the panel is on screen showing this character.
 function AltPanel.RefreshIfShowing(key)
   if shownKey == key and ns.MainWindow.IsShown() then
@@ -360,7 +484,7 @@ end
 function AltPanel.PaintTabs()
   local e = ns.Window.Current().edge
   for i, tab in ipairs(TABS) do
-    local on = settings().panelTab == tab.key or (tab.key == "gear" and not AltPanel.IsGridTab())
+    local on = settings().panelTab == tab.key or (tab.key == "gear" and not KNOWN[settings().panelTab])
     if tabs[i].SetBackdropBorderColor then
       tabs[i]:SetBackdropBorderColor(e[1], e[2], e[3], on and 1 or 0.35)
     end

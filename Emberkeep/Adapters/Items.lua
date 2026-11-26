@@ -146,6 +146,60 @@ function Items.Banked()
   return reading
 end
 
+-- The whole inbox, for Mail.Observe. Only right while the mailbox is open.
+function Items.Inbox()
+  if not (GetInboxNumItems and GetInboxHeaderInfo and GetInboxItem) then
+    return nil
+  end
+  local reading = { mails = {}, missing = false }
+  for i = 1, plain(GetInboxNumItems()) or 0 do
+    local _, _, sender, subject, money, _, daysLeft, count, _, returned, _, canReply = GetInboxHeaderInfo(i)
+    local items = {}
+    if (plain(count) or 0) > 0 then
+      for slot = 1, ATTACHMENTS_MAX_RECEIVE or 16 do
+        local _, id, _, stack = GetInboxItem(i, slot)
+        id = plain(id)
+        if id then
+          local link = GetInboxItemLink and plain(GetInboxItemLink(i, slot))
+          if link and (ns.Gear.LinkName(link) or "") == "" then
+            link = nil
+          end
+          reading.missing = reading.missing or link == nil
+          items[#items + 1] = { link = link or ("item:" .. id), count = plain(stack) or 1 }
+        end
+      end
+    end
+    reading.mails[#reading.mails + 1] = {
+      sender = plain(sender),
+      subject = plain(subject),
+      money = plain(money) or 0,
+      daysLeft = plain(daysLeft),
+      -- Mail already sent back once, or from a mailbox that can't take a
+      -- reply (the auction house, a vendor), is deleted when it expires.
+      returns = not (plain(returned) or not plain(canReply)),
+      items = items,
+    }
+  end
+  return reading
+end
+
+-- What's attached to the mail being sent, for Mail.Sent.
+function Items.Outgoing()
+  local mail = { items = {}, money = GetSendMailMoney and plain(GetSendMailMoney()) or 0 }
+  if not GetSendMailItem then
+    return mail
+  end
+  for slot = 1, ATTACHMENTS_MAX_SEND or 12 do
+    local _, id, _, count = GetSendMailItem(slot)
+    id = plain(id)
+    if id then
+      local link = GetSendMailItemLink and plain(GetSendMailItemLink(slot))
+      mail.items[#mail.items + 1] = { link = link or ("item:" .. id), count = plain(count) or 1 }
+    end
+  end
+  return mail
+end
+
 local requested = {}
 
 -- For Gear.View. Asks the game once to load an item it doesn't know yet; the

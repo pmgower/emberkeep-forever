@@ -324,12 +324,12 @@ describe("the addon in a stand-in client", function()
 
   it("builds the options page and applies a changed color scheme and scale", function()
     assert.are.equal("Emberkeep", wow.settings.name)
-    assert.are.equal(7, #wow.settings.controls) -- 5 checkboxes, scheme, scale
+    assert.are.equal(8, #wow.settings.controls) -- 6 checkboxes, scheme, scale
     SlashCmdList.EMBERKEEP("")
-    local theme = wow.settings.controls[6]
+    local theme = wow.settings.controls[7]
     theme:SetValue("twilight")
     assert.are.equal("twilight", ns.Window.Current().key)
-    wow.settings.controls[7]:SetValue(1.5)
+    wow.settings.controls[8]:SetValue(1.5)
     local scaled
     for _, f in ipairs(wow.frames) do
       if f._scale == 1.5 then
@@ -775,6 +775,103 @@ describe("the addon in a stand-in client", function()
       _G.C_Timer = nil
       assert.truthy(c.gear.slots[1]:find("[New Cap]", 1, true))
       assert.are.equal(1, #later, "nothing left to read again")
+    end)
+  end)
+
+  describe("mail", function()
+    local function drawn(text)
+      for _, f in ipairs(wow.frames) do
+        if f._shown and f._text and tostring(f._text):find(text, 1, true) then
+          return true
+        end
+      end
+      return false
+    end
+
+    before_each(function()
+      wow.fire("PLAYER_ENTERING_WORLD", false, true)
+      EmberkeepDB.characters["Quill-Nightfall"] = { name = "Quill", realm = "Nightfall", level = 18 }
+      local cloth = { { id = 2589, name = "Linen Cloth", count = 20 } }
+      state.inbox = {
+        { sender = "Auction House", subject = "Expired", days = 2, returned = true, items = cloth },
+        { sender = "Gamon", subject = "Loan", days = 9, money = 50000 },
+        { sender = "Magtoor", subject = "Hey", days = 12 },
+      }
+    end)
+
+    it("saves mail with items or gold only while the mailbox is open", function()
+      local c = EmberkeepDB.characters["Brakka-Nightfall"]
+      wow.fire("MAIL_INBOX_UPDATE")
+      assert.is_nil(c.mail, "not without the mailbox open")
+      wow.fire("MAIL_SHOW")
+      wow.fire("MAIL_INBOX_UPDATE")
+      assert.are.equal(2, #c.mail.inbox)
+      assert.is_false(c.mail.inbox[1].returns, "returned once already: deleted next time")
+      wow.fire("MAIL_CLOSED")
+      state.inbox = {}
+      wow.fire("MAIL_INBOX_UPDATE")
+      assert.are.equal(2, #c.mail.inbox)
+    end)
+
+    it("adds mail you send to an alt, once it has gone", function()
+      state.outgoing = { { id = 2589, name = "Linen Cloth", count = 5 } }
+      wow.hooks.SendMail("quill")
+      local quill = EmberkeepDB.characters["Quill-Nightfall"]
+      assert.is_nil(quill.mail, "not until it has gone")
+      wow.fire("MAIL_SEND_SUCCESS")
+      assert.are.equal(1, #quill.mail.sent)
+      assert.are.equal("Brakka", quill.mail.sent[1].from)
+      wow.hooks.SendMail("Quill")
+      wow.fire("MAIL_FAILED")
+      wow.fire("MAIL_SEND_SUCCESS")
+      assert.are.equal(1, #quill.mail.sent, "a failed send adds nothing")
+      wow.hooks.SendMail("Somebody Else")
+      wow.fire("MAIL_SEND_SUCCESS")
+      assert.are.equal(1, #quill.mail.sent)
+    end)
+
+    it("shows the Mail tab and a Mail column on Overview, soonest first", function()
+      wow.fire("MAIL_SHOW")
+      wow.fire("MAIL_INBOX_UPDATE")
+      EmberkeepDB.settings.focus = "overview"
+      SlashCmdList.EMBERKEEP("")
+      assert.is_true(drawn("|cffff60602d|r"), "Brakka's mail expires in 2 days")
+      for _, f in ipairs(wow.frames) do
+        if rawget(f, "key") == "Brakka-Nightfall" and f._scripts.OnClick then
+          f._scripts.OnClick(f, "LeftButton")
+        end
+      end
+      for _, f in ipairs(wow.frames) do
+        if rawget(f, "label") and f.label._text == "Mail" then
+          f._scripts.OnClick(f)
+        end
+      end
+      assert.are.equal("mail", EmberkeepDB.settings.panelTab)
+      assert.is_true(drawn("2 mails to collect, 1 expiring within 3 days"))
+      assert.is_true(drawn("Auction House"))
+      assert.is_true(drawn("2 days left, deleted"))
+      for _, f in ipairs(wow.frames) do
+        if rawget(f, "mail") and f._shown then
+          f._scripts.OnEnter(f)
+        end
+      end
+      ns.AltPanel.Step(1)
+      assert.is_true(drawn("No mail saved yet"))
+    end)
+
+    it("warns at login about mail that's about to expire, unless that's turned off", function()
+      wow.fire("MAIL_SHOW")
+      wow.fire("MAIL_INBOX_UPDATE")
+      local before = #DEFAULT_CHAT_FRAME.lines
+      ns.App.MailWarnings()
+      local line = DEFAULT_CHAT_FRAME.lines[before + 1]
+      local expected = "Brakka has mail with items or gold that expires in 2d 0h"
+      assert.truthy(line and line:find(expected, 1, true), line)
+      assert.truthy(line:find("deleted", 1, true))
+      assert.are.equal(before + 1, #DEFAULT_CHAT_FRAME.lines, "Gamon's mail is 9 days out")
+      EmberkeepDB.settings.mailWarning = false
+      ns.App.MailWarnings()
+      assert.are.equal(before + 1, #DEFAULT_CHAT_FRAME.lines)
     end)
   end)
 
