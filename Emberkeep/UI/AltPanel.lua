@@ -318,6 +318,9 @@ function AltPanel.Refresh()
   for _, r in pairs(mailRows) do
     r:Hide()
   end
+  if panel.more then
+    panel.more:Hide()
+  end
   if tab == "mail" then
     return AltPanel.ShowMail(c)
   end
@@ -411,6 +414,9 @@ local function mailRow(i)
   return b
 end
 
+-- At most this many mail rows, so a full mailbox stays on screen.
+local MAIL_ROWS = 14
+
 -- The Mail tab: mail to collect, soonest to expire first.
 function AltPanel.ShowMail(c)
   for _, b in pairs(buttons) do
@@ -431,7 +437,9 @@ function AltPanel.ShowMail(c)
     panel.summary:SetText(DIM .. "No mail saved yet|r")
     panel.asOf:SetText("Open a mailbox once on them to save it.")
   end
-  for i, m in ipairs(rows) do
+  local showing = math.min(#rows, MAIL_ROWS)
+  for i = 1, showing do
+    local m = rows[i]
     local b = mailRow(i)
     b.mail = m
     local first = m.items[1]
@@ -463,7 +471,16 @@ function AltPanel.ShowMail(c)
     b:SetWidth(WIDE - PAD * 2)
     b:Show()
   end
-  panel:SetSize(WIDE, TOP + 30 + math.max(1, #rows) * SLOT_H + 26)
+  local extra = 0
+  if #rows > showing then
+    panel.more = panel.more or panel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    panel.more:ClearAllPoints()
+    panel.more:SetPoint("TOPLEFT", panel, "TOPLEFT", PAD, -(TOP + 30) - showing * SLOT_H - 2)
+    panel.more:SetText("+" .. (#rows - showing) .. " more, expiring later")
+    panel.more:Show()
+    extra = 16
+  end
+  panel:SetSize(WIDE, TOP + 30 + math.max(1, showing) * SLOT_H + extra + 26)
   AltPanel.Dock()
   panel:Show()
 end
