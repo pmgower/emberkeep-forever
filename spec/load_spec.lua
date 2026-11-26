@@ -587,6 +587,51 @@ describe("the addon in a stand-in client", function()
       assert.is_true(drawn("14 of 16 slots free"), "the open panel follows the bags")
     end)
 
+    it("saves the bank only while it's open, and shows it on its own tab", function()
+      wow.fire("PLAYER_ENTERING_WORLD", false, true)
+      state.bank = { size = 28, [1] = { id = 70, name = "Wool", count = 19 } }
+      wow.fire("BAG_UPDATE_DELAYED")
+      local c = EmberkeepDB.characters["Brakka-Nightfall"]
+      assert.is_nil(c.bank, "the bank can't be read from out here")
+      wow.fire("BANKFRAME_OPENED")
+      assert.are.equal(28, c.bank.total)
+      assert.truthy(c.bank.items[1].link:find("[Wool]", 1, true))
+      state.bank[2] = { id = 71, name = "Silk", count = 3 }
+      wow.fire("BAG_UPDATE_DELAYED")
+      assert.are.equal(2, #c.bank.items)
+      wow.fire("BANKFRAME_CLOSED")
+      state.bank = { size = 28 }
+      wow.fire("BAG_UPDATE_DELAYED")
+      assert.are.equal(2, #c.bank.items, "closed: kept as it was")
+      click("Brakka-Nightfall")
+      for _, f in ipairs(wow.frames) do
+        if rawget(f, "label") and f.label._text == "Bank" then
+          f._scripts.OnClick(f)
+        end
+      end
+      assert.is_true(drawn("26 of 28 slots free"))
+      assert.is_true(drawn("19"))
+      ns.AltPanel.Step(1)
+      assert.is_true(drawn("No bank saved yet"))
+      assert.is_true(drawn("Open the bank once on them to save it."))
+    end)
+
+    it("reads the bank from the banker interaction too, but not other ones", function()
+      _G.Enum.PlayerInteractionType = { Banker = 8, Merchant = 5 }
+      wow.install(state)
+      ns = wow.loadToc("Emberkeep/Emberkeep.toc", "Emberkeep")
+      wow.fire("ADDON_LOADED", "Emberkeep")
+      wow.fire("PLAYER_LOGIN")
+      wow.fire("PLAYER_ENTERING_WORLD", false, true)
+      state.bank = { size = 28, [1] = { id = 70, name = "Wool", count = 19 } }
+      wow.fire("PLAYER_INTERACTION_MANAGER_FRAME_SHOW", 5)
+      local c = EmberkeepDB.characters["Brakka-Nightfall"]
+      assert.is_nil(c.bank)
+      wow.fire("PLAYER_INTERACTION_MANAGER_FRAME_SHOW", 8)
+      assert.are.equal(28, c.bank.total)
+      _G.Enum.PlayerInteractionType = nil
+    end)
+
     it("doesn't read bags while zoning or logging out", function()
       state.bag = { size = 16, [1] = { id = 50, name = "Linen", count = 18 } }
       wow.fire("BAG_UPDATE_DELAYED")
