@@ -303,8 +303,8 @@ function AltPanel.Refresh()
   if bags then
     -- A big bank gets more cells per row rather than running off the screen.
     local saved = c[tab]
-    local cells = saved and (#saved.items + saved.free) or 0
-    local perRow = math.max(10, math.min(20, math.ceil(cells / 12)))
+    local count = saved and (#saved.items + saved.free) or 0
+    local perRow = math.max(10, math.min(20, math.ceil(count / 12)))
     width = PAD * 2 + perRow * (CELL + CELL_GAP) - CELL_GAP
   end
   local name = classColored(ns.Roster.DisplayName(c, settings().hideSurnames), c.classFile)

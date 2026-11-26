@@ -686,8 +686,11 @@ describe("the addon in a stand-in client", function()
       state.bank = { size = 28 }
       wow.fire("BAG_UPDATE_DELAYED")
       assert.are.equal(2, #c.bank.items, "closed by the banker's hide")
+      state.bank[1] = { id = 70, name = "Wool", count = 19 }
+      state.bank[2] = { id = 71, name = "Silk", count = 3 }
       wow.fire("PLAYER_INTERACTION_MANAGER_FRAME_SHOW", 8)
       wow.fire("PLAYER_LEAVING_WORLD")
+      state.bank = { size = 28 }
       wow.fire("PLAYER_ENTERING_WORLD", false, false)
       wow.fire("BAG_UPDATE_DELAYED")
       assert.are.equal(2, #c.bank.items, "leaving the world closes it")
