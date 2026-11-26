@@ -319,7 +319,7 @@ local function noteSend(recipient)
   if not ns.db then
     return
   end
-  local key = ns.Roster.FindByName(ns.db.characters, recipient)
+  local key = ns.Roster.FindByName(ns.db.characters, recipient, ns.Game.Realm())
   if key and key ~= ns.Game.CurrentKey() then
     outgoing = { key = key, mail = ns.Items.Outgoing() }
   end
@@ -338,7 +338,8 @@ local function mailSent()
   if not (sent and me) then
     return
   end
-  sent.mail.from = ns.Roster.DisplayName(me)
+  sent.mail.from = ns.Roster.DisplayName(me, ns.db.settings.hideSurnames)
+  sent.mail.fromName = me.name
   if ns.Mail.Sent(ns.db.characters[sent.key], sent.mail, ns.Game.Now()) then
     ns.AltPanel.RefreshIfShowing(sent.key)
     ns.MainWindow.RefreshIfShown()
@@ -346,6 +347,7 @@ local function mailSent()
 end
 
 local BANKER = Enum and Enum.PlayerInteractionType and Enum.PlayerInteractionType.Banker
+local MAILBOX = Enum and Enum.PlayerInteractionType and Enum.PlayerInteractionType.MailInfo
 
 -- The bank window opening or closing, from either event that says so.
 local function bankEvent(event, arg1)
@@ -424,6 +426,9 @@ local function handle(event, arg1)
       queueBank(BAG_DELAY, RETRIES)
     end
     return queueBags(BAG_DELAY, RETRIES)
+  elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_HIDE" and MAILBOX ~= nil and arg1 == MAILBOX then
+    mailOpen = false -- some clients send only this when the mailbox closes
+    return
   elseif event:find("^BANKFRAME_") or event:find("^PLAYER_INTERACTION_MANAGER_FRAME_") then
     return bankEvent(event, arg1)
   elseif event == "SKILL_LINES_CHANGED" then

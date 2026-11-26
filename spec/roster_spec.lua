@@ -99,10 +99,21 @@ describe("Roster.FindByName", function()
       c = { name = "Quill", realm = "R" },
     }
     assert.are.equal("a", Roster.FindByName(store, "jango pheu"))
-    assert.are.equal("c", Roster.FindByName(store, " Quill-Somewhere "))
+    assert.are.equal("c", Roster.FindByName(store, " Quill-R "))
     assert.is_nil(Roster.FindByName(store, "Jango"), "two alts share it")
     assert.is_nil(Roster.FindByName(store, "Nobody"))
     assert.is_nil(Roster.FindByName(store, nil))
+  end)
+
+  it("looks on your realm for a bare name, and on the named realm otherwise", function()
+    local store = {
+      here = { name = "Quill", realm = "Nightfall" },
+      there = { name = "Quill", realm = "Blood Moon" },
+    }
+    assert.are.equal("here", Roster.FindByName(store, "Quill", "Nightfall"))
+    assert.are.equal("there", Roster.FindByName(store, "Quill-BloodMoon", "Nightfall"))
+    assert.is_nil(Roster.FindByName(store, "Quill-Elsewhere", "Nightfall"))
+    assert.is_nil(Roster.FindByName(store, "Quill"), "no realm given: two match")
   end)
 end)
 

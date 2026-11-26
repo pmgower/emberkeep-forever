@@ -151,8 +151,13 @@ function Items.Inbox()
   if not (GetInboxNumItems and GetInboxHeaderInfo and GetInboxItem) then
     return nil
   end
-  local reading = { mails = {}, missing = false }
-  for i = 1, plain(GetInboxNumItems()) or 0 do
+  local shown, total = GetInboxNumItems()
+  shown = plain(shown) or 0
+  local reading = { mails = {}, missing = false, total = plain(total) or shown }
+  if shown == 0 and reading.total > 0 then
+    reading.incomplete, reading.missing = true, true -- not loaded yet: read again shortly
+  end
+  for i = 1, shown do
     local _, _, sender, subject, money, _, daysLeft, count, _, returned, _, canReply = GetInboxHeaderInfo(i)
     local items = {}
     if (plain(count) or 0) > 0 then
@@ -168,6 +173,7 @@ function Items.Inbox()
           items[#items + 1] = { link = link or ("item:" .. id), count = plain(stack) or 1 }
         end
       end
+      reading.missing = reading.missing or #items < plain(count) -- some not loaded yet
     end
     reading.mails[#reading.mails + 1] = {
       sender = plain(sender),
