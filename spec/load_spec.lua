@@ -587,6 +587,35 @@ describe("the addon in a stand-in client", function()
       assert.is_true(drawn("14 of 16 slots free"), "the open panel follows the bags")
     end)
 
+    it("reads the bank only while it's open, and shows it on its own tab", function()
+      _G.BANK_CONTAINER = -1
+      state.bag = { size = 16 }
+      state.bank = { size = 24, [1] = { id = 70, name = "Silk", count = 20 } }
+      wow.fire("PLAYER_ENTERING_WORLD", false, true)
+      local c = EmberkeepDB.characters["Brakka-Nightfall"]
+      wow.fire("BAG_UPDATE_DELAYED")
+      assert.is_nil(c.bank, "not before the bank opens")
+      wow.fire("BANKFRAME_OPENED")
+      assert.are.equal(23, c.bank.free)
+      state.bank[2] = { id = 71, name = "Mageweave", count = 5 }
+      wow.fire("BAG_UPDATE_DELAYED")
+      assert.are.equal(22, c.bank.free, "follows changes while open")
+      wow.fire("BANKFRAME_CLOSED")
+      state.bank = nil
+      wow.fire("BAG_UPDATE_DELAYED")
+      assert.are.equal(22, c.bank.free, "closed, the bank reads empty and that's ignored")
+      click("Brakka-Nightfall")
+      for _, f in ipairs(wow.frames) do
+        if rawget(f, "label") and f.label._text == "Bank" then
+          f._scripts.OnClick(f)
+        end
+      end
+      assert.is_true(drawn("22 of 24 slots free"))
+      ns.AltPanel.Step(1)
+      assert.is_true(drawn("No bank saved yet"))
+      _G.BANK_CONTAINER = nil
+    end)
+
     it("doesn't read bags while zoning or logging out", function()
       state.bag = { size = 16, [1] = { id = 50, name = "Linen", count = 18 } }
       wow.fire("BAG_UPDATE_DELAYED")

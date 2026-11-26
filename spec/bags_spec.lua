@@ -53,3 +53,39 @@ describe("Bags.View", function()
     assert.are.equal("14 of 16 slots free", Bags.Summary(view))
   end)
 end)
+
+describe("the bank", function()
+  local bank = { items = { { link = "item:3", count = 20 } }, free = 23, total = 24 }
+
+  it("is saved apart from the bags, and neither overwrites the other", function()
+    local c = {}
+    Bags.Observe(c, reading, 500)
+    assert.is_true(Bags.Observe(c, bank, 600, "bank"))
+    assert.are.equal(16, c.bags.total)
+    assert.are.same({ items = bank.items, free = 23, total = 24, at = 600 }, c.bank)
+  end)
+
+  it("never lets a closed bank, which reads no slots, wipe what was saved", function()
+    local c = {}
+    Bags.Observe(c, bank, 600, "bank")
+    assert.is_false(Bags.Observe(c, { items = {}, free = 0, total = 0 }, 900, "bank"))
+    assert.are.equal(600, c.bank.at)
+  end)
+
+  it("has a view of its own, nil until the bank is visited", function()
+    local c = {}
+    Bags.Observe(c, reading, 500)
+    assert.is_nil(Bags.View(c, function() end, "bank"))
+    Bags.Observe(c, bank, 600, "bank")
+    local view = Bags.View(c, function() end, "bank")
+    assert.are.equal("item:3", view.rows[1].link)
+    assert.are.equal("23 of 24 slots free", Bags.Summary(view))
+  end)
+
+  it("treats an unknown place as the bags", function()
+    local c = {}
+    Bags.Observe(c, reading, 500, "attic")
+    assert.are.equal(16, c.bags.total)
+    assert.is_nil(c.attic)
+  end)
+end)

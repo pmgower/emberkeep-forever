@@ -1,5 +1,5 @@
 -- AltPanel: one alt up close, docked beside the main window, with a tab for
--- gear and one for bags; bank and mail will join them. It's a child of the main window, so
+-- gear, one for bags and one for the bank; mail will join them. It's a child of the main window, so
 -- it moves, scales and closes with it.
 local _, ns = ...
 local AltPanel = {}
@@ -14,10 +14,22 @@ local QUESTION = "Interface\\Icons\\INV_Misc_QuestionMark"
 
 local win, panel, shownKey
 local buttons, cells, tabs = {}, {}, {}
-local TABS = { { key = "gear", title = "Gear" }, { key = "bags", title = "Bags" } }
+local TABS =
+  { { key = "gear", title = "Gear" }, { key = "bags", title = "Bags" }, { key = "bank", title = "Bank" } }
+-- What each item tab says before anything is saved, and under the grid.
+local PLACES = {
+  bags = { none = "No bags saved yet", hint = "Log in here once to save it.", asOf = "Bags as of " },
+  bank = { none = "No bank saved yet", hint = "Visit the bank on this alt once.", asOf = "Bank as of " },
+}
 
 local function settings()
   return ns.db.settings
+end
+
+-- The open tab: gear unless bags or bank was picked.
+local function openTab()
+  local tab = settings().panelTab
+  return PLACES[tab] and tab or "gear"
 end
 
 local function classColored(name, classFile)
@@ -292,7 +304,9 @@ function AltPanel.Refresh()
   if not c then
     return AltPanel.Close() -- removed while open
   end
-  local bags = settings().panelTab == "bags"
+  local tab = openTab()
+  local texts = PLACES[tab]
+  local bags = texts ~= nil
   local list = settings().gearList and not bags
   local width = list and NARROW or WIDE
   local name = classColored(ns.Roster.DisplayName(c, settings().hideSurnames), c.classFile)
@@ -302,11 +316,16 @@ function AltPanel.Refresh()
   for _, b in pairs(bags and buttons or cells) do
     b:Hide() -- the other tab's
   end
-  local view = (bags and ns.Bags or ns.Gear).View(c, ns.Items.Info)
+  local view
+  if bags then
+    view = ns.Bags.View(c, ns.Items.Info, tab)
+  else
+    view = ns.Gear.View(c, ns.Items.Info)
+  end
   local height = SLOT_H
   if view and bags then
     panel.summary:SetText(ns.Bags.Summary(view))
-    panel.asOf:SetText("Bags as of " .. ns.Format.Ago(view.at, ns.Game.Now()))
+    panel.asOf:SetText(texts.asOf .. ns.Format.Ago(view.at, ns.Game.Now()))
     panel.view:Hide()
     height = layoutBags(view, width)
   elseif view then
@@ -320,8 +339,8 @@ function AltPanel.Refresh()
     for _, b in pairs(bags and cells or buttons) do
       b:Hide()
     end
-    panel.summary:SetText(DIM .. (bags and "No bags saved yet|r" or "No gear saved yet|r"))
-    panel.asOf:SetText("Log in here once to save it.")
+    panel.summary:SetText(DIM .. (bags and texts.none or "No gear saved yet") .. "|r")
+    panel.asOf:SetText(bags and texts.hint or "Log in here once to save it.")
     panel.view:Hide()
   end
   panel:SetSize(width, TOP + 30 + height + 26)
@@ -339,7 +358,7 @@ end
 function AltPanel.PaintTabs()
   local e = ns.Window.Current().edge
   for i, tab in ipairs(TABS) do
-    local on = settings().panelTab == tab.key or (tab.key == "gear" and settings().panelTab ~= "bags")
+    local on = openTab() == tab.key
     if tabs[i].SetBackdropBorderColor then
       tabs[i]:SetBackdropBorderColor(e[1], e[2], e[3], on and 1 or 0.35)
     end

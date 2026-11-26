@@ -268,11 +268,14 @@ function W.install(state)
     end,
     RequestLoadItemDataByID = function() end,
   }
-  -- The backpack and a quiver (family 1): state.bag and state.quiver are
-  -- { size, [slot] = { id, name, count } }. state.unloaded leaves names out.
+  -- The backpack, a quiver (family 1) and the bank (bag -1): state.bag,
+  -- state.quiver and state.bank are { size, [slot] = { id, name, count } }.
+  -- state.unloaded leaves names out.
   local function bagAt(bag)
     if bag == 0 then
       return state.bag
+    elseif bag == -1 then
+      return state.bank
     end
     return bag == 1 and state.quiver or nil
   end

@@ -153,6 +153,18 @@ frame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
 frame:RegisterEvent("BAG_UPDATE_DELAYED")
 frame:RegisterEvent("SKILL_LINES_CHANGED")
 frame:RegisterEvent("PLAYER_LEAVING_WORLD")
+frame:RegisterEvent("BANKFRAME_OPENED")
+frame:RegisterEvent("BANKFRAME_CLOSED")
+-- Newer clients announce the banker this way too, and the second when a bank
+-- tab is bought. Not every client has them, and registering an unknown event
+-- is an error.
+for _, event in ipairs({
+  "PLAYER_INTERACTION_MANAGER_FRAME_SHOW",
+  "PLAYER_INTERACTION_MANAGER_FRAME_HIDE",
+  "BANK_TABS_CHANGED",
+}) do
+  pcall(frame.RegisterEvent, frame, event)
+end
 -- The last few errors Emberkeep hit this session, for /emberkeep feedback and
 -- /emberkeep debug. Kept in memory only, never saved.
 App.errors = {}
@@ -259,6 +271,50 @@ function queueBags(delay, tries)
   end)
 end
 
+-- The bank can only be read while it's open. It's read on opening and after
+-- each change while open; closed, it reads no slots, which Bags.Observe
+-- ignores, so what was saved stays. Several changes close together make one read.
+local bankOpen, bankQueued = false, false
+local BANKER = Enum and Enum.PlayerInteractionType and Enum.PlayerInteractionType.Banker
+local queueBank
+
+local function readBank(tries)
+  local key = ns.db and bankOpen and not leaving and ns.Game.CurrentKey()
+  local c = key and ns.db.characters[key]
+  if not c then
+    return
+  end
+  local reading = ns.Items.Banked()
+  if ns.Bags.Observe(c, reading, ns.Game.Now(), "bank") then
+    ns.AltPanel.RefreshIfShowing(key)
+  end
+  if reading and reading.missing and tries > 0 then
+    queueBank(RETRY_SECONDS, tries - 1)
+  end
+end
+
+function queueBank(delay, tries)
+  if bankQueued or not bankOpen then
+    return
+  end
+  if not (C_Timer and C_Timer.After) then
+    return readBank(0)
+  end
+  bankQueued = true
+  C_Timer.After(delay, function()
+    bankQueued = false
+    readBank(tries)
+  end)
+end
+
+-- open: true when the banker opens, false when it closes, nil for a change.
+local function bankChanged(open)
+  if open ~= nil then
+    bankOpen = open
+  end
+  queueBank(BAG_DELAY, RETRIES)
+end
+
 local function handle(event, arg1)
   if event == "ADDON_LOADED" then
     if arg1 == addonName then
@@ -278,12 +334,25 @@ local function handle(event, arg1)
     end
     return
   end
+  if event == "BANKFRAME_OPENED" then
+    return bankChanged(true)
+  elseif event == "BANKFRAME_CLOSED" then
+    return bankChanged(false)
+  elseif event:find("^PLAYER_INTERACTION_MANAGER_FRAME_") then
+    if BANKER and arg1 == BANKER then
+      bankChanged(event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW")
+    end
+    return
+  elseif event == "BANK_TABS_CHANGED" then
+    return bankChanged()
+  end
   if event == "BAG_UPDATE_DELAYED" then
+    bankChanged() -- moving items in or out of the bank
     return queueBags(BAG_DELAY, RETRIES)
   elseif event == "SKILL_LINES_CHANGED" then
     return skillsChanged()
   elseif event == "PLAYER_LEAVING_WORLD" then
-    leaving, settled = true, false
+    leaving, settled, bankOpen = true, false, false
     return
   elseif event == "PLAYER_ENTERING_WORLD" then
     leaving = false

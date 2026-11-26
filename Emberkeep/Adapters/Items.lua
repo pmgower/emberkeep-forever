@@ -35,17 +35,24 @@ function Items.Worn()
   return reading
 end
 
--- Every bag's contents, for Bags.Observe: the backpack, then each equipped bag.
--- Free slots count only bags that hold anything (family 0). The keyring's
--- items are listed, its slots aren't counted. "missing" says a link hasn't
--- loaded, so read again shortly.
-function Items.Carried()
+-- Reads each container into a reading for Bags.Observe. Free slots count
+-- only containers that hold anything (family 0) and that counts(bag) allows.
+-- "missing" says a link hasn't loaded, so read again shortly.
+local function readContainers(bags, counts)
   local C = C_Container
   if not (C and C.GetContainerNumSlots and C.GetContainerItemInfo) then
     return nil
   end
   local reading = { items = {}, free = 0, total = 0, missing = false }
-  local function readSlots(bag, size)
+  for _, bag in ipairs(bags) do
+    local size = plain(C.GetContainerNumSlots(bag)) or 0
+    if size > 0 and counts(bag) then
+      local free, family = C.GetContainerNumFreeSlots(bag)
+      if (plain(family) or 0) == 0 then
+        reading.total = reading.total + size
+        reading.free = reading.free + (plain(free) or 0)
+      end
+    end
     for slot = 1, size do
       local info = C.GetContainerItemInfo(bag, slot)
       local id = info and plain(info.itemID)
@@ -59,20 +66,53 @@ function Items.Carried()
       end
     end
   end
+  return reading
+end
+
+-- Every bag's contents, for Bags.Observe: the backpack, then each equipped
+-- bag, then the keyring. The reagent bag (bag 5) and the keyring list their
+-- items but their slots aren't counted.
+function Items.Carried()
+  local bags = {}
   for bag = 0, NUM_TOTAL_EQUIPPED_BAG_SLOTS or 5 do
-    local size = plain(C.GetContainerNumSlots(bag)) or 0
-    local free, family = C.GetContainerNumFreeSlots(bag)
-    if size > 0 and (plain(family) or 0) == 0 and bag <= 4 then -- bag 5 is the reagent bag
-      reading.total = reading.total + size
-      reading.free = reading.free + (plain(free) or 0)
-    end
-    readSlots(bag, size)
+    bags[#bags + 1] = bag
   end
   local keyring = Enum and Enum.BagIndex and Enum.BagIndex.Keyring
   if keyring and GetKeyRingSize then
-    readSlots(keyring, plain(GetKeyRingSize()) or 0)
+    bags[#bags + 1] = keyring
   end
-  return reading
+  return readContainers(bags, function(bag)
+    return bag >= 0 and bag <= 4
+  end)
+end
+
+-- The bank's containers. Forever's bank is tabs: tab 1 is the bank itself,
+-- the rest bank bag slots (0 slots until bought and given a bag). Older
+-- clients have the bank container and numbered bank bags instead.
+local function bankBags()
+  local bags, index = {}, Enum and Enum.BagIndex
+  for i = 1, 9 do
+    local bag = index and index["CharacterBankTab_" .. i]
+    if bag then
+      bags[#bags + 1] = bag
+    end
+  end
+  if #bags == 0 and BANK_CONTAINER then
+    bags[1] = BANK_CONTAINER
+    local first = (NUM_BAG_SLOTS or 4) + 1
+    for bag = first, first + (NUM_BANKBAGSLOTS or 6) - 1 do
+      bags[#bags + 1] = bag
+    end
+  end
+  return bags
+end
+
+-- The bank's contents, for Bags.Observe with "bank". Only right while the
+-- bank is open: closed, it reads no slots, which Observe ignores.
+function Items.Banked()
+  return readContainers(bankBags(), function()
+    return true
+  end)
 end
 
 local requested = {}

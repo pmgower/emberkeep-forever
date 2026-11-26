@@ -35,6 +35,7 @@ read_globals = {
   "GetProfessions", "GetProfessionInfo", "strlenutf8",
   -- Bags
   "C_Container", "GetKeyRingSize", "NUM_TOTAL_EQUIPPED_BAG_SLOTS",
+  "BANK_CONTAINER", "NUM_BAG_SLOTS", "NUM_BANKBAGSLOTS",
   -- Button on the Character window
   "CharacterFrame",
 }
