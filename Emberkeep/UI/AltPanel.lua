@@ -14,7 +14,11 @@ local QUESTION = "Interface\\Icons\\INV_Misc_QuestionMark"
 
 local win, panel, shownKey
 local buttons, cells, tabs = {}, {}, {}
-local TABS = { { key = "gear", title = "Gear" }, { key = "bags", title = "Bags" }, { key = "bank", title = "Bank" } }
+local TABS = {
+  { key = "gear", title = "Gear" },
+  { key = "bags", title = "Bags" },
+  { key = "bank", title = "Bank" },
+}
 
 local function settings()
   return ns.db.settings
@@ -324,7 +328,8 @@ function AltPanel.Refresh()
     end
     local what = tab == "bank" and "bank" or (bags and "bags" or "gear")
     panel.summary:SetText(DIM .. "No " .. what .. " saved yet|r")
-    panel.asOf:SetText(tab == "bank" and "Open the bank once on them to save it." or "Log in here once to save it.")
+    local hint = tab == "bank" and "Open the bank once on them to save it." or "Log in here once to save it."
+    panel.asOf:SetText(hint)
     panel.view:Hide()
   end
   panel:SetSize(width, TOP + 30 + height + 26)
@@ -339,9 +344,13 @@ function AltPanel.RefreshIfShowing(key)
   end
 end
 
--- Whether the open tab is one of the item grids (bags or bank). AltPanel.IsGridTab()
+-- Whether the open tab is one of the item grids (bags or bank).
+function AltPanel.IsGridTab()
   local tab = settings().panelTab
-  return tab == "bags" or tab == "bank" AltPanel.PaintTabs()
+  return tab == "bags" or tab == "bank"
+end
+
+function AltPanel.PaintTabs()
   local e = ns.Window.Current().edge
   for i, tab in ipairs(TABS) do
     local on = settings().panelTab == tab.key or (tab.key == "gear" and not AltPanel.IsGridTab())
