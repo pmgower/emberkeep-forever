@@ -14,4 +14,5 @@
 | Alt panel | The panel docked beside the main window that shows one character's snapshots. |
 | Outleveled | An equipped item more than 8 item levels below its wearer's level (from level 10). |
 | Profession skills | Each profession a character has, with its skill and current limit, and when they were read. |
+| Mail to collect | Mail with items or gold in a character's mailbox when they last opened it, plus what you have mailed them since. It expires. |
 | Stale | A snapshot that can only be refreshed at the bank or mailbox, shown "as of" its time. |

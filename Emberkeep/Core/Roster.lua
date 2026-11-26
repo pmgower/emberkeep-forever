@@ -88,6 +88,26 @@ function Roster.Forget(store, name)
   return removed
 end
 
+-- The key of the one character a typed name means: their full name, or their
+-- first name when no other character has it. Any "-Realm" is ignored. nil when
+-- it's nobody, or more than one.
+function Roster.FindByName(store, name)
+  local wanted = tostring(name or ""):gsub("%-.*$", ""):match("^%s*(.-)%s*$"):lower()
+  if wanted == "" then
+    return nil
+  end
+  local full, first = {}, {}
+  for key, c in pairs(store) do
+    if Roster.DisplayName(c):lower() == wanted then
+      full[#full + 1] = key
+    elseif tostring(c.name):lower() == wanted then
+      first[#first + 1] = key
+    end
+  end
+  local found = #full > 0 and full or first
+  return #found == 1 and found[1] or nil
+end
+
 -- Removes one character by its key. Returns true if it was there.
 function Roster.ForgetKey(store, key)
   local found = store[key] ~= nil

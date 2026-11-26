@@ -27,6 +27,11 @@ local CHECKBOXES = {
     "Offer a bug report on errors",
     "If Emberkeep hits an error, a small window offers to report it, once per session.",
   },
+  {
+    "mailWarning",
+    "Warn about expiring mail",
+    "When you log in, one chat line for each alt with items or gold in the mail that expires within 3 days.",
+  },
 }
 
 local function register(cat, key, kind, label, default, onChange)
