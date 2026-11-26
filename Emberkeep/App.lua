@@ -151,6 +151,10 @@ frame:RegisterEvent("TRAIT_CONFIG_UPDATED")
 frame:RegisterEvent("TIME_PLAYED_MSG")
 frame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
 frame:RegisterEvent("BAG_UPDATE_DELAYED")
+frame:RegisterEvent("BANKFRAME_OPENED")
+frame:RegisterEvent("BANKFRAME_CLOSED")
+frame:RegisterEvent("PLAYER_INTERACTION_MANAGER_FRAME_SHOW")
+frame:RegisterEvent("PLAYER_INTERACTION_MANAGER_FRAME_HIDE")
 frame:RegisterEvent("SKILL_LINES_CHANGED")
 frame:RegisterEvent("PLAYER_LEAVING_WORLD")
 -- The last few errors Emberkeep hit this session, for /emberkeep feedback and
@@ -226,37 +230,72 @@ end
 -- sighting. Not between leaving the world and entering it again (zoning or
 -- logging out), when they can read as empty.
 -- Several changes close together (looting, a shot that uses ammo) make one read.
-local queued = false
+-- The bank is read the same way, but only while it's open: it can't be read
+-- from anywhere else.
 local BAG_DELAY, ENTER_DELAY = 0.5, 1
-local queueBags
+local bankOpen = false
 
-local function readBags(tries)
+-- A queue for one kind of read: one pending read at a time, which runs
+-- `tries` more times while an item link hasn't loaded.
+local function readQueue(read)
+  local queued, queue = false, nil
+  queue = function(delay, tries)
+    if queued then
+      return
+    end
+    if not (C_Timer and C_Timer.After) then
+      return read(0, queue)
+    end
+    queued = true
+    C_Timer.After(delay, function()
+      queued = false
+      read(tries, queue)
+    end)
+  end
+  return queue
+end
+
+local function readInto(field, reading, tries, queue)
   local key = ns.db and not leaving and ns.Game.CurrentKey()
   local c = key and ns.db.characters[key]
   if not c then
     return
   end
-  local reading = ns.Items.Carried()
-  if ns.Bags.Observe(c, reading, ns.Game.Now()) then
+  if ns.Bags.Observe(c, reading, ns.Game.Now(), field) then
     ns.AltPanel.RefreshIfShowing(key)
   end
   if reading and reading.missing and tries > 0 then
-    queueBags(RETRY_SECONDS, tries - 1)
+    queue(RETRY_SECONDS, tries - 1)
   end
 end
 
-function queueBags(delay, tries)
-  if queued then
-    return
+local queueBags = readQueue(function(tries, queue)
+  readInto("bags", ns.Items.Carried(), tries, queue)
+end)
+
+local queueBank = readQueue(function(tries, queue)
+  if bankOpen then
+    readInto("bank", ns.Items.Banked(), tries, queue)
   end
-  if not (C_Timer and C_Timer.After) then
-    return readBags(0)
+end)
+
+local BANKER = Enum and Enum.PlayerInteractionType and Enum.PlayerInteractionType.Banker
+
+-- The bank window opening or closing, from either event that says so.
+local function bankEvent(event, arg1)
+  if event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW" or event == "PLAYER_INTERACTION_MANAGER_FRAME_HIDE" then
+    if BANKER == nil or arg1 ~= BANKER then
+      return
+    end
   end
-  queued = true
-  C_Timer.After(delay, function()
-    queued = false
-    readBags(tries)
-  end)
+  local opened = event == "BANKFRAME_OPENED" or event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW"
+  if opened and not bankOpen then
+    bankOpen = true
+    queueBank(0, RETRIES)
+    queueBank(BAG_DELAY, RETRIES) -- again once every slot has loaded
+  elseif not opened then
+    bankOpen = false
+  end
 end
 
 local function handle(event, arg1)
@@ -279,7 +318,12 @@ local function handle(event, arg1)
     return
   end
   if event == "BAG_UPDATE_DELAYED" then
+    if bankOpen then
+      queueBank(BAG_DELAY, RETRIES)
+    end
     return queueBags(BAG_DELAY, RETRIES)
+  elseif event:find("^BANKFRAME_") or event:find("^PLAYER_INTERACTION_MANAGER_FRAME_") then
+    return bankEvent(event, arg1)
   elseif event == "SKILL_LINES_CHANGED" then
     return skillsChanged()
   elseif event == "PLAYER_LEAVING_WORLD" then

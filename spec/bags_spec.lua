@@ -37,6 +37,21 @@ describe("Bags.Observe", function()
   end)
 end)
 
+describe("the bank", function()
+  it("is saved and shown on its own, apart from the bags", function()
+    local c = {}
+    Bags.Observe(c, reading, 500)
+    local bank = { items = { { id = 9, link = "item:9", count = 20 } }, free = 27, total = 28 }
+    assert.is_true(Bags.Observe(c, bank, 600, "bank"))
+    assert.are.equal(16, c.bags.total)
+    assert.are.equal(28, c.bank.total)
+    local view = Bags.View(c, function() end, "bank")
+    assert.are.equal(20, view.rows[1].count)
+    assert.are.equal(600, view.at)
+    assert.is_nil(Bags.View({ bags = c.bags }, function() end, "bank"))
+  end)
+end)
+
 describe("Bags.View", function()
   it("is nil for a character whose bags were never saved", function()
     assert.is_nil(Bags.View({}, function() end))

@@ -1,5 +1,5 @@
 -- AltPanel: one alt up close, docked beside the main window, with a tab for
--- gear and one for bags; bank and mail will join them. It's a child of the main window, so
+-- gear, one for bags and one for the bank; mail will join them. It's a child of the main window, so
 -- it moves, scales and closes with it.
 local _, ns = ...
 local AltPanel = {}
@@ -14,7 +14,7 @@ local QUESTION = "Interface\\Icons\\INV_Misc_QuestionMark"
 
 local win, panel, shownKey
 local buttons, cells, tabs = {}, {}, {}
-local TABS = { { key = "gear", title = "Gear" }, { key = "bags", title = "Bags" } }
+local TABS = { { key = "gear", title = "Gear" }, { key = "bags", title = "Bags" }, { key = "bank", title = "Bank" } }
 
 local function settings()
   return ns.db.settings
@@ -292,7 +292,8 @@ function AltPanel.Refresh()
   if not c then
     return AltPanel.Close() -- removed while open
   end
-  local bags = settings().panelTab == "bags"
+  local tab = settings().panelTab
+  local bags = tab == "bags" or tab == "bank" -- both are a grid of items
   local list = settings().gearList and not bags
   local width = list and NARROW or WIDE
   local name = classColored(ns.Roster.DisplayName(c, settings().hideSurnames), c.classFile)
@@ -302,11 +303,12 @@ function AltPanel.Refresh()
   for _, b in pairs(bags and buttons or cells) do
     b:Hide() -- the other tab's
   end
-  local view = (bags and ns.Bags or ns.Gear).View(c, ns.Items.Info)
+  local view = (bags and ns.Bags or ns.Gear).View(c, ns.Items.Info, bags and tab or nil)
   local height = SLOT_H
   if view and bags then
     panel.summary:SetText(ns.Bags.Summary(view))
-    panel.asOf:SetText("Bags as of " .. ns.Format.Ago(view.at, ns.Game.Now()))
+    local where = tab == "bank" and "Bank" or "Bags"
+    panel.asOf:SetText(where .. " as of " .. ns.Format.Ago(view.at, ns.Game.Now()))
     panel.view:Hide()
     height = layoutBags(view, width)
   elseif view then
@@ -320,8 +322,9 @@ function AltPanel.Refresh()
     for _, b in pairs(bags and cells or buttons) do
       b:Hide()
     end
-    panel.summary:SetText(DIM .. (bags and "No bags saved yet|r" or "No gear saved yet|r"))
-    panel.asOf:SetText("Log in here once to save it.")
+    local what = tab == "bank" and "bank" or (bags and "bags" or "gear")
+    panel.summary:SetText(DIM .. "No " .. what .. " saved yet|r")
+    panel.asOf:SetText(tab == "bank" and "Open the bank once on them to save it." or "Log in here once to save it.")
     panel.view:Hide()
   end
   panel:SetSize(width, TOP + 30 + height + 26)
@@ -336,10 +339,12 @@ function AltPanel.RefreshIfShowing(key)
   end
 end
 
-function AltPanel.PaintTabs()
+-- Whether the open tab is one of the item grids (bags or bank). AltPanel.IsGridTab()
+  local tab = settings().panelTab
+  return tab == "bags" or tab == "bank" AltPanel.PaintTabs()
   local e = ns.Window.Current().edge
   for i, tab in ipairs(TABS) do
-    local on = settings().panelTab == tab.key or (tab.key == "gear" and settings().panelTab ~= "bags")
+    local on = settings().panelTab == tab.key or (tab.key == "gear" and not AltPanel.IsGridTab())
     if tabs[i].SetBackdropBorderColor then
       tabs[i]:SetBackdropBorderColor(e[1], e[2], e[3], on and 1 or 0.35)
     end

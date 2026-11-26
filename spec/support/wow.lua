@@ -270,12 +270,17 @@ function W.install(state)
   }
   -- The backpack and a quiver (family 1): state.bag and state.quiver are
   -- { size, [slot] = { id, name, count } }. state.unloaded leaves names out.
+  -- The bank: state.bank is { size, [slot] = { id, name, count } }, in bank tab 6.
+  _G.Enum = _G.Enum or {}
   local function bagAt(bag)
     if bag == 0 then
       return state.bag
+    elseif bag == 6 then
+      return state.bank
     end
     return bag == 1 and state.quiver or nil
   end
+  _G.Enum.BagIndex = { CharacterBankTab_1 = 6 }
   _G.C_Container = {
     GetContainerNumSlots = function(bag)
       return bagAt(bag) and bagAt(bag).size or 0
