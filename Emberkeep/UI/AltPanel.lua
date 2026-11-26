@@ -389,7 +389,7 @@ local function mailRow(i)
       GameTooltip:AddLine(m.subject or "Mail")
       GameTooltip:AddLine("From " .. tostring(m.sender or "?"), 0.79, 0.81, 0.84)
       for _, item in ipairs(m.items) do
-        local name = ns.Gear.LinkName(item.link) or (ns.Items.Info(item.link).name) or "Item"
+        local name = ns.Gear.LinkName(item.link) or ns.Items.Info(item.link).name or "Item"
         local q = ns.Items.Info(item.link).quality
         local count = (item.count or 1) > 1 and (" x" .. item.count) or ""
         GameTooltip:AddLine(ns.Items.Colored(name, q) .. count)
