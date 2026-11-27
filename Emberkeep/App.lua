@@ -408,7 +408,10 @@ local function auraChanged()
     return
   end
   local obs = ns.Game.RestObservation()
-  if (obs.bag and true or false) ~= (c.rest.bag and true or false) and ns.Rest.Observe(c, obs) then
+  local refresh = (obs.bag and true or false) ~= (c.rest.bag and true or false) and ns.Rest.Observe(c, obs)
+  local before = c.xpBuff and c.xpBuff.stacks
+  ns.Rest.ObserveXpBuff(c, ns.Game.XpBuff(), obs.at)
+  if refresh or before ~= (c.xpBuff and c.xpBuff.stacks) then
     ns.MainWindow.RefreshIfShown()
   end
   -- Out of the bag but still in its grace: look again once that has passed,
@@ -480,6 +483,12 @@ local function handle(event, arg1)
   elseif event == "SKILL_LINES_CHANGED" then
     return skillsChanged()
   elseif event == "PLAYER_LEAVING_WORLD" then
+    -- The bag XP buff's time left as you log out (or zone); an empty read keeps the last.
+    local key = ns.db and ns.Game.CurrentKey()
+    local c = key and ns.db.characters[key]
+    if c then
+      ns.Rest.ObserveXpBuff(c, ns.Game.XpBuff(), ns.Game.Now(), true)
+    end
     leaving, settled, bankOpen, mailOpen = true, false, false, false
     return
   elseif event == "PLAYER_ENTERING_WORLD" then

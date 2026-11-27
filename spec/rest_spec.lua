@@ -171,3 +171,31 @@ describe("Rest.Ranking", function()
     assert.are.same({ "Brakka", "Thistle", "Elowen", "Morvain" }, names)
   end)
 end)
+
+describe("the sleeping bag's XP buff", function()
+  it("saves its stacks and time left, held to 1 to 3 stacks", function()
+    local c = {}
+    assert.is_true(Rest.ObserveXpBuff(c, { stacks = 3, left = 2 * HOUR }, 100))
+    assert.are.same({ stacks = 3, left = 2 * HOUR, at = 100 }, c.xpBuff)
+    Rest.ObserveXpBuff(c, { stacks = 7, left = HOUR }, 200)
+    assert.are.equal(3, c.xpBuff.stacks)
+    Rest.ObserveXpBuff(c, { stacks = 0, left = HOUR }, 200)
+    assert.are.equal(1, c.xpBuff.stacks)
+  end)
+
+  it("clears when it's gone, unless the read was an empty one while logging in or out", function()
+    local c = { xpBuff = { stacks = 2, left = HOUR, at = 0 } }
+    assert.is_false(Rest.ObserveXpBuff(c, nil, 10, true))
+    assert.is_not_nil(c.xpBuff)
+    assert.is_true(Rest.ObserveXpBuff(c, nil, 10))
+    assert.is_nil(c.xpBuff)
+  end)
+
+  it("counts down for the character you're on, and stays as at logout for the rest", function()
+    local saved = { stacks = 3, left = HOUR, at = 0 }
+    assert.are.equal(HOUR - 600, Rest.XpBuffLeft(saved, 600, true))
+    assert.are.equal(HOUR, Rest.XpBuffLeft(saved, DAY, false))
+    assert.is_nil(Rest.XpBuffLeft(saved, 2 * HOUR, true))
+    assert.is_nil(Rest.XpBuffLeft(nil, 0, true))
+  end)
+end)

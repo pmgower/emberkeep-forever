@@ -17,6 +17,14 @@ local BAR_FULL, BAR_INN, BAR_OUT = { 0.30, 0.65, 1 }, { 0.50, 0.78, 0.50 }, { 0.
 local WHERE = { bag = "|cff7fc77fSleeping bag|r", inn = DIM .. "Inn|r", outside = WARN .. "Outside|r" }
 local WHERE_WORD = { bag = "sleeping bag", inn = "inn", outside = "outside" }
 
+-- The sleeping bag's XP buff for the Bag XP column: "+3%  1h 42m".
+local function xpBuffText(buff)
+  if not buff then
+    return ""
+  end
+  return "|cff7fc77f+" .. buff.stacks .. "%|r  " .. ns.Format.Duration(buff.left)
+end
+
 local function classColored(name, classFile)
   local c = classFile and RAID_CLASS_COLORS and RAID_CLASS_COLORS[classFile]
   if c and c.colorStr then
@@ -72,6 +80,7 @@ local focuses = {
       { "Full in", 64 },
       { "Well Rested", 88 },
       { "Resting", 84 },
+      { "Bag XP", 96 },
       { "Zone", 130, grow = 1 },
     },
     bar = 4, -- the column that draws a fill bar before its text
@@ -93,6 +102,7 @@ local focuses = {
             r.full and (BLUE .. r.fullIn .. "|r") or r.fullIn,
             r.wellRested and (r.wellRested .. " / 5") or (DIM .. "Not read yet|r"),
             WHERE[r.where],
+            xpBuffText(r.xpBuff),
             r.zone,
           },
         }
@@ -336,6 +346,16 @@ local function tooltip(owner, key)
       effect = rank > 0 and ns.Rest.RankEffect(rank) or "No points in it"
     end
     GameTooltip:AddLine(effect, 0.56, 0.6, 0.65)
+    local live = key == ns.Game.CurrentKey()
+    local left = ns.Rest.XpBuffLeft(c.xpBuff, now, live)
+    if left then
+      local text = "+"
+        .. c.xpBuff.stacks
+        .. "% XP, "
+        .. ns.Format.Duration(left)
+        .. (live and " left" or " left at logout")
+      GameTooltip:AddDoubleLine("Bag XP buff", text, 1, 0.82, 0, 1, 1, 1)
+    end
   end
   GameTooltip:AddDoubleLine("Gold", moneyText(ns.Format.Money(c.money)), 1, 0.82, 0)
   local played = ns.Played.Total(c, now, key == ns.Game.CurrentKey())

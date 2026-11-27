@@ -135,6 +135,45 @@ function Game.InSleepingBag()
   return false
 end
 
+-- The sleeping bag's XP buff, named "Well-Rested" in game (not the Legacy
+-- perk): +1% XP a stack, up to 3, for 2 hours (checked in game 2026-11-27).
+local BAG_XP_AURA = 429959
+
+-- { stacks, left } for that buff (left in seconds), or nil without it.
+function Game.XpBuff()
+  if not GetTime then
+    return nil
+  end
+  local count, expires
+  local auras = C_UnitAuras
+  local found = false
+  if auras and auras.GetPlayerAuraBySpellID then
+    local ok, aura = pcall(auras.GetPlayerAuraBySpellID, BAG_XP_AURA)
+    if ok then
+      found = true
+      if aura then
+        count, expires = plain(aura.applications), plain(aura.expirationTime)
+      end
+    end
+  end
+  if not found and UnitBuff then
+    for i = 1, 40 do
+      local name, _, stacks, _, _, expirationTime, _, _, _, spellId = UnitBuff("player", i)
+      if not name then
+        break
+      end
+      if plain(spellId) == BAG_XP_AURA then
+        count, expires = plain(stacks), plain(expirationTime)
+        break
+      end
+    end
+  end
+  if type(expires) ~= "number" or expires <= 0 then
+    return nil
+  end
+  return { stacks = (type(count) == "number" and count > 0) and count or 1, left = expires - GetTime() }
+end
+
 -- Logging out sits you up out of the bag, so its aura goes during the logout
 -- countdown while the game keeps the bag's rest. A bag seen this recently
 -- still counts, or every alt logged out in one would be saved as at an inn.

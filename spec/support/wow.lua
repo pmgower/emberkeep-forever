@@ -236,11 +236,18 @@ function W.install(state)
     return state.rested
   end
   -- state.buffs: spell IDs of the player's buffs, in order.
+  -- state.buffs: spell ids, or { id, count, expires } for a buff with stacks
+  -- and a timer (expires on GetTime's clock, state.clock).
   _G.UnitBuff = function(_, i)
-    local id = (state.buffs or {})[i]
-    if id then
-      return "Buff " .. id, nil, 0, nil, 0, 0, "player", false, false, id
+    local b = (state.buffs or {})[i]
+    if type(b) == "table" then
+      return "Buff " .. b[1], nil, b[2], nil, 0, b[3], "player", false, false, b[1]
+    elseif b then
+      return "Buff " .. b, nil, 0, nil, 0, 0, "player", false, false, b
     end
+  end
+  _G.GetTime = function()
+    return state.clock or 0
   end
   _G.IsResting = function()
     return state.resting

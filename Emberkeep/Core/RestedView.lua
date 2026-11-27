@@ -11,7 +11,9 @@ ns.RestedView = RestedView
 -- rows: rank, key, name, classFile, level, percentText ("12.5%"), percent (whole number, rounded
 -- down until full so 150% always means full), fill (0 to 1 of the cap), full,
 -- fullIn ("Full" or "1d 18h"), fullAt, wellRested (0 to 5, or nil when it was
--- never read), resting, where ("bag", "inn" or "outside"), zone.
+-- never read), resting, where ("bag", "inn" or "outside"), zone, xpBuff (the
+-- sleeping bag's XP buff: stacks, seconds left, live for the character you're
+-- on, or nil).
 -- summary: levelling (rows shown), atMax, full (how many are full), next (the
 -- top row that isn't the character you're on and has rested XP, or nil).
 function RestedView.Build(store, deps, ctx)
@@ -42,6 +44,11 @@ function RestedView.Build(store, deps, ctx)
       where = deps.Rest.Where(c.rest),
       zone = c.zone or "",
     }
+    local live = c.key == ctx.currentKey
+    local left = deps.Rest.XpBuffLeft(c.xpBuff, ctx.now, live)
+    if left then
+      row.xpBuff = { stacks = c.xpBuff.stacks, left = left, live = live }
+    end
     rows[#rows + 1] = row
     if p.full then
       summary.full = summary.full + 1

@@ -260,6 +260,32 @@ describe("the addon in a stand-in client", function()
     state.buffs, state.resting = nil, nil
   end)
 
+  it("saves the sleeping bag's XP buff as you log out, and shows it on the Rested tab", function()
+    state.resting, state.clock = true, 1000
+    wow.fire("PLAYER_ENTERING_WORLD", false, true)
+    local c = EmberkeepDB.characters["Brakka-Nightfall"]
+    state.buffs = { { 429959, 3, 1000 + 6120 } }
+    wow.fire("UNIT_AURA", "player")
+    assert.are.equal(3, c.xpBuff.stacks)
+    state.clock = 1120
+    wow.fire("PLAYER_LEAVING_WORLD")
+    assert.are.equal(6000, c.xpBuff.left, "time left as you leave")
+    state.buffs = nil
+    wow.fire("PLAYER_LOGOUT")
+    assert.are.equal(6000, c.xpBuff.left, "an empty read while logging out keeps it")
+    wow.fire("PLAYER_ENTERING_WORLD", false, false)
+    SlashCmdList.EMBERKEEP("")
+    local shown = false
+    for _, f in ipairs(wow.frames) do
+      if f._text and tostring(f._text):find("+3%", 1, true) then
+        shown = true
+      end
+    end
+    assert.is_true(shown)
+    state.resting, state.clock = nil, nil
+    c.xpBuff = nil
+  end)
+
   it("puts the account's gold total on its own row with no character name", function()
     EmberkeepDB.characters["Quill-Nightfall"] =
       { name = "Quill", realm = "Nightfall", level = 18, money = 10000 }

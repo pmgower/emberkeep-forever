@@ -37,6 +37,38 @@ function Rest.Observe(c, obs)
   return true
 end
 
+-- The sleeping bag's XP buff (its own "Well-Rested", not the Legacy perk):
+-- +1% XP per stack, up to 3, for 2 hours. buff is { stacks, left } (seconds
+-- left), or nil when the character doesn't have it. Whether the timer runs
+-- while logged out isn't known yet, so it's saved as it was at the reading.
+-- keep: an empty read (logging in or out, before or after auras load) leaves
+-- the saved buff alone.
+function Rest.ObserveXpBuff(c, buff, at, keep)
+  if buff and type(buff.left) == "number" and buff.left > 0 then
+    local stacks = math.max(1, math.min(3, math.floor(tonumber(buff.stacks) or 1)))
+    c.xpBuff = { stacks = stacks, left = buff.left, at = at }
+    return true
+  end
+  if not keep and c.xpBuff then
+    c.xpBuff = nil
+    return true
+  end
+  return false
+end
+
+-- The buff's seconds left: counting down for the character you're on,
+-- as saved at logout for everyone else. nil when there's none.
+function Rest.XpBuffLeft(saved, now, live)
+  if not saved then
+    return nil
+  end
+  local left = saved.left
+  if live then
+    left = left - math.max(0, now - saved.at)
+  end
+  return left > 0 and left or nil
+end
+
 -- Where a character is resting: "bag" (a sleeping bag), "inn" (an inn or a
 -- city: the game doesn't tell them apart) or "outside".
 function Rest.Where(rest)
