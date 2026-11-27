@@ -462,6 +462,32 @@ local function auraChanged()
   end
 end
 
+-- Buffs are read only while resting: lying in the bag is what makes you rest,
+-- and the XP buff only gains stacks there. Everywhere else its time left
+-- counts down from what was saved, so nothing needs reading, and in combat
+-- the game hides auras from addons anyway (asking throws an error). A change
+-- in combat is read once it ends; several changes close together make one
+-- read. Also on entering the world (readBagBuff, after a moment).
+local AURA_DELAY = 2
+
+local function resting()
+  return IsResting and IsResting() and true or false
+end
+
+local function readAuras()
+  aurasChanged = false
+  readBagBuff()
+  auraChanged()
+end
+
+local queueAuras = readQueue(function()
+  if InCombatLockdown and InCombatLockdown() then
+    aurasChanged = true
+  else
+    readAuras()
+  end
+end)
+
 local function handle(event, arg1)
   if event == "ADDON_LOADED" then
     if arg1 == addonName then
@@ -483,17 +509,14 @@ local function handle(event, arg1)
     return
   end
   if event == "UNIT_AURA" or event == "PLAYER_REGEN_ENABLED" then
-    -- In combat the game hides auras from addons (asking throws an error),
-    -- so aura changes wait until combat ends.
-    if InCombatLockdown and InCombatLockdown() then
-      aurasChanged = true
-      return
-    elseif event == "PLAYER_REGEN_ENABLED" and not aurasChanged then
-      return
+    if event == "PLAYER_REGEN_ENABLED" then
+      return aurasChanged and readAuras()
+    elseif resting() then
+      return queueAuras(AURA_DELAY, 0)
     end
-    aurasChanged = false
-    readBagBuff()
-    return auraChanged()
+    return
+  elseif event == "PLAYER_UPDATE_RESTING" then
+    queueAuras(AURA_DELAY, 0) -- lay down, got up, or walked into or out of an inn
   elseif event == "MAIL_SHOW" then
     mailOpen = true
     return

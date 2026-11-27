@@ -40,6 +40,10 @@ local function fakeObject(kind)
           self._w, self._h = ...
         elseif k == "SetText" then
           self._text = ...
+        elseif k == "SetChecked" then
+          self._checked = ...
+        elseif k == "GetChecked" then
+          return self._checked
         elseif k == "SetOwner" then
           self._lines = {}
         elseif k == "AddLine" then
@@ -164,6 +168,15 @@ function W.install(state)
     end,
     CreateSliderOptions = function()
       return { SetLabelFormatter = function() end }
+    end,
+    RegisterCanvasLayoutCategory = function(frame, name)
+      W.settings.name = name
+      W.settings.pages[name] = frame
+      return {
+        GetID = function()
+          return 7
+        end,
+      }
     end,
     RegisterAddOnCategory = function() end,
     RegisterCanvasLayoutSubcategory = function(_, frame, name)
