@@ -146,6 +146,41 @@ function Items.Banked()
   return reading
 end
 
+-- One mail in the inbox: { sender, subject, money, daysLeft, returns, items },
+-- and whether some of it hasn't loaded yet.
+function Items.InboxMail(i)
+  if not (GetInboxHeaderInfo and GetInboxItem) then
+    return nil, false
+  end
+  local _, _, sender, subject, money, _, daysLeft, count, _, returned, _, canReply = GetInboxHeaderInfo(i)
+  local items, missing = {}, false
+  if (plain(count) or 0) > 0 then
+    for slot = 1, ATTACHMENTS_MAX_RECEIVE or 16 do
+      local _, id, _, stack = GetInboxItem(i, slot)
+      id = plain(id)
+      if id then
+        local link = GetInboxItemLink and plain(GetInboxItemLink(i, slot))
+        if link and (ns.Gear.LinkName(link) or "") == "" then
+          link = nil
+        end
+        missing = missing or link == nil
+        items[#items + 1] = { link = link or ("item:" .. id), count = plain(stack) or 1 }
+      end
+    end
+    missing = missing or #items < plain(count) -- some not loaded yet
+  end
+  return {
+    sender = plain(sender),
+    subject = plain(subject),
+    money = plain(money) or 0,
+    daysLeft = plain(daysLeft),
+    -- Mail already sent back once, or from a mailbox that can't take a
+    -- reply (the auction house, a vendor), is deleted when it expires.
+    returns = not (plain(returned) or not plain(canReply)),
+    items = items,
+  }, missing
+end
+
 -- The whole inbox, for Mail.Observe. Only right while the mailbox is open.
 function Items.Inbox()
   if not (GetInboxNumItems and GetInboxHeaderInfo and GetInboxItem) then
@@ -158,33 +193,9 @@ function Items.Inbox()
     reading.incomplete, reading.missing = true, true -- not loaded yet: read again shortly
   end
   for i = 1, shown do
-    local _, _, sender, subject, money, _, daysLeft, count, _, returned, _, canReply = GetInboxHeaderInfo(i)
-    local items = {}
-    if (plain(count) or 0) > 0 then
-      for slot = 1, ATTACHMENTS_MAX_RECEIVE or 16 do
-        local _, id, _, stack = GetInboxItem(i, slot)
-        id = plain(id)
-        if id then
-          local link = GetInboxItemLink and plain(GetInboxItemLink(i, slot))
-          if link and (ns.Gear.LinkName(link) or "") == "" then
-            link = nil
-          end
-          reading.missing = reading.missing or link == nil
-          items[#items + 1] = { link = link or ("item:" .. id), count = plain(stack) or 1 }
-        end
-      end
-      reading.missing = reading.missing or #items < plain(count) -- some not loaded yet
-    end
-    reading.mails[#reading.mails + 1] = {
-      sender = plain(sender),
-      subject = plain(subject),
-      money = plain(money) or 0,
-      daysLeft = plain(daysLeft),
-      -- Mail already sent back once, or from a mailbox that can't take a
-      -- reply (the auction house, a vendor), is deleted when it expires.
-      returns = not (plain(returned) or not plain(canReply)),
-      items = items,
-    }
+    local mail, missing = Items.InboxMail(i)
+    reading.mails[#reading.mails + 1] = mail
+    reading.missing = reading.missing or missing
   end
   return reading
 end

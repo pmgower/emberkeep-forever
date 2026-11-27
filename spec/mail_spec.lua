@@ -78,6 +78,15 @@ describe("Mail.Sent", function()
     assert.are.equal(1000 + 30 * DAY, c.mail.sent[1].expires)
   end)
 
+  it("keeps the time left on mail you send back, and says it will be deleted", function()
+    local c = {}
+    Mail.Sent(c, { from = "Jango", items = cloth, returned = true, daysLeft = 4 }, 0)
+    local row = Mail.View(c, 0).rows[1]
+    assert.are.equal(4 * DAY, row.expiresIn)
+    assert.is_false(row.returns)
+    assert.are.equal("Sent back by you", row.subject)
+  end)
+
   it("stops showing it once it would have gone back to you", function()
     local c = {}
     Mail.Sent(c, { from = "Jango", items = cloth }, 0)

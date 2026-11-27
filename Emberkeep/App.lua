@@ -159,6 +159,7 @@ frame:RegisterEvent("MAIL_SHOW")
 frame:RegisterEvent("MAIL_CLOSED")
 frame:RegisterEvent("MAIL_INBOX_UPDATE")
 frame:RegisterEvent("MAIL_SEND_SUCCESS")
+frame:RegisterEvent("MAIL_SUCCESS")
 frame:RegisterEvent("MAIL_FAILED")
 frame:RegisterEvent("BANKFRAME_OPENED")
 frame:RegisterEvent("BANKFRAME_CLOSED")
@@ -310,24 +311,57 @@ local queueMail = readQueue(function(tries, queue)
   end
 end)
 
--- Mail you send to one of your characters shows on their Mail tab at once.
--- What's attached is noted when you press Send, and added once it has gone.
+-- Mail you send to one of your characters, or send back to one, shows on their
+-- Mail tab at once. What's attached is noted when you press Send (or Return),
+-- and added once the game says it has gone: `done` is the event that says so.
+-- TSM and Syndicator track mail to alts the same way.
 local outgoing
+
+-- The key of one of your characters, from a name typed into the mail. With
+-- names unique across the region, the realm isn't part of it.
+local function findAlt(name)
+  local regional = RegionalUniqueNamesEnabled and RegionalUniqueNamesEnabled()
+  if regional then
+    name = tostring(name or ""):gsub("%-.*$", "")
+  end
+  local key = ns.Roster.FindByName(ns.db.characters, name, not regional and ns.Game.Realm() or nil)
+  return key ~= ns.Game.CurrentKey() and key or nil
+end
 
 local function noteSend(recipient)
   outgoing = nil
-  if not ns.db then
-    return
+  local key = ns.db and findAlt(recipient)
+  if key then
+    outgoing = { key = key, mail = ns.Items.Outgoing(), done = "MAIL_SEND_SUCCESS" }
   end
-  local key = ns.Roster.FindByName(ns.db.characters, recipient, ns.Game.Realm())
-  if key and key ~= ns.Game.CurrentKey() then
-    outgoing = { key = key, mail = ns.Items.Outgoing() }
+end
+
+local function noteReturn(index)
+  outgoing = nil
+  local mail = ns.db and ns.Items.InboxMail(index)
+  local key = mail and findAlt(mail.sender)
+  if key then
+    mail.returned = true
+    outgoing = { key = key, mail = mail, done = "MAIL_SUCCESS" }
+  end
+end
+
+-- A mail sent back is confirmed by MAIL_SUCCESS, which other mailbox actions
+-- send too, so it is forgotten when the mailbox closes. A send is not: its
+-- MAIL_SEND_SUCCESS can arrive just after.
+local function mailboxClosed()
+  mailOpen = false
+  if outgoing and outgoing.done == "MAIL_SUCCESS" then
+    outgoing = nil
   end
 end
 
 if hooksecurefunc then
   hooksecurefunc("SendMail", function(recipient)
     pcall(noteSend, recipient)
+  end)
+  hooksecurefunc("ReturnInboxItem", function(index)
+    pcall(noteReturn, index)
   end)
 end
 
@@ -404,15 +438,17 @@ local function handle(event, arg1)
     mailOpen = true
     return
   elseif event == "MAIL_CLOSED" then
-    mailOpen = false
-    return
+    return mailboxClosed()
   elseif event == "MAIL_INBOX_UPDATE" then
     if mailOpen then
       queueMail(MAIL_DELAY, RETRIES)
     end
     return
-  elseif event == "MAIL_SEND_SUCCESS" then
-    return mailSent()
+  elseif event == "MAIL_SEND_SUCCESS" or event == "MAIL_SUCCESS" then
+    if outgoing and outgoing.done == event then
+      mailSent()
+    end
+    return
   elseif event == "MAIL_FAILED" then
     outgoing = nil
     return
@@ -426,8 +462,13 @@ local function handle(event, arg1)
       queueBank(BAG_DELAY, RETRIES)
     end
     return queueBags(BAG_DELAY, RETRIES)
-  elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_HIDE" and MAILBOX ~= nil and arg1 == MAILBOX then
-    mailOpen = false -- some clients send only this when the mailbox closes
+  elseif event:find("^PLAYER_INTERACTION_MANAGER_FRAME_") and MAILBOX ~= nil and arg1 == MAILBOX then
+    -- Some clients send only these when the mailbox opens or closes.
+    if event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW" then
+      mailOpen = true
+    else
+      mailboxClosed()
+    end
     return
   elseif event:find("^BANKFRAME_") or event:find("^PLAYER_INTERACTION_MANAGER_FRAME_") then
     return bankEvent(event, arg1)
