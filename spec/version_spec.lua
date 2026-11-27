@@ -16,6 +16,7 @@ describe("Version.Line", function()
 
   it("has a short form for the window header", function()
     assert.are.equal("v0.1.0", Version.Short("0.1.0"))
+    assert.are.equal("v0.5.0", Version.Short("v0.5.0"), "a release tag already has its v")
     assert.are.equal("dev", Version.Short("@project-version@"))
   end)
 end)
