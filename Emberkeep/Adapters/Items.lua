@@ -169,7 +169,7 @@ function Items.InboxMail(i)
     end
     missing = missing or #items < plain(count) -- some not loaded yet
   end
-  return {
+  local mail = {
     sender = plain(sender),
     subject = plain(subject),
     money = plain(money) or 0,
@@ -178,7 +178,8 @@ function Items.InboxMail(i)
     -- reply (the auction house, a vendor), is deleted when it expires.
     returns = not (plain(returned) or not plain(canReply)),
     items = items,
-  }, missing
+  }
+  return mail, missing
 end
 
 -- The whole inbox, for Mail.Observe. Only right while the mailbox is open.
