@@ -449,7 +449,7 @@ function AltPanel.ShowMail(c)
     local r, g, bl = ns.Items.Rgb(info.quality)
     b.border:SetColorTexture(r or 0.3, g or 0.35, bl or 0.4, 1)
     local sender = tostring(m.sender or "?")
-    b.name:SetText(m.sent and (sender .. " |cff4fd04f(sent by you)|r") or sender)
+    b.name:SetText(m.sent and (sender .. " |cff4fd04f(" .. m.subject:lower() .. ")|r") or sender)
     local parts = {}
     if #m.items > 0 then
       parts[#parts + 1] = #m.items == 1 and "1 item" or (#m.items .. " items")

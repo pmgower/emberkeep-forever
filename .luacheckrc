@@ -38,6 +38,7 @@ read_globals = {
   -- Mail
   "ATTACHMENTS_MAX_RECEIVE", "ATTACHMENTS_MAX_SEND", "GetInboxHeaderInfo", "GetInboxItem", "GetInboxItemLink",
   "GetInboxNumItems", "GetSendMailItem", "GetSendMailItemLink", "GetSendMailMoney", "hooksecurefunc",
+  "RegionalUniqueNamesEnabled",
   -- Bank
   "BANK_CONTAINER", "NUM_BAG_SLOTS", "NUM_BANKBAGSLOTS", "C_Bank",
   -- Button on the Character window

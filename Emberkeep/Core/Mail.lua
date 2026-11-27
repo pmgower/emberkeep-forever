@@ -71,8 +71,10 @@ function Mail.Observe(c, reading, now)
 end
 
 -- Something you mailed to one of your characters: { from, fromName, items =
--- { { link, count } }, money }. from is shown; fromName is the sender's name
--- as the inbox shows it. Kept until it shows in their mailbox.
+-- { { link, count } }, money, returned, daysLeft }. from is shown; fromName is
+-- the sender's name as the inbox shows it. Mail you send back (returned) keeps
+-- what time it had left, as far as anyone can tell, and is deleted when that
+-- runs out. Kept until it shows in their mailbox.
 function Mail.Sent(c, mail, now)
   if not c or not worthKeeping(mail) then
     return false
@@ -85,7 +87,8 @@ function Mail.Sent(c, mail, now)
     items = mail.items or {},
     money = mail.money or 0,
     at = now,
-    expires = now + Mail.SENT_DAYS * DAY,
+    expires = now + math.floor((mail.returned and mail.daysLeft or Mail.SENT_DAYS) * DAY),
+    returned = mail.returned or nil,
   })
   return true
 end
@@ -113,11 +116,11 @@ function Mail.View(c, now)
     if m.expires > now then -- gone back to you by now
       rows[#rows + 1] = {
         sender = m.from,
-        subject = "Sent by you",
+        subject = m.returned and "Sent back by you" or "Sent by you",
         items = m.items,
         money = m.money,
         expiresIn = m.expires - now,
-        returns = true,
+        returns = not m.returned,
         sent = true,
       }
     end
