@@ -69,6 +69,14 @@ commands = {
     if not db then
       return say("no saved data loaded (ADDON_LOADED didn't finish)")
     end
+    local ok2, buff = pcall(ns.Game.BagXpBuff)
+    if ok2 and buff then
+      local line = "sleeping bag buff: %d stack(s), %ds left, spell %s"
+      say(string.format(line, buff.stacks, buff.left, tostring(buff.spellId)))
+    else
+      say("sleeping bag buff: not on you")
+    end
+    say("its timer while logged out: " .. (db.bagBuffOffline or "not measured yet"))
     local count = 0
     for key, c in pairs(db.characters) do
       count = count + 1

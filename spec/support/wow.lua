@@ -235,12 +235,18 @@ function W.install(state)
   _G.GetXPExhaustion = function()
     return state.rested
   end
-  -- state.buffs: spell IDs of the player's buffs, in order.
+  -- state.buffs: the player's buffs, in order: a spell ID, or { id, name,
+  -- count, duration, expires } for one with stacks and a timer.
   _G.UnitBuff = function(_, i)
-    local id = (state.buffs or {})[i]
-    if id then
-      return "Buff " .. id, nil, 0, nil, 0, 0, "player", false, false, id
+    local b = (state.buffs or {})[i]
+    if type(b) == "table" then
+      return b.name, nil, b.count or 0, nil, b.duration or 0, b.expires or 0, "player", false, false, b.id
+    elseif b then
+      return "Buff " .. b, nil, 0, nil, 0, 0, "player", false, false, b
     end
+  end
+  _G.GetTime = function()
+    return state.uptime or 0
   end
   _G.IsResting = function()
     return state.resting

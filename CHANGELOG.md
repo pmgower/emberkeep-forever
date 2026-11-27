@@ -7,6 +7,7 @@
 - A chat line at login names any alt whose mail expires within 3 days (turn it off in the options)
 - Search tab: find an item on any alt, with how many each one has and where (bags, bank, mail or worn). Type a name, or search words like #epic, #bank or >30; the tab shows how
 - Rested tab: an alt logged out in a Cozy Sleeping Bag shows "Sleeping bag" instead of "Inn"
+- Rested tab: a Bag buff column shows each alt's sleeping bag XP buff (+1% to +3%) and how long it had left when they logged out
 - Open the bank and a mailbox once on each alt to save them
 
 ## 0.4.0
