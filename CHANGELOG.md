@@ -1,3 +1,13 @@
+## 0.5.0
+
+- Bank tab in the alt panel: what each alt has in their bank, bank tabs included, as a grid like the Bags tab
+- Mail tab in the alt panel: each alt's mail with items or gold to collect, soonest to expire first, with how long is left and whether it then goes back or is deleted
+- Mail you send, or send back, to one of your alts shows on their Mail tab straight away
+- Overview tab: a Mail column shows how soon each alt's mail expires, red within 3 days and amber within a week
+- A chat line at login names any alt whose mail expires within 3 days (turn it off in the options)
+- Rested tab: an alt logged out in a Cozy Sleeping Bag shows "Sleeping bag" instead of "Inn"
+- Open the bank and a mailbox once on each alt to save them
+
 ## 0.4.0
 
 - Professions tab: every alt's profession skills side by side, with a column for each profession, including Cooking, Fishing and First Aid
