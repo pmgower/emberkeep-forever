@@ -1248,4 +1248,73 @@ describe("the addon in a stand-in client", function()
       assert.truthy(last:find("/emberkeep feedback", 1, true))
     end)
   end)
+
+  describe("the Search tab", function()
+    local function drawn(text)
+      for _, f in ipairs(wow.frames) do
+        if f._shown and f._text and tostring(f._text):find(text, 1, true) then
+          return true
+        end
+      end
+      return false
+    end
+
+    local function row(key)
+      for _, f in ipairs(wow.frames) do
+        if f._shown and rawget(f, "link") and rawget(f, "key") == key then
+          return f
+        end
+      end
+    end
+
+    before_each(function()
+      wow.fire("PLAYER_ENTERING_WORLD", false, true)
+      local linen = "|cffffffff|Hitem:2589::|h[Linen Cloth]|h|r"
+      local brakka = EmberkeepDB.characters["Brakka-Nightfall"]
+      brakka.bags = { items = { { link = linen, count = 15 } }, free = 1, total = 2 }
+      EmberkeepDB.characters["Quill-Nightfall"] = {
+        name = "Quill",
+        realm = "Nightfall",
+        level = 18,
+        bank = { items = { { link = linen, count = 7 } }, free = 0, total = 1 },
+      }
+    end)
+
+    it("finds an item on every alt, in the window and not in chat", function()
+      local lines = #DEFAULT_CHAT_FRAME.lines
+      SlashCmdList.EMBERKEEP("search linen")
+      assert.are.equal("search", EmberkeepDB.settings.focus)
+      assert.is_true(drawn("Linen Cloth"))
+      assert.is_true(drawn("15 bags"))
+      assert.is_true(drawn("7 bank"))
+      assert.is_true(drawn("2 alts"))
+      assert.are.equal(lines, #DEFAULT_CHAT_FRAME.lines, "nothing printed")
+      local quill = row("Quill-Nightfall")
+      quill._scripts.OnEnter(quill)
+      assert.truthy(table.concat(GameTooltip._lines or {}, " "):find("alt panel", 1, true))
+      quill._scripts.OnClick(quill, "LeftButton")
+      assert.are.equal("Quill-Nightfall", ns.AltPanel.Key())
+      assert.are.equal("bank", EmberkeepDB.settings.panelTab, "opens where the item is")
+    end)
+
+    it("searches as you type, and shows how to search while the box is empty", function()
+      SlashCmdList.EMBERKEEP("search linen")
+      local box
+      for _, f in ipairs(wow.frames) do
+        if f._kind == "EditBox" and f._text == "linen" then
+          box = f
+        end
+      end
+      box._text = "linen &"
+      box._scripts.OnTextChanged(box, true)
+      assert.is_true(drawn("Not a whole search yet"))
+      box._text = "nothing like it"
+      box._scripts.OnTextChanged(box, true)
+      assert.is_true(drawn("No alt has anything that matches"))
+      box._text = ""
+      box._scripts.OnTextChanged(box, true)
+      assert.is_true(drawn("Type in the box to find an item"))
+      assert.is_true(drawn("Where: bags, bank, mailbox, equipped"))
+    end)
+  end)
 end)

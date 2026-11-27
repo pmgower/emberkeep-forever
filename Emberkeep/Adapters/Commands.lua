@@ -85,6 +85,9 @@ commands = {
   options = function()
     ns.OptionsPage.Open()
   end,
+  search = function(text)
+    ns.MainWindow.Search(text)
+  end,
   reset = function()
     ns.Window.ResetAll()
     say("window moved back to the middle of the screen")
@@ -102,5 +105,5 @@ SlashCmdList.EMBERKEEP = function(input)
   if fn then
     return fn(rest)
   end
-  say("/emberkeep opens the window. Also: options, feedback (report a bug), version, remove <name>, reset")
+  say("/emberkeep opens the window. Also: search <item>, options, feedback, version, remove <name>, reset")
 end
