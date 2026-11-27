@@ -151,6 +151,7 @@ frame:RegisterEvent("PLAYER_UPDATE_RESTING")
 if frame.RegisterUnitEvent then
   frame:RegisterUnitEvent("UNIT_AURA", "player")
 end
+frame:RegisterEvent("PLAYER_REGEN_ENABLED") -- combat ended: read auras that changed during it
 frame:RegisterEvent("TRAIT_CONFIG_UPDATED")
 frame:RegisterEvent("TIME_PLAYED_MSG")
 frame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
@@ -419,12 +420,19 @@ local function noteLogin()
   end
 end
 
+-- An aura changed during combat, so read them once it ends.
+local aurasChanged = false
+
 local function readBagBuff()
   local c = not leaving and ns.db and ns.db.characters[ns.Game.CurrentKey() or ""]
   if not c then
     return
   end
-  local reading, now = ns.Game.BagXpBuff(), ns.Game.Now()
+  local reading, hidden = ns.Game.BagXpBuff()
+  if hidden then
+    return -- the game wouldn't say; keep what was saved
+  end
+  local now = ns.Game.Now()
   if beforeLogin then
     local verdict = ns.Rest.OfflineTimer(beforeLogin.buff, beforeLogin.lastSeen, reading, now)
     ns.db.bagBuffOffline = verdict or ns.db.bagBuffOffline
@@ -474,7 +482,16 @@ local function handle(event, arg1)
     end
     return
   end
-  if event == "UNIT_AURA" then
+  if event == "UNIT_AURA" or event == "PLAYER_REGEN_ENABLED" then
+    -- In combat the game hides auras from addons (asking throws an error),
+    -- so aura changes wait until combat ends.
+    if InCombatLockdown and InCombatLockdown() then
+      aurasChanged = true
+      return
+    elseif event == "PLAYER_REGEN_ENABLED" and not aurasChanged then
+      return
+    end
+    aurasChanged = false
     readBagBuff()
     return auraChanged()
   elseif event == "MAIL_SHOW" then

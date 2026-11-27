@@ -42,7 +42,7 @@ read_globals = {
   -- Bank
   "BANK_CONTAINER", "NUM_BAG_SLOTS", "NUM_BANKBAGSLOTS", "C_Bank",
   -- Sleeping bag rest
-  "C_UnitAuras", "UnitBuff", "GetTime",
+  "C_UnitAuras", "UnitBuff", "GetTime", "InCombatLockdown",
   -- Button on the Character window
   "CharacterFrame",
 }

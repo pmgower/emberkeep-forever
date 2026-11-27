@@ -1,3 +1,7 @@
+## 0.5.1
+
+- Fixed: an error in combat ("Auras cannot be accessed when secret") when Emberkeep checked the sleeping bag buff. It now waits until combat ends
+
 ## 0.5.0
 
 - Bank tab in the alt panel: what each alt has in their bank, bank tabs included, as a grid like the Bags tab
