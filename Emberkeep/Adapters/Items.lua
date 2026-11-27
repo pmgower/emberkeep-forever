@@ -240,6 +240,20 @@ function Items.Info(link)
   return info
 end
 
+-- What Search matches on: Items.Info plus the item's kind, slot and binding.
+-- Kind and slot are known straight away; binding once the item has loaded.
+function Items.SearchInfo(link)
+  local info = Items.Info(link)
+  if C_Item and C_Item.GetItemInfoInstant and ns.Gear.ItemId(link) then
+    local _, _, _, equipLoc, _, classID, subclassID = C_Item.GetItemInfoInstant(link)
+    info.equipLoc, info.classID, info.subclassID = equipLoc, classID, subclassID
+  end
+  if info.name and C_Item.GetItemInfo then
+    info.bindType = select(14, C_Item.GetItemInfo(link))
+  end
+  return info
+end
+
 -- "|cff1eff00Name|r" in the item's quality color.
 function Items.Colored(name, quality)
   local c = quality and ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[quality]

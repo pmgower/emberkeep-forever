@@ -215,6 +215,76 @@ focuses[3].tooltip = function(c)
   GameTooltip:AddLine("As of " .. ns.Format.Ago(saved.at, ns.Game.Now()), 0.56, 0.6, 0.65)
 end
 
+-- The Search tab: an item on any alt, from the box beside the tabs. Each
+-- item gets a row, then a row for each alt that has it. Nothing is printed
+-- to chat.
+local searchText = ""
+
+-- Rows that say how to search, while the box is empty.
+local function searchHelp()
+  local rows = {
+    { cells = { "Type in the box to find an item on any of your alts.", "", "" }, span = 1 },
+    { cells = { DIM .. "linen|r", "", "names with linen in them" } },
+    { cells = { DIM .. "#epic|r", "", "only the keyword: epic quality" } },
+    { cells = { DIM .. "#gear & >30|r", "", "gear above item level 30" } },
+    { cells = { DIM .. "#bank | #mailbox|r", "", "anything in a bank or mailbox" } },
+    { cells = { DIM .. "cloth & !#bags|r", "", "cloth, but not in bags" } },
+    { cells = { DIM .. "20-30, <10, 25|r", "", "item levels between, below, exactly" } },
+    { cells = { DIM .. "& and, | or, ! not, ( ) group|r", "", "" }, span = 1 },
+  }
+  for _, group in ipairs(ns.Search.KEYWORDS) do
+    local label = group[1] ~= "" and (group[1] .. ": ") or ""
+    rows[#rows + 1] = { cells = { DIM .. label .. group[2] .. "|r", "", "" }, span = 1 }
+  end
+  rows[#rows + 1] = {
+    cells = { DIM .. "Searches what each alt had when last seen at their bags, bank and mailbox.|r", "", "" },
+    span = 1,
+  }
+  return rows
+end
+
+focuses[#focuses + 1] = {
+  key = "search",
+  title = "Search",
+  columns = { { "Item", 200, grow = 2 }, { "Count", 50 }, { "Where", 150, grow = 1 } },
+  build = function(db, now)
+    if searchText:match("^%s*$") then
+      return searchHelp(), "Search"
+    end
+    local result = ns.Search.Run(db.characters, searchText, ns.Items.SearchInfo, now)
+    if not result then
+      return { { cells = { DIM .. "Not a whole search yet|r", "", "" }, span = 1 } }, ""
+    end
+    if #result.items == 0 then
+      return { { cells = { DIM .. "No alt has anything that matches|r", "", "" }, span = 1 } }, "0 items"
+    end
+    local grid = {}
+    for _, item in ipairs(result.items) do
+      local icon = item.icon and ("|T" .. item.icon .. ":14:14|t ") or ""
+      local where = #item.alts == 1 and "1 alt" or (#item.alts .. " alts")
+      local name = ns.Items.Colored(item.name or "Item", item.quality)
+      local cellsOf = { icon .. name, item.total, DIM .. where .. "|r" }
+      grid[#grid + 1] = { link = item.link, item = item, cells = cellsOf }
+      for _, alt in ipairs(item.alts) do
+        local c = db.characters[alt.key]
+        local shown = classColored(ns.Roster.DisplayName(c, db.settings.hideSurnames), c.classFile)
+        grid[#grid + 1] = {
+          key = alt.key,
+          link = item.link,
+          tab = ns.Search.Tab(alt),
+          cells = { "      " .. shown, alt.total, ns.Search.Places(alt) },
+        }
+      end
+    end
+    if result.more > 0 then
+      local more = "+" .. result.more .. " more items: add to the search to narrow it"
+      grid[#grid + 1] = { cells = { DIM .. more .. "|r", "", "" }, span = 1 }
+    end
+    local count = #result.items + result.more
+    return grid, count == 1 and "1 item" or (count .. " items")
+  end,
+}
+
 local win, tabs, cells, stripes, headerLine, hovers, bars = nil, {}, {}, {}, nil, {}, {}
 local pips = {}
 local PIP, PIP_GAP, PIPS = 7, 2, 5
@@ -288,6 +358,28 @@ local function tooltip(owner, key)
   if MenuUtil and key ~= ns.Game.CurrentKey() then
     GameTooltip:AddLine("Right-click to remove", 0.56, 0.6, 0.65)
   end
+  GameTooltip:Show()
+end
+
+-- A search row's tooltip: the item, then who has it and where.
+local function itemTooltip(owner)
+  GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
+  local link = tostring(owner.link)
+  local hyperlink = link:match("|H(item:[^|]+)|h") or link:match("item:[%-%d:]+")
+  if hyperlink then
+    GameTooltip:SetHyperlink(hyperlink)
+  end
+  if owner.item then
+    GameTooltip:AddLine(" ")
+    for _, alt in ipairs(owner.item.alts) do
+      local c = ns.db.characters[alt.key]
+      local name = classColored(ns.Roster.DisplayName(c, settings().hideSurnames), c.classFile)
+      GameTooltip:AddDoubleLine(name, ns.Search.Places(alt), 1, 1, 1, 0.79, 0.81, 0.84)
+    end
+  elseif owner.key then
+    GameTooltip:AddLine("Click to see it in the alt panel", 0.56, 0.6, 0.65)
+  end
+  GameTooltip:AddLine("Shift-click to link it", 0.56, 0.6, 0.65)
   GameTooltip:Show()
 end
 
@@ -389,6 +481,9 @@ local function hover(r)
     hl:SetAllPoints()
     win:AddHighlight(hl)
     b:SetScript("OnEnter", function(self)
+      if self.link then
+        return itemTooltip(self)
+      end
       tooltip(self, self.key)
     end)
     b:SetScript("OnLeave", function()
@@ -396,7 +491,13 @@ local function hover(r)
     end)
     b:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     b:SetScript("OnClick", function(self, button)
-      if button == "RightButton" then
+      if self.link then -- a search result
+        if IsModifiedClick and IsModifiedClick() then
+          ns.Items.ModifiedClick(self.link)
+        elseif button == "LeftButton" and self.key and ns.db.characters[self.key] then
+          ns.AltPanel.Open(win, self.key, self.tab)
+        end
+      elseif button == "RightButton" then
         rowMenu(self)
       elseif self.key and ns.db.characters[self.key] then
         ns.AltPanel.Toggle(win, self.key)
@@ -469,6 +570,40 @@ local function buildTabs()
     t:SetFrameLevel((win.frame:GetFrameLevel() or 1) + 10)
     x = x + t:GetWidth() + TAB_GAP
   end
+end
+
+-- The search box, to the right of the tabs, shown on the Search tab only.
+local searchBox
+
+local function buildSearchBox()
+  searchBox = CreateFrame("EditBox", "EmberkeepSearchBox", win.frame, "SearchBoxTemplate")
+  searchBox:SetHeight(TAB_H)
+  searchBox:SetAutoFocus(false)
+  searchBox:SetFrameLevel((win.frame:GetFrameLevel() or 1) + 10)
+  local inherited = searchBox:GetScript("OnTextChanged") -- the template's clear button
+  searchBox:SetScript("OnTextChanged", function(self, typed)
+    if type(inherited) == "function" then
+      inherited(self, typed)
+    end
+    local text = self:GetText() or ""
+    if text ~= searchText then
+      searchText = text
+      MainWindow.Render()
+    end
+  end)
+  searchBox:SetScript("OnEnterPressed", function(self)
+    self:ClearFocus()
+  end)
+end
+
+local function placeSearchBox()
+  if active.key ~= "search" then
+    return searchBox:Hide()
+  end
+  searchBox:ClearAllPoints()
+  searchBox:SetPoint("TOPLEFT", tabs[#tabs], "TOPRIGHT", 14, 0)
+  searchBox:SetPoint("TOPRIGHT", win.frame, "TOPRIGHT", -ns.Window.PAD, -(ns.Window.HEADER_H + 4))
+  searchBox:Show()
 end
 
 local function paintTabs()
@@ -558,7 +693,9 @@ local function layout(grid)
   keys = {}
   for _, row in ipairs(grid) do
     lines[#lines + 1] = row
-    keys[#keys + 1] = row.key -- rows without a character have none
+    if not row.link then
+      keys[#keys + 1] = row.key -- rows without a character have none; search rows step nowhere
+    end
   end
   for r, row in ipairs(lines) do
     local x, y = 2, -(r - 1) * ROW_H - (r > 1 and 4 or 0)
@@ -571,7 +708,7 @@ local function layout(grid)
         t:Show()
       end
       local b = hover(r)
-      b.key = row.key
+      b.key, b.link, b.item, b.tab = row.key, row.link, row.item, row.tab
       b:ClearAllPoints()
       b:SetPoint("TOPLEFT", content, "TOPLEFT", 0, y + 2)
       b:SetSize(width + 4, ROW_H)
@@ -683,6 +820,7 @@ local function build()
     end
   end
   buildTabs()
+  buildSearchBox()
 end
 
 local function render()
@@ -690,6 +828,7 @@ local function render()
   win:UpdateGrip()
   win:SetRightText(right)
   paintTabs()
+  placeSearchBox()
   local w, h = layout(grid)
   win:AutoFit(w, h + TAB_H + 6)
   ns.AltPanel.Refresh()
@@ -766,6 +905,29 @@ function MainWindow.ShowAlt(key)
   end
   if ns.AltPanel.Key() ~= key then
     ns.AltPanel.Toggle(win, key)
+  end
+end
+
+-- Opens the window on the Search tab with this text in the box (/emberkeep search).
+function MainWindow.Search(text)
+  if not win then
+    build()
+  end
+  for _, focus in ipairs(focuses) do
+    if focus.key == "search" then
+      active = focus
+    end
+  end
+  settings().focus = "search"
+  searchText = tostring(text or "")
+  searchBox:SetText(searchText)
+  if win.frame:IsShown() then
+    MainWindow.Render()
+  else
+    MainWindow.Toggle()
+  end
+  if searchText == "" then
+    searchBox:SetFocus()
   end
 end
 
