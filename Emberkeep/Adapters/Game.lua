@@ -255,8 +255,9 @@ local function isBagXpBuff(name, duration, spellId)
   return plainName == "wellrested" and (tonumber(duration) or 0) > 0
 end
 
--- How many stacks: the aura's count, or its first value when that says more
--- (the buff's +1 to 3% may be held there instead: the count read 1 at 2 stacks).
+-- How many stacks: the aura's count (3 at 3 stacks on Forever, 2026-11-27),
+-- or its first value when that says more, in case a client keeps the +1 to 3%
+-- there instead.
 local function stacksOf(count, points)
   local stacks = tonumber(count) or 0
   local value = tonumber(points)
