@@ -19,7 +19,8 @@ Rest.AWAY = 0.25
 Rest.WELL_RESTED_STEP = 0.04
 Rest.WELL_RESTED_MAX = 5
 
--- observation: { rested, xpMax, resting, at }
+-- observation: { rested, xpMax, resting, bag, at }. bag is true while lying
+-- in a Cozy Sleeping Bag, which rests you like an inn wherever it's unrolled.
 -- Saves it on the character unless it's a bad read: XP to level reads 0
 -- while logging out, and that must not replace a good observation.
 function Rest.Observe(c, obs)
@@ -30,9 +31,19 @@ function Rest.Observe(c, obs)
     rested = math.max(0, tonumber(obs.rested) or 0),
     xpMax = obs.xpMax,
     resting = obs.resting and true or false,
+    bag = (obs.resting and obs.bag) and true or nil,
     at = obs.at,
   }
   return true
+end
+
+-- Where a character is resting: "bag" (a sleeping bag), "inn" (an inn or a
+-- city: the game doesn't tell them apart) or "outside".
+function Rest.Where(rest)
+  if not (rest and rest.resting) then
+    return "outside"
+  end
+  return rest.bag and "bag" or "inn"
 end
 
 -- Legacy points are earned by the account but spent by each character, so

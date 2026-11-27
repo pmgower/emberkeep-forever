@@ -12,6 +12,10 @@ local GOLD, SILVER, COPPER, DIM = "|cffffd100", "|cffc7c7cf", "|cffeda55f", "|cf
 local BLUE, WARN = "|cff4da6ff", "|cffe0a040"
 -- Bar colors: full (wasting rest), filling in an inn, filling outside.
 local BAR_FULL, BAR_INN, BAR_OUT = { 0.30, 0.65, 1 }, { 0.50, 0.78, 0.50 }, { 0.88, 0.63, 0.25 }
+-- The Resting column and the tooltip's "Last zone" line, by Rest.Where. A
+-- sleeping bag rests you like an inn, so it shares the inn's bar color.
+local WHERE = { bag = "|cff7fc77fSleeping bag|r", inn = DIM .. "Inn|r", outside = WARN .. "Outside|r" }
+local WHERE_WORD = { bag = "sleeping bag", inn = "inn", outside = "outside" }
 
 local function classColored(name, classFile)
   local c = classFile and RAID_CLASS_COLORS and RAID_CLASS_COLORS[classFile]
@@ -55,7 +59,7 @@ local focuses = {
       { "Rested", 140, grow = 1 },
       { "Full in", 64 },
       { "Well Rested", 88 },
-      { "Resting", 70 },
+      { "Resting", 84 },
       { "Zone", 130, grow = 1 },
     },
     bar = 4, -- the column that draws a fill bar before its text
@@ -76,7 +80,7 @@ local focuses = {
             (r.full and BLUE or "") .. r.percentText .. (r.full and "|r" or ""),
             r.full and (BLUE .. r.fullIn .. "|r") or r.fullIn,
             r.wellRested and (r.wellRested .. " / 5") or (DIM .. "Not read yet|r"),
-            r.resting and (DIM .. "Inn|r") or (WARN .. "Outside|r"),
+            WHERE[r.where],
             r.zone,
           },
         }
@@ -258,7 +262,7 @@ local function tooltip(owner, key)
   if place then
     local where = place
     if levelling then
-      where = where .. (c.rest.resting and " (inn)" or " (outside)")
+      where = where .. " (" .. WHERE_WORD[ns.Rest.Where(c.rest)] .. ")"
     end
     GameTooltip:AddDoubleLine("Last zone", where, 1, 0.82, 0, 1, 1, 1)
   end
