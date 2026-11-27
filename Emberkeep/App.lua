@@ -147,6 +147,10 @@ frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 frame:RegisterEvent("PLAYER_XP_UPDATE")
 frame:RegisterEvent("UPDATE_EXHAUSTION")
 frame:RegisterEvent("PLAYER_UPDATE_RESTING")
+-- Lying down in a sleeping bag, or getting up, only changes an aura.
+if frame.RegisterUnitEvent then
+  frame:RegisterUnitEvent("UNIT_AURA", "player")
+end
 frame:RegisterEvent("TRAIT_CONFIG_UPDATED")
 frame:RegisterEvent("TIME_PLAYED_MSG")
 frame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
@@ -298,6 +302,20 @@ local function bankEvent(event, arg1)
   end
 end
 
+-- Auras change all the time (every buff and cooldown), so only a change in
+-- whether you're lying in a sleeping bag saves a new rest reading.
+local function auraChanged()
+  local key = ns.db and not leaving and ns.Game.CurrentKey()
+  local c = key and ns.db.characters[key]
+  if not (c and c.rest) then
+    return
+  end
+  local obs = ns.Game.RestObservation()
+  if (obs.bag and true or false) ~= (c.rest.bag and true or false) and ns.Rest.Observe(c, obs) then
+    ns.MainWindow.RefreshIfShown()
+  end
+end
+
 local function handle(event, arg1)
   if event == "ADDON_LOADED" then
     if arg1 == addonName then
@@ -316,6 +334,9 @@ local function handle(event, arg1)
       ns.CharacterButton.Init()
     end
     return
+  end
+  if event == "UNIT_AURA" then
+    return auraChanged()
   end
   if event == "PLAYERBANKSLOTS_CHANGED" then
     if bankOpen then
@@ -420,8 +441,14 @@ function App.FeedbackContext()
   summary = summary or {}
   local alts = {}
   for i, r in ipairs(rows) do
-    alts[i] =
-      { level = r.level, class = r.classFile, percent = r.percent, full = r.full, resting = r.resting }
+    alts[i] = {
+      level = r.level,
+      class = r.classFile,
+      percent = r.percent,
+      full = r.full,
+      resting = r.resting,
+      where = r.where,
+    }
   end
   local saved = 0
   for _ in pairs(db.characters) do

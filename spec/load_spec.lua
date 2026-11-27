@@ -228,6 +228,31 @@ describe("the addon in a stand-in client", function()
     assert.is_true(drawn("Brakka"))
   end)
 
+  it("tells a sleeping bag from an inn by its Resting aura, and follows getting in and out", function()
+    state.resting = true
+    wow.fire("PLAYER_ENTERING_WORLD", false, true)
+    local c = EmberkeepDB.characters["Brakka-Nightfall"]
+    assert.are.equal("inn", ns.Rest.Where(c.rest))
+    state.buffs = { 16609, 1331671 }
+    wow.fire("UNIT_AURA", "player")
+    assert.is_true(c.rest.bag)
+    local at = c.rest.at
+    wow.fire("UNIT_AURA", "player")
+    assert.are.equal(at, c.rest.at, "an aura change that isn't the bag saves nothing")
+    SlashCmdList.EMBERKEEP("")
+    local shown = false
+    for _, f in ipairs(wow.frames) do
+      if f._text and tostring(f._text):find("Sleeping bag", 1, true) then
+        shown = true
+      end
+    end
+    assert.is_true(shown)
+    state.buffs = { 16609 }
+    wow.fire("UNIT_AURA", "player")
+    assert.is_nil(c.rest.bag)
+    state.buffs, state.resting = nil, nil
+  end)
+
   it("puts the account's gold total on its own row with no character name", function()
     EmberkeepDB.characters["Quill-Nightfall"] =
       { name = "Quill", realm = "Nightfall", level = 18, money = 10000 }

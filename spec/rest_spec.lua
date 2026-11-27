@@ -57,6 +57,25 @@ describe("Rest.Observe", function()
     assert.are.same({ rested = 500, xpMax = LEVEL, resting = true, at = 5 }, c.rest)
   end)
 
+  it("notes a sleeping bag only while resting in one", function()
+    local c = {}
+    Rest.Observe(c, { rested = 500, xpMax = LEVEL, resting = true, bag = true, at = 5 })
+    assert.is_true(c.rest.bag)
+    assert.are.equal("bag", Rest.Where(c.rest))
+    Rest.Observe(c, { rested = 500, xpMax = LEVEL, resting = false, bag = true, at = 6 })
+    assert.is_nil(c.rest.bag)
+    assert.are.equal("outside", Rest.Where(c.rest))
+    Rest.Observe(c, { rested = 500, xpMax = LEVEL, resting = true, at = 7 })
+    assert.are.equal("inn", Rest.Where(c.rest))
+    assert.are.equal("outside", Rest.Where(nil))
+  end)
+
+  it("fills a sleeping bag at the inn rate", function()
+    local inn = Rest.Project({ rested = 0, xpMax = LEVEL, resting = true, at = 0 }, 8 * 3600)
+    local bag = Rest.Project({ rested = 0, xpMax = LEVEL, resting = true, bag = true, at = 0 }, 8 * 3600)
+    assert.are.equal(inn.rested, bag.rested)
+  end)
+
   it("ignores the zero XP-to-level the game reports while logging out", function()
     local c = {}
     Rest.Observe(c, { rested = 500, xpMax = LEVEL, resting = true, at = 5 })
