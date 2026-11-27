@@ -481,7 +481,7 @@ local function hover(r)
         if IsModifiedClick and IsModifiedClick() then
           ns.Items.ModifiedClick(self.link)
         elseif button == "LeftButton" and self.key and ns.db.characters[self.key] then
-          ns.AltPanel.Open(win, self.key, self.tab)
+          ns.AltPanel.Open(win, self.key, self.tab or nil)
         end
       elseif button == "RightButton" then
         rowMenu(self)
@@ -694,7 +694,8 @@ local function layout(grid)
         t:Show()
       end
       local b = hover(r)
-      b.key, b.link, b.item, b.tab = row.key, row.link, row.item, row.tab
+      -- false, not nil: a reused button must forget the last row's fields
+      b.key, b.link, b.item, b.tab = row.key or false, row.link or false, row.item or false, row.tab or false
       b:ClearAllPoints()
       b:SetPoint("TOPLEFT", content, "TOPLEFT", 0, y + 2)
       b:SetSize(width + 4, ROW_H)
