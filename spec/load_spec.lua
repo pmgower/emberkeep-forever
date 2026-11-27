@@ -217,7 +217,9 @@ describe("the addon in a stand-in client", function()
     end
     SlashCmdList.EMBERKEEP("")
     assert.is_true(drawn("Brakka Stonefist"))
-    wow.settings.controls[3]:SetValue(true) -- First names only
+    local firstNames = ns.OptionsPage.controls.hideSurnames
+    firstNames:SetChecked(true)
+    firstNames._scripts.OnClick(firstNames)
     for _, f in ipairs(wow.frames) do
       if f._text and tostring(f._text):find("Brakka Stonefist", 1, true) then
         f._text = nil -- clear what the first draw left behind
@@ -263,7 +265,7 @@ describe("the addon in a stand-in client", function()
   it("shows the sleeping bag's XP buff on the Rested tab, but not the Legacy perk", function()
     local perk = { id = 9, name = "Well Rested", duration = 0 }
     local bag = { id = 4242, name = "Well-Rested", count = 3, duration = 7200, expires = 7300 }
-    state.uptime, state.buffs = 100, { perk, bag }
+    state.uptime, state.buffs, state.resting = 100, { perk, bag }, true
     wow.fire("PLAYER_ENTERING_WORLD", false, true)
     local c = EmberkeepDB.characters["Brakka-Nightfall"]
     assert.are.equal(3, c.bagBuff.stacks)
@@ -282,12 +284,12 @@ describe("the addon in a stand-in client", function()
     state.buffs = { perk }
     wow.fire("UNIT_AURA", "player")
     assert.is_nil(c.bagBuff, "the perk never runs out, so it isn't the bag's buff")
-    state.buffs, state.uptime = nil, nil
+    state.buffs, state.uptime, state.resting = nil, nil, nil
   end)
 
   it("leaves auras alone in combat, where the game hides them, and reads them after", function()
     local bag = { id = 429959, name = "Well-Rested", count = 3, duration = 7200, expires = 7300 }
-    state.uptime, state.buffs = 100, { bag }
+    state.uptime, state.buffs, state.resting = 100, { bag }, true
     wow.fire("PLAYER_ENTERING_WORLD", false, true)
     local c = EmberkeepDB.characters["Brakka-Nightfall"]
     assert.are.equal(3, c.bagBuff.stacks)
@@ -315,7 +317,25 @@ describe("the addon in a stand-in client", function()
     _G.C_UnitAuras = nil
     wow.fire("UNIT_AURA", "player")
     assert.are.equal(2, c.bagBuff.stacks, "read again once the game says")
-    _G.InCombatLockdown, state.buffs, state.uptime = nil, nil, nil
+    _G.InCombatLockdown, state.buffs, state.uptime, state.resting = nil, nil, nil, nil
+  end)
+
+  it("reads buffs only while resting, and when resting starts or stops", function()
+    local bag = { id = 429959, name = "Well-Rested", count = 1, duration = 7200, expires = 7300 }
+    state.uptime, state.buffs, state.resting = 100, { bag }, false
+    wow.fire("PLAYER_ENTERING_WORLD", false, true)
+    local c = EmberkeepDB.characters["Brakka-Nightfall"]
+    assert.are.equal(1, c.bagBuff.stacks, "read on entering the world")
+    bag.count = 2
+    wow.fire("UNIT_AURA", "player")
+    assert.are.equal(1, c.bagBuff.stacks, "out questing: buffs aren't read")
+    state.resting = true
+    wow.fire("PLAYER_UPDATE_RESTING")
+    assert.are.equal(2, c.bagBuff.stacks, "read when resting starts")
+    bag.count = 3
+    wow.fire("UNIT_AURA", "player")
+    assert.are.equal(3, c.bagBuff.stacks, "and as it changes while resting")
+    state.buffs, state.uptime, state.resting = nil, nil, nil
   end)
 
   it("finds the bag buff by its spell ID, and counts stacks from its value", function()
@@ -414,12 +434,24 @@ describe("the addon in a stand-in client", function()
 
   it("builds the options page and applies a changed color scheme and scale", function()
     assert.are.equal("Emberkeep", wow.settings.name)
-    assert.are.equal(8, #wow.settings.controls) -- 6 checkboxes, scheme, scale
+    assert.is_not_nil(wow.settings.pages.Emberkeep, "its own page, not shared Settings controls")
+    local controls = ns.OptionsPage.controls
+    local boxes = { "minimapButton", "loginHint", "hideSurnames", "locked", "errorPrompt", "mailWarning" }
+    for _, key in ipairs(boxes) do
+      assert.is_true(controls[key]:GetChecked() == (EmberkeepDB.settings[key] == true), key)
+    end
     SlashCmdList.EMBERKEEP("")
-    local theme = wow.settings.controls[7]
-    theme:SetValue("twilight")
-    assert.are.equal("twilight", ns.Window.Current().key)
-    wow.settings.controls[8]:SetValue(1.5)
+    controls.theme.forward._scripts.OnClick(controls.theme.forward)
+    assert.are.equal("deepwater", ns.Window.Current().key)
+    assert.are.equal("Deepwater", controls.theme.value._text)
+    controls.theme.back._scripts.OnClick(controls.theme.back)
+    controls.theme.back._scripts.OnClick(controls.theme.back)
+    assert.are.equal("classic", ns.Window.Current().key, "wraps round")
+    EmberkeepDB.settings.scale = 1.45
+    controls.scale.forward._scripts.OnClick(controls.scale.forward)
+    controls.scale.forward._scripts.OnClick(controls.scale.forward)
+    assert.are.equal(1.5, EmberkeepDB.settings.scale, "no bigger than the most")
+    assert.are.equal("150%", controls.scale.value._text)
     local scaled
     for _, f in ipairs(wow.frames) do
       if f._scale == 1.5 then
@@ -1273,14 +1305,9 @@ describe("the addon in a stand-in client", function()
     end)
 
     it("opens from the options page button and a minimap ctrl-click", function()
-      local button
-      for _, b in ipairs(wow.settings.buttons) do
-        if b.label == "Report a bug" then
-          button = b
-        end
-      end
+      local button = ns.OptionsPage.reportButton
       assert.is_not_nil(button)
-      button.onClick()
+      button._scripts.OnClick(button)
       assert.is_true(ns.FeedbackWindow.IsShown())
       state.ctrl = true
       ns.FeedbackWindow.url = nil

@@ -1,6 +1,8 @@
 ## 0.5.1
 
 - Fixed: an error in combat ("Auras cannot be accessed when secret") when Emberkeep checked the sleeping bag buff. It now waits until combat ends
+- Fixed: an error blaming Emberkeep ("tried to call the protected function IsUserOAuthed") when scrolling the game's Settings window. Emberkeep's options page is now its own panel
+- Emberkeep now checks buffs only while you're resting, which is the only time the sleeping bag and its XP buff can change
 
 ## 0.5.0
 
