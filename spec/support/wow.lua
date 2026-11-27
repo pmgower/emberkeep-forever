@@ -40,6 +40,13 @@ local function fakeObject(kind)
           self._w, self._h = ...
         elseif k == "SetText" then
           self._text = ...
+        elseif k == "SetOwner" then
+          self._lines = {}
+        elseif k == "AddLine" then
+          self._lines = self._lines or {}
+          table.insert(self._lines, (...))
+        elseif k == "ClearLines" then
+          self._lines = {}
         elseif k == "GetText" then
           return self._text
         elseif k == "GetStringWidth" then

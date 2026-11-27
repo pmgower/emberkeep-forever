@@ -402,6 +402,20 @@ function AltPanel.Toggle(window, key)
   ns.MainWindow.PaintSelected()
 end
 
+-- Opens the panel on one character at one tab ("gear", "bags", ...), from
+-- a search result. A tab the panel doesn't have leaves the open one.
+function AltPanel.Open(window, key, tab)
+  for _, t in ipairs(TABS) do
+    if t.key == tab then
+      settings().panelTab = tab
+    end
+  end
+  if shownKey == key then
+    return AltPanel.Refresh()
+  end
+  AltPanel.Toggle(window, key)
+end
+
 -- Moves to the next or previous row of the tab that's open.
 function AltPanel.Step(step)
   local key = ns.Gear.Step(ns.MainWindow.Keys(), shownKey, step)
