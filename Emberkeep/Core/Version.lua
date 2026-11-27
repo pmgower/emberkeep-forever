@@ -17,7 +17,8 @@ end
 
 -- The short form the window header shows: "v0.1.0", or "dev".
 function Version.Short(metadata)
-  local version = Version.Line("", metadata):gsub("^%s+", "")
+  -- The packager fills in the tag, which already starts with "v" (v0.5.0).
+  local version = Version.Line("", metadata):gsub("^%s+", ""):gsub("^[vV]", "")
   return version == "dev" and "dev" or ("v" .. version)
 end
 
