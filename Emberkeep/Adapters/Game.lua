@@ -236,5 +236,41 @@ function Game.RestContext(db, now)
     now = now or time(),
     currentKey = Game.CurrentKey(),
     hideSurnames = db.settings.hideSurnames,
+    bagBuffOffline = db.bagBuffOffline,
   }
+end
+
+-- The Cozy Sleeping Bag's XP buff: up to 3 stacks of +1% XP, for 2 hours.
+-- It isn't the bag's Resting aura. Found by its name, and only a buff with a
+-- timer: the Legacy perk of the same name never runs out. Its spell ID isn't
+-- known yet on Forever; /emberkeep debug prints it once seen.
+local function isBagXpBuff(name, duration)
+  local plainName = tostring(name or ""):lower():gsub("[^%a]", "")
+  return plainName == "wellrested" and (tonumber(duration) or 0) > 0
+end
+
+-- { stacks, left (seconds), spellId } while the player has that buff, else nil.
+function Game.BagXpBuff()
+  local now = GetTime and GetTime() or 0
+  for i = 1, 40 do
+    local name, count, duration, expires, spellId
+    if C_UnitAuras and C_UnitAuras.GetBuffDataByIndex then
+      local aura = C_UnitAuras.GetBuffDataByIndex("player", i)
+      if aura then
+        name, count, duration = plain(aura.name), plain(aura.applications), plain(aura.duration)
+        expires, spellId = plain(aura.expirationTime), plain(aura.spellId)
+      end
+    elseif UnitBuff then
+      local n, _, c, _, d, e, _, _, _, id = UnitBuff("player", i)
+      name, count, duration, expires, spellId = plain(n), plain(c), plain(d), plain(e), plain(id)
+    end
+    if not name then
+      return nil
+    end
+    if isBagXpBuff(name, duration) and tonumber(expires) then
+      local stacks = math.max(1, tonumber(count) or 1)
+      return { stacks = stacks, left = math.max(0, expires - now), spellId = spellId }
+    end
+  end
+  return nil
 end

@@ -399,6 +399,34 @@ local function bankEvent(event, arg1)
   end
 end
 
+-- The sleeping bag's XP buff, read whenever an aura changes. What was saved
+-- for the character before this login is kept until the buff is first read,
+-- to learn whether its timer runs while logged out.
+local beforeLogin
+
+local function noteLogin()
+  local c = ns.db.characters[ns.Game.CurrentKey() or ""]
+  if c and c.bagBuff then
+    beforeLogin = { buff = c.bagBuff, lastSeen = c.lastSeen }
+  end
+end
+
+local function readBagBuff()
+  local c = not leaving and ns.db and ns.db.characters[ns.Game.CurrentKey() or ""]
+  if not c then
+    return
+  end
+  local reading, now = ns.Game.BagXpBuff(), ns.Game.Now()
+  if beforeLogin then
+    local verdict = ns.Rest.OfflineTimer(beforeLogin.buff, beforeLogin.lastSeen, reading, now)
+    ns.db.bagBuffOffline = verdict or ns.db.bagBuffOffline
+    beforeLogin = nil
+  end
+  if ns.Rest.ObserveBagBuff(c, reading, now) then
+    ns.MainWindow.RefreshIfShown()
+  end
+end
+
 -- Auras change all the time (every buff and cooldown), so only a change in
 -- whether you're lying in a sleeping bag saves a new rest reading.
 local function auraChanged()
@@ -423,6 +451,7 @@ local function handle(event, arg1)
     if arg1 == addonName then
       EmberkeepDB = ns.Store.Ensure(EmberkeepDB)
       ns.db = EmberkeepDB
+      noteLogin()
       local themeKeys = {}
       for _, t in ipairs(ns.Window.THEMES) do
         themeKeys[t.key] = true
@@ -438,6 +467,7 @@ local function handle(event, arg1)
     return
   end
   if event == "UNIT_AURA" then
+    readBagBuff()
     return auraChanged()
   elseif event == "MAIL_SHOW" then
     mailOpen = true
@@ -488,6 +518,12 @@ local function handle(event, arg1)
   observe(event, arg1)
   if event == "PLAYER_ENTERING_WORLD" then
     queueBags(ENTER_DELAY, RETRIES) -- whatever changed behind the loading screen
+    -- Auras can still be loading just after entering the world.
+    if C_Timer and C_Timer.After then
+      C_Timer.After(RANK_DELAY, readBagBuff)
+    else
+      readBagBuff()
+    end
   end
   -- Ask for /played once per session (login or /reload), a moment after
   -- loading so it doesn't land among every other addon's login work.

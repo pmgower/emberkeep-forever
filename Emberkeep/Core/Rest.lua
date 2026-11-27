@@ -123,4 +123,67 @@ function Rest.Ranking(characters, maxLevel, now)
   return rows
 end
 
+-- The Cozy Sleeping Bag's XP buff (up to +3%, for 2 hours).
+Rest.BAG_BUFF_MAX = 3
+
+-- reading: { stacks, left (seconds) } or nil when the buff isn't there. Saves
+-- it with the time, and clears it once it's gone.
+function Rest.ObserveBagBuff(c, reading, now)
+  local had = c.bagBuff
+  if reading then
+    c.bagBuff = { stacks = reading.stacks, left = reading.left, at = now }
+  else
+    c.bagBuff = nil
+  end
+  return (had == nil) ~= (reading == nil) or (had and had.stacks ~= reading.stacks) or false
+end
+
+-- The buff on a character: { stacks, left } or nil when it has run out.
+-- Its timer runs while you play, so a logged-out alt had what was left at
+-- their last reading less the time played since, until they logged out.
+-- offline is what logging in showed the timer does while logged out: "runs"
+-- takes that time off too; "paused" (or not known yet) doesn't.
+function Rest.BagBuff(c, now, current, offline)
+  local b = c.bagBuff
+  if not b then
+    return nil
+  end
+  local stop = current and now or math.max(b.at, c.lastSeen or b.at)
+  local left = b.left - math.max(0, stop - b.at)
+  if not current and offline == "runs" then
+    left = left - math.max(0, now - stop)
+  end
+  if left <= 0 then
+    return nil
+  end
+  return { stacks = b.stacks, left = left }
+end
+
+-- What logging in shows about the timer while logged out. saved is the
+-- character's buff and lastSeen from before this login; reading is the buff
+-- now. "paused" if it had as long left as at logout, "runs" if the time
+-- logged out came off it, nil if it can't tell (a minute either way is
+-- allowed for, and a short time away can't tell them apart).
+function Rest.OfflineTimer(saved, lastSeen, reading, now)
+  if not (saved and lastSeen and reading) then
+    return nil
+  end
+  local away = now - lastSeen
+  local atLogout = saved.left - math.max(0, lastSeen - saved.at)
+  if away < 300 or atLogout <= away then
+    return nil
+  end
+  if math.abs(reading.left - atLogout) <= 60 then
+    return "paused"
+  elseif math.abs(reading.left - (atLogout - away)) <= 60 then
+    return "runs"
+  end
+  return nil
+end
+
+-- "+3%, 1h 40m left" for the Rested tab and its tooltip.
+function Rest.BagBuffText(buff, Format)
+  return "+" .. buff.stacks .. "%, " .. Format.Duration(buff.left) .. " left"
+end
+
 return Rest
