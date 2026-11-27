@@ -893,6 +893,66 @@ describe("the addon in a stand-in client", function()
       assert.are.equal(2, #c.mail.inbox)
     end)
 
+    it("adds mail you send back to the alt who sent it, once it has gone", function()
+      local ore = { { id = 2770, name = "Ore", count = 8 } }
+      state.inbox[2] = { sender = "Quill", subject = "Ore", days = 6, items = ore }
+      wow.fire("MAIL_SHOW")
+      wow.hooks.ReturnInboxItem(2)
+      local quill = EmberkeepDB.characters["Quill-Nightfall"]
+      wow.fire("MAIL_SEND_SUCCESS")
+      assert.is_nil(quill.mail, "a send back is confirmed by MAIL_SUCCESS")
+      wow.fire("MAIL_SUCCESS")
+      assert.are.equal(1, #quill.mail.sent)
+      local back = ns.Mail.View(quill, ns.Game.Now()).rows[1]
+      assert.are.equal("Sent back by you", back.subject)
+      assert.is_false(back.returns, "sent back once: deleted when it runs out")
+      wow.fire("MAIL_SUCCESS")
+      assert.are.equal(1, #quill.mail.sent, "taking an item later adds nothing")
+      wow.hooks.ReturnInboxItem(2)
+      wow.fire("MAIL_CLOSED")
+      wow.fire("MAIL_SUCCESS")
+      assert.are.equal(1, #quill.mail.sent, "forgotten when the mailbox closes")
+      wow.hooks.ReturnInboxItem(3) -- from someone else
+      wow.fire("MAIL_SUCCESS")
+      assert.are.equal(1, #quill.mail.sent)
+    end)
+
+    it("ignores the realm when names are unique across the region", function()
+      EmberkeepDB.characters["Zed-Elsewhere"] = { name = "Zed", realm = "Elsewhere", level = 5 }
+      state.outgoing = { { id = 2589, name = "Linen Cloth", count = 5 } }
+      wow.hooks.SendMail("Zed")
+      wow.fire("MAIL_SEND_SUCCESS")
+      assert.is_nil(EmberkeepDB.characters["Zed-Elsewhere"].mail, "a bare name is on your realm")
+      _G.RegionalUniqueNamesEnabled = function()
+        return true
+      end
+      wow.hooks.SendMail("Zed")
+      wow.fire("MAIL_SEND_SUCCESS")
+      _G.RegionalUniqueNamesEnabled = nil
+      assert.are.equal(1, #EmberkeepDB.characters["Zed-Elsewhere"].mail.sent)
+    end)
+
+    it("knows the mailbox is open from the interaction events too", function()
+      _G.Enum.PlayerInteractionType = { Banker = 8, MailInfo = 17 }
+      wow.install(state)
+      ns = wow.loadToc("Emberkeep/Emberkeep.toc", "Emberkeep")
+      wow.fire("ADDON_LOADED", "Emberkeep")
+      wow.fire("PLAYER_LOGIN")
+      wow.fire("PLAYER_ENTERING_WORLD", false, true)
+      _G.Enum.PlayerInteractionType = nil
+      local c = EmberkeepDB.characters["Brakka-Nightfall"]
+      wow.fire("PLAYER_INTERACTION_MANAGER_FRAME_SHOW", 8)
+      wow.fire("MAIL_INBOX_UPDATE")
+      assert.is_nil(c.mail, "the banker is not the mailbox")
+      wow.fire("PLAYER_INTERACTION_MANAGER_FRAME_SHOW", 17)
+      wow.fire("MAIL_INBOX_UPDATE")
+      assert.are.equal(2, #c.mail.inbox)
+      wow.fire("PLAYER_INTERACTION_MANAGER_FRAME_HIDE", 17)
+      state.inbox = {}
+      wow.fire("MAIL_INBOX_UPDATE")
+      assert.are.equal(2, #c.mail.inbox)
+    end)
+
     it("shows mail you sent to an alt on another realm only for that realm", function()
       EmberkeepDB.characters["Quill-Elsewhere"] = { name = "Quill", realm = "Elsewhere", level = 9 }
       state.outgoing = { { id = 2589, name = "Linen Cloth", count = 5 } }
