@@ -253,6 +253,31 @@ describe("the addon in a stand-in client", function()
     state.buffs, state.resting = nil, nil
   end)
 
+  it("shows the sleeping bag's XP buff on the Rested tab, but not the Legacy perk", function()
+    local perk = { id = 9, name = "Well Rested", duration = 0 }
+    local bag = { id = 4242, name = "Well-Rested", count = 3, duration = 7200, expires = 7300 }
+    state.uptime, state.buffs = 100, { perk, bag }
+    wow.fire("PLAYER_ENTERING_WORLD", false, true)
+    local c = EmberkeepDB.characters["Brakka-Nightfall"]
+    assert.are.equal(3, c.bagBuff.stacks)
+    assert.are.equal(7200, c.bagBuff.left)
+    SlashCmdList.EMBERKEEP("")
+    local shown = false
+    for _, f in ipairs(wow.frames) do
+      if f._shown and f._text == "+3%  2h 0m" then
+        shown = true
+      end
+    end
+    assert.is_true(shown)
+    SlashCmdList.EMBERKEEP("debug")
+    local said = table.concat(DEFAULT_CHAT_FRAME.lines, "\n")
+    assert.truthy(said:find("3 stack(s), 7200s left, spell 4242", 1, true), said)
+    state.buffs = { perk }
+    wow.fire("UNIT_AURA", "player")
+    assert.is_nil(c.bagBuff, "the perk never runs out, so it isn't the bag's buff")
+    state.buffs, state.uptime = nil, nil
+  end)
+
   it("puts the account's gold total on its own row with no character name", function()
     EmberkeepDB.characters["Quill-Nightfall"] =
       { name = "Quill", realm = "Nightfall", level = 18, money = 10000 }

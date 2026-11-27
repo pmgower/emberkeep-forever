@@ -54,6 +54,14 @@ end
 -- Who the last Rested build said to play next, for the row tooltips.
 local nextKey
 
+-- The Rested tab's Bag buff column: "+3%  1h 40m", or a dash.
+local function bagCell(buff)
+  if not buff then
+    return DIM .. "-|r"
+  end
+  return "+" .. buff.stacks .. "%  " .. ns.Format.Duration(buff.left)
+end
+
 local function restedBuild(db, now)
   local rows, summary = ns.RestedView.Build(db.characters, ns, ns.Game.RestContext(db, now))
   nextKey = summary.next and summary.next.key
@@ -72,6 +80,7 @@ local focuses = {
       { "Full in", 64 },
       { "Well Rested", 88 },
       { "Resting", 84 },
+      { "Bag buff", 92 },
       { "Zone", 130, grow = 1 },
     },
     bar = 4, -- the column that draws a fill bar before its text
@@ -93,6 +102,7 @@ local focuses = {
             r.full and (BLUE .. r.fullIn .. "|r") or r.fullIn,
             r.wellRested and (r.wellRested .. " / 5") or (DIM .. "Not read yet|r"),
             WHERE[r.where],
+            bagCell(r.bagBuff),
             r.zone,
           },
         }
@@ -336,6 +346,21 @@ local function tooltip(owner, key)
       effect = rank > 0 and ns.Rest.RankEffect(rank) or "No points in it"
     end
     GameTooltip:AddLine(effect, 0.56, 0.6, 0.65)
+    local current = key == ns.Game.CurrentKey()
+    local buff = ns.Rest.BagBuff(c, now, current, ns.db.bagBuffOffline)
+    if buff then
+      local text = ns.Rest.BagBuffText(buff, ns.Format)
+      GameTooltip:AddDoubleLine("Sleeping bag buff", text, 1, 0.82, 0, 1, 1, 1)
+      if not current then
+        local note = "As it was when they logged out"
+        if ns.db.bagBuffOffline == "paused" then
+          note = "Its timer waits while they're logged out"
+        elseif ns.db.bagBuffOffline == "runs" then
+          note = "Its timer kept running while they were logged out"
+        end
+        GameTooltip:AddLine(note, 0.56, 0.6, 0.65)
+      end
+    end
   end
   GameTooltip:AddDoubleLine("Gold", moneyText(ns.Format.Money(c.money)), 1, 0.82, 0)
   local played = ns.Played.Total(c, now, key == ns.Game.CurrentKey())

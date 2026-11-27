@@ -171,3 +171,41 @@ describe("Rest.Ranking", function()
     assert.are.same({ "Brakka", "Thistle", "Elowen", "Morvain" }, names)
   end)
 end)
+
+describe("the sleeping bag's XP buff", function()
+  local Format = dofile("Emberkeep/Core/Format.lua")
+
+  it("is saved with the time, and cleared once it's gone", function()
+    local c = {}
+    assert.is_true(Rest.ObserveBagBuff(c, { stacks = 2, left = 7000 }, 100))
+    assert.are.same({ stacks = 2, left = 7000, at = 100 }, c.bagBuff)
+    assert.is_false(Rest.ObserveBagBuff(c, { stacks = 2, left = 6990 }, 110), "only the time moved")
+    assert.is_true(Rest.ObserveBagBuff(c, { stacks = 3, left = 7200 }, 120))
+    assert.is_true(Rest.ObserveBagBuff(c, nil, 130))
+    assert.is_nil(c.bagBuff)
+  end)
+
+  it("says what an alt had left when they logged out", function()
+    local c = { bagBuff = { stacks = 3, left = 7200, at = 0 }, lastSeen = 1200 }
+    local logout = Rest.BagBuff(c, 50000, false)
+    assert.are.equal(6000, logout.left, "20 minutes played after the reading")
+    assert.are.equal(3, logout.stacks)
+    assert.are.equal(6000, Rest.BagBuff(c, 50000, false, "paused").left)
+    assert.are.equal(3000, Rest.BagBuff(c, 4200, false, "runs").left, "and the time away came off")
+    assert.is_nil(Rest.BagBuff(c, 50000, false, "runs"), "run out while away")
+    assert.are.equal(7100, Rest.BagBuff(c, 100, true).left, "on the character you're on, it counts down")
+    assert.is_nil(Rest.BagBuff({}, 0, false))
+    assert.are.equal("+3%, 1h 40m left", Rest.BagBuffText(logout, Format))
+  end)
+
+  it("learns at login whether the timer runs while logged out", function()
+    local saved = { stacks = 3, left = 7200, at = 0 }
+    -- Logged out at 1200 with 6000s left, back at 4200.
+    assert.are.equal("paused", Rest.OfflineTimer(saved, 1200, { left = 5990 }, 4200))
+    assert.are.equal("runs", Rest.OfflineTimer(saved, 1200, { left = 3010 }, 4200))
+    assert.is_nil(Rest.OfflineTimer(saved, 1200, { left = 4500 }, 4200), "neither")
+    assert.is_nil(Rest.OfflineTimer(saved, 1200, { left = 6000 }, 1300), "too short a time away to tell")
+    assert.is_nil(Rest.OfflineTimer(saved, 1200, nil, 4200), "gone: can't tell why")
+    assert.is_nil(Rest.OfflineTimer(nil, 1200, { left = 10 }, 4200))
+  end)
+end)
