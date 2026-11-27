@@ -285,6 +285,39 @@ describe("the addon in a stand-in client", function()
     state.buffs, state.uptime = nil, nil
   end)
 
+  it("leaves auras alone in combat, where the game hides them, and reads them after", function()
+    local bag = { id = 429959, name = "Well-Rested", count = 3, duration = 7200, expires = 7300 }
+    state.uptime, state.buffs = 100, { bag }
+    wow.fire("PLAYER_ENTERING_WORLD", false, true)
+    local c = EmberkeepDB.characters["Brakka-Nightfall"]
+    assert.are.equal(3, c.bagBuff.stacks)
+    local fighting, asked = true, 0
+    _G.InCombatLockdown = function()
+      return fighting
+    end
+    _G.C_UnitAuras = {
+      GetBuffDataByIndex = function()
+        asked = asked + 1
+        error("Auras cannot be accessed when secret while tainted by 'Emberkeep'")
+      end,
+    }
+    local errors = #ns.App.errors
+    bag.count = 2
+    wow.fire("UNIT_AURA", "player")
+    assert.are.equal(0, asked, "not asked in combat")
+    assert.are.equal(errors, #ns.App.errors, "no error reported")
+    assert.are.equal(3, c.bagBuff.stacks)
+    fighting = false
+    wow.fire("PLAYER_REGEN_ENABLED")
+    assert.are.equal(1, asked, "asked once combat ended")
+    assert.are.equal(errors, #ns.App.errors, "a hidden aura still isn't an error")
+    assert.are.equal(3, c.bagBuff.stacks, "and doesn't clear what was saved")
+    _G.C_UnitAuras = nil
+    wow.fire("UNIT_AURA", "player")
+    assert.are.equal(2, c.bagBuff.stacks, "read again once the game says")
+    _G.InCombatLockdown, state.buffs, state.uptime = nil, nil, nil
+  end)
+
   it("finds the bag buff by its spell ID, and counts stacks from its value", function()
     local auras = {
       { name = "Some Other Buff", spellId = 1, duration = 600, expirationTime = 700 },

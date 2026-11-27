@@ -123,16 +123,20 @@ function Game.InSleepingBag()
   if not UnitBuff then
     return false
   end
-  for i = 1, 40 do
-    local name, _, _, _, _, _, _, _, _, spellId = UnitBuff("player", i)
-    if not name then
-      return false
+  -- Auras the game hides from addons (in combat) can make this throw.
+  local ok, found = pcall(function()
+    for i = 1, 40 do
+      local name, _, _, _, _, _, _, _, _, spellId = UnitBuff("player", i)
+      if not name then
+        return false
+      end
+      if plain(spellId) == SLEEPING_BAG_AURA then
+        return true
+      end
     end
-    if plain(spellId) == SLEEPING_BAG_AURA then
-      return true
-    end
-  end
-  return false
+    return false
+  end)
+  return ok and found or false
 end
 
 -- Logging out sits you up out of the bag, so its aura goes during the logout
@@ -267,10 +271,7 @@ local function stacksOf(count, points)
   return math.max(1, stacks)
 end
 
--- { stacks, left (seconds), spellId, count, points } while the player has
--- that buff, else nil. count and points are what the game said, for
--- /emberkeep debug.
-function Game.BagXpBuff()
+local function readBagXpBuff()
   local now = GetTime and GetTime() or 0
   for i = 1, 40 do
     local name, count, duration, expires, spellId, points
@@ -299,4 +300,16 @@ function Game.BagXpBuff()
     end
   end
   return nil
+end
+
+-- { stacks, left (seconds), spellId, count, points } while the player has
+-- that buff, else nil. count and points are what the game said, for
+-- /emberkeep debug. The second value is true when the game wouldn't say:
+-- it hides auras from addons in combat, and asking then throws an error.
+function Game.BagXpBuff()
+  local ok, buff = pcall(readBagXpBuff)
+  if not ok then
+    return nil, true
+  end
+  return buff, false
 end
