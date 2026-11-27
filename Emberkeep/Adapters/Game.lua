@@ -240,25 +240,45 @@ function Game.RestContext(db, now)
   }
 end
 
--- The Cozy Sleeping Bag's XP buff: up to 3 stacks of +1% XP, for 2 hours.
--- It isn't the bag's Resting aura. Found by its name, and only a buff with a
--- timer: the Legacy perk of the same name never runs out. Its spell ID isn't
--- known yet on Forever; /emberkeep debug prints it once seen.
-local function isBagXpBuff(name, duration)
+-- The Cozy Sleeping Bag's XP buff, "Well-Rested": up to 3 stacks of +1% XP,
+-- for 2 hours. It isn't the bag's Resting aura, nor the Legacy perk of the
+-- same name (that one never runs out). Spell 429959 on Forever (/emberkeep
+-- debug, 2026-11-27); found by name too, in case another client numbers it
+-- differently.
+local BAG_XP_AURA = 429959
+
+local function isBagXpBuff(name, duration, spellId)
+  if spellId == BAG_XP_AURA then
+    return true
+  end
   local plainName = tostring(name or ""):lower():gsub("[^%a]", "")
   return plainName == "wellrested" and (tonumber(duration) or 0) > 0
 end
 
--- { stacks, left (seconds), spellId } while the player has that buff, else nil.
+-- How many stacks: the aura's count, or its first value when that says more
+-- (the buff's +1 to 3% may be held there instead: the count read 1 at 2 stacks).
+local function stacksOf(count, points)
+  local stacks = tonumber(count) or 0
+  local value = tonumber(points)
+  if value and value >= 1 and value <= 3 then
+    stacks = math.max(stacks, math.floor(value + 0.5))
+  end
+  return math.max(1, stacks)
+end
+
+-- { stacks, left (seconds), spellId, count, points } while the player has
+-- that buff, else nil. count and points are what the game said, for
+-- /emberkeep debug.
 function Game.BagXpBuff()
   local now = GetTime and GetTime() or 0
   for i = 1, 40 do
-    local name, count, duration, expires, spellId
+    local name, count, duration, expires, spellId, points
     if C_UnitAuras and C_UnitAuras.GetBuffDataByIndex then
       local aura = C_UnitAuras.GetBuffDataByIndex("player", i)
       if aura then
         name, count, duration = plain(aura.name), plain(aura.applications), plain(aura.duration)
         expires, spellId = plain(aura.expirationTime), plain(aura.spellId)
+        points = type(aura.points) == "table" and plain(aura.points[1]) or nil
       end
     elseif UnitBuff then
       local n, _, c, _, d, e, _, _, _, id = UnitBuff("player", i)
@@ -267,9 +287,14 @@ function Game.BagXpBuff()
     if not name then
       return nil
     end
-    if isBagXpBuff(name, duration) and tonumber(expires) then
-      local stacks = math.max(1, tonumber(count) or 1)
-      return { stacks = stacks, left = math.max(0, expires - now), spellId = spellId }
+    if isBagXpBuff(name, duration, spellId) and tonumber(expires) then
+      return {
+        stacks = stacksOf(count, points),
+        left = math.max(0, expires - now),
+        spellId = spellId,
+        count = count,
+        points = points,
+      }
     end
   end
   return nil

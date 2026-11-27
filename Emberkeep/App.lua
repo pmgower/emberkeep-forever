@@ -318,13 +318,21 @@ end)
 local outgoing
 
 -- The key of one of your characters, from a name typed into the mail. With
--- names unique across the region, the realm isn't part of it.
+-- names unique across the region, the realm isn't part of it. On Forever the
+-- game reports each character's surname as its realm (/emberkeep debug on
+-- 2026-11-27: realm=Doombringer for Pheumageddon Doombringer), so a bare name
+-- can't be held to "your realm" there either.
 local function findAlt(name)
   local regional = RegionalUniqueNamesEnabled and RegionalUniqueNamesEnabled()
   if regional then
     name = tostring(name or ""):gsub("%-.*$", "")
   end
-  local key = ns.Roster.FindByName(ns.db.characters, name, not regional and ns.Game.Realm() or nil)
+  local me = ns.Game.Sighting()
+  local realm = me.realm
+  if regional or (me.surname and me.surname == realm) then
+    realm = nil
+  end
+  local key = ns.Roster.FindByName(ns.db.characters, name, realm)
   return key ~= ns.Game.CurrentKey() and key or nil
 end
 

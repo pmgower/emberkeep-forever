@@ -71,8 +71,9 @@ commands = {
     end
     local ok2, buff = pcall(ns.Game.BagXpBuff)
     if ok2 and buff then
-      local line = "sleeping bag buff: %d stack(s), %ds left, spell %s"
-      say(string.format(line, buff.stacks, buff.left, tostring(buff.spellId)))
+      local line = "sleeping bag buff: %d stack(s), %ds left, spell %s (count %s, value %s)"
+      local raw = { tostring(buff.count), tostring(buff.points) }
+      say(string.format(line, buff.stacks, buff.left, tostring(buff.spellId), raw[1], raw[2]))
     else
       say("sleeping bag buff: not on you")
     end
