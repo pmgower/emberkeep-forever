@@ -249,7 +249,14 @@ describe("the addon in a stand-in client", function()
     assert.is_true(shown)
     state.buffs = { 16609 }
     wow.fire("UNIT_AURA", "player")
-    assert.is_nil(c.rest.bag)
+    assert.is_true(c.rest.bag, "logging out sits you up; the bag still counts for a moment")
+    wow.fire("PLAYER_LEAVING_WORLD")
+    wow.fire("PLAYER_LOGOUT")
+    assert.are.equal("bag", ns.Rest.Where(c.rest), "logged out in the bag, saved as the bag")
+    wow.fire("PLAYER_ENTERING_WORLD", false, false)
+    state.now = state.now + ns.Game.BAG_GRACE + 1
+    wow.fire("UNIT_AURA", "player")
+    assert.is_nil(c.rest.bag, "out of the bag for longer than that: an inn again")
     state.buffs, state.resting = nil, nil
   end)
 

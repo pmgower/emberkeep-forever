@@ -135,15 +135,30 @@ function Game.InSleepingBag()
   return false
 end
 
+-- Logging out sits you up out of the bag, so its aura goes during the logout
+-- countdown while the game keeps the bag's rest. A bag seen this recently
+-- still counts, or every alt logged out in one would be saved as at an inn.
+Game.BAG_GRACE = 30
+local bagSeenAt
+
 -- A cheap read, so it can run on every XP change.
 function Game.RestObservation()
   local resting = plain(IsResting())
+  local now = time()
+  local bag = false
+  if resting then
+    if Game.InSleepingBag() then
+      bag, bagSeenAt = true, now
+    else
+      bag = bagSeenAt ~= nil and now - bagSeenAt <= Game.BAG_GRACE
+    end
+  end
   return {
     rested = plain(GetXPExhaustion()),
     xpMax = plain(UnitXPMax("player")),
     resting = resting,
-    bag = resting and Game.InSleepingBag() or false,
-    at = time(),
+    bag = bag,
+    at = now,
   }
 end
 

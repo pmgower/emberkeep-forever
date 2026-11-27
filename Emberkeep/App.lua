@@ -411,6 +411,11 @@ local function auraChanged()
   if (obs.bag and true or false) ~= (c.rest.bag and true or false) and ns.Rest.Observe(c, obs) then
     ns.MainWindow.RefreshIfShown()
   end
+  -- Out of the bag but still in its grace: look again once that has passed,
+  -- unless you've logged out by then.
+  if obs.bag and not ns.Game.InSleepingBag() and C_Timer and C_Timer.After then
+    C_Timer.After(ns.Game.BAG_GRACE + 1, auraChanged)
+  end
 end
 
 local function handle(event, arg1)
