@@ -285,6 +285,31 @@ describe("the addon in a stand-in client", function()
     state.buffs, state.uptime = nil, nil
   end)
 
+  it("finds the bag buff by its spell ID, and counts stacks from its value", function()
+    local auras = {
+      { name = "Some Other Buff", spellId = 1, duration = 600, expirationTime = 700 },
+      {
+        name = "Whatever",
+        spellId = 429959,
+        applications = 1,
+        points = { 2 },
+        duration = 7200,
+        expirationTime = 7100,
+      },
+    }
+    _G.C_UnitAuras = {
+      GetBuffDataByIndex = function(_, i)
+        return auras[i]
+      end,
+    }
+    state.uptime = 100
+    local buff = ns.Game.BagXpBuff()
+    _G.C_UnitAuras, state.uptime = nil, nil
+    assert.are.equal(2, buff.stacks, "count said 1, the value says 2%")
+    assert.are.equal(7000, buff.left)
+    assert.are.equal(429959, buff.spellId)
+  end)
+
   it("puts the account's gold total on its own row with no character name", function()
     EmberkeepDB.characters["Quill-Nightfall"] =
       { name = "Quill", realm = "Nightfall", level = 18, money = 10000 }
@@ -983,6 +1008,23 @@ describe("the addon in a stand-in client", function()
       state.inbox = {}
       wow.fire("MAIL_INBOX_UPDATE")
       assert.are.equal(2, #c.mail.inbox)
+    end)
+
+    it("finds an alt by a bare name when the game reports surnames as realms", function()
+      -- On Forever, /emberkeep debug showed realm=Doombringer for Pheumageddon Doombringer.
+      state.surname, state.realm = "Doombringer", "Doombringer"
+      wow.fire("PLAYER_ENTERING_WORLD", false, false)
+      EmberkeepDB.characters["Pheubar Caretaker-Caretaker"] =
+        { name = "Pheubar", surname = "Caretaker", realm = "Caretaker", level = 22 }
+      state.outgoing = { { id = 2589, name = "Linen Cloth", count = 5 } }
+      wow.hooks.SendMail("Pheubar")
+      wow.fire("MAIL_SEND_SUCCESS")
+      local pheubar = EmberkeepDB.characters["Pheubar Caretaker-Caretaker"]
+      assert.are.equal(1, #pheubar.mail.sent)
+      wow.hooks.SendMail("Pheubar-Caretaker")
+      wow.fire("MAIL_SEND_SUCCESS")
+      assert.are.equal(2, #pheubar.mail.sent)
+      state.surname, state.realm = nil, "Nightfall"
     end)
 
     it("shows mail you sent to an alt on another realm only for that realm", function()
