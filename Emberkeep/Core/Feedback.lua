@@ -127,7 +127,7 @@ end
 --   wellRested,                            -- this character's Well Rested rank, or nil
 --   settings = {...},
 --   saved, atMax,                          -- how many alts are saved / at max level
---   alts = { { level, class, percent, full, resting }, ... }, -- Rested tab order
+--   alts = { { level, class, percent, full, resting, where }, ... }, -- Rested tab order
 --   addons = { BugSack = bool, ... },
 --   errors = { "message", ... },
 -- }
@@ -181,7 +181,7 @@ function Feedback.Report(ctx)
       q(a.class),
       q(a.percent),
       a.full and " (full)" or "",
-      a.resting and "inn" or "outside"
+      a.where or (a.resting and "inn" or "outside")
     )
   end
 

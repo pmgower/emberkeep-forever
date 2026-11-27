@@ -106,12 +106,43 @@ function Game.WellRestedRank()
   return nil
 end
 
+-- The "Resting" aura the game gives while you lie in a Cozy Sleeping Bag
+-- (checked in game on Forever, 2026-11-27). IsResting() is true there too, so
+-- this aura is what tells a sleeping bag from an inn.
+local SLEEPING_BAG_AURA = 1331671
+
+-- Whether the player has that aura. Asks whichever aura API this client has.
+function Game.InSleepingBag()
+  local auras = C_UnitAuras
+  if auras and auras.GetPlayerAuraBySpellID then
+    local ok, aura = pcall(auras.GetPlayerAuraBySpellID, SLEEPING_BAG_AURA)
+    if ok then
+      return aura ~= nil
+    end
+  end
+  if not UnitBuff then
+    return false
+  end
+  for i = 1, 40 do
+    local name, _, _, _, _, _, _, _, _, spellId = UnitBuff("player", i)
+    if not name then
+      return false
+    end
+    if plain(spellId) == SLEEPING_BAG_AURA then
+      return true
+    end
+  end
+  return false
+end
+
 -- A cheap read, so it can run on every XP change.
 function Game.RestObservation()
+  local resting = plain(IsResting())
   return {
     rested = plain(GetXPExhaustion()),
     xpMax = plain(UnitXPMax("player")),
-    resting = plain(IsResting()),
+    resting = resting,
+    bag = resting and Game.InSleepingBag() or false,
     at = time(),
   }
 end

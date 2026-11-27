@@ -12,7 +12,7 @@ local function fakeObject(kind)
         if k == "SetScript" then
           local name, fn = ...
           self._scripts[name] = fn
-        elseif k == "RegisterEvent" then
+        elseif k == "RegisterEvent" or k == "RegisterUnitEvent" then
           self._events[...] = true
         elseif k == "UnregisterEvent" then
           self._events[...] = nil
@@ -227,6 +227,13 @@ function W.install(state)
   end
   _G.GetXPExhaustion = function()
     return state.rested
+  end
+  -- state.buffs: spell IDs of the player's buffs, in order.
+  _G.UnitBuff = function(_, i)
+    local id = (state.buffs or {})[i]
+    if id then
+      return "Buff " .. id, nil, 0, nil, 0, 0, "player", false, false, id
+    end
   end
   _G.IsResting = function()
     return state.resting
